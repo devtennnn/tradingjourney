@@ -325,6 +325,39 @@ button.auth-avatar:hover{border-color:var(--gold)}
 .pf-sql{padding:10px 12px;border-radius:12px;border:1px solid #7a4a2a;background:#2a1d10;color:#ffb454;font-size:12px}
 .pf-pass{display:grid;gap:10px}
 @media(max-width:560px){.pf-hero{flex-direction:column;text-align:center}.pf-mail{justify-content:center}.plan-meta{grid-template-columns:1fr}}
+/* Market News Analysis (USD news -> BUY/SELL bias) */
+.na-sum{display:grid;grid-template-columns:minmax(220px,1.1fr) 2fr;gap:14px;margin-bottom:14px}
+.na-usd{padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(145deg,#191a20,#0f0f13)}
+.na-usd small{display:block;font-size:10.5px;letter-spacing:1.3px;color:var(--muted);font-weight:800;text-transform:uppercase}
+.na-usd .big{font-size:26px;font-weight:900;margin-top:6px}
+.na-usd .big.bull{color:var(--green)}.na-usd .big.bear{color:var(--red)}.na-usd .big.flat{color:var(--muted)}
+.na-usd .src{font-size:11px;color:var(--muted);margin-top:4px}
+.na-meter{height:6px;border-radius:999px;background:#1d1d22;margin-top:12px;position:relative;overflow:hidden}
+.na-meter i{position:absolute;top:0;bottom:0;left:50%;border-radius:999px;transition:all .4s}
+.na-pairs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.na-pair{padding:14px;border-radius:14px;border:1px solid var(--line);background:#0e0e12;text-align:center}
+.na-pair .sym{font-size:12px;font-weight:800;letter-spacing:.8px;color:var(--muted)}
+.na-sig{display:inline-block;margin-top:8px;padding:6px 14px;border-radius:999px;font-weight:900;font-size:14px;letter-spacing:.8px}
+.na-sig.buy{background:rgba(45,206,137,.13);color:var(--green);border:1px solid #1f6f4d}
+.na-sig.sell{background:rgba(240,91,120,.12);color:var(--red);border:1px solid #6e2737}
+.na-sig.wait{background:#17171c;color:var(--muted);border:1px solid var(--line)}
+.na-pair .str{font-size:10.5px;color:var(--muted);margin-top:6px}
+.na-list{display:grid;gap:10px}
+.na-ev{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.6fr) 150px;gap:14px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid #1d1d22;background:#0d0d11}
+.na-ev.done{border-color:#3a3320}
+.na-ev .ttl{font-weight:700;font-size:13px}
+.na-ev .meta{font-size:11px;color:var(--muted);margin-top:3px}
+.na-scn{font-size:11.5px;line-height:1.55;color:var(--muted)}
+.na-scn b.up{color:var(--green)}.na-scn b.dn{color:var(--red)}
+.na-act{display:grid;gap:6px}
+.na-act input{width:100%;min-width:0;height:34px;font-size:13px}
+.na-res{font-size:11px;font-weight:800}
+.na-res.up{color:var(--green)}.na-res.dn{color:var(--red)}.na-res.flat{color:var(--muted)}
+.na-lean{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:999px;margin-left:6px;border:1px solid var(--line);color:var(--muted)}
+.na-lean.up{color:var(--green);border-color:#1f6f4d}.na-lean.dn{color:var(--red);border-color:#6e2737}
+.na-disc{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.5}
+@media(max-width:900px){.na-sum{grid-template-columns:1fr}.na-ev{grid-template-columns:1fr}}
+@media(max-width:560px){.na-pairs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .news-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .news-clock{color:var(--gold2);font-variant-numeric:tabular-nums}
 .news-tz{color:var(--muted);font-size:10px;letter-spacing:.5px}
@@ -939,6 +972,27 @@ tbody tr:hover{background:#ffffff05}
   </section>
 </div>
 
+<!-- Market News Analysis: USD data surprises -> BUY/SELL bias for USD pairs and gold -->
+<section class="panel section" id="naPanel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-title" data-i18n="naTitle">MARKET NEWS ANALYSIS</div>
+      <div class="panel-sub" data-i18n="naSub">USD High & Medium impact news today → expected BUY / SELL bias</div>
+    </div>
+  </div>
+  <div class="na-sum">
+    <div class="na-usd">
+      <small data-i18n="naUsdBias">USD bias</small>
+      <div class="big flat" id="naUsd">—</div>
+      <div class="src" id="naSrc"></div>
+      <div class="na-meter"><i id="naMeter"></i></div>
+    </div>
+    <div class="na-pairs" id="naPairs"></div>
+  </div>
+  <div class="na-list" id="naList"></div>
+  <div class="na-disc" data-i18n="naDisc">Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.</div>
+</section>
+
 <!-- Community stats: users joined + total trades logged -->
 <section class="section" id="statsPanel" aria-labelledby="stTitle">
   <div class="panel-head" style="margin-bottom:12px">
@@ -1367,7 +1421,7 @@ const T = {
     eyebrow:"THE PROCESS. THE PROGRESS. THE PURPOSE.",heroH1:"Discipline over <span>emotion.</span>",heroP:"A private space to document every setup, decision, result and lesson. Build consistency one trade at a time.",heroNote:"YOUR JOURNEY, YOUR RESPONSIBILITY",
     netPL:"Net P/L",netFoot:"Across recorded trades",balance:"Balance",balStart:"Start",winRate:"Win rate",wl:"wins / losses",totalTrades:"Total trades",pf:"Profit factor",pfFoot:"Gross profit ÷ gross loss",premBtnUp:"Upgrade",premBtnPro:"PRO",premTitle:"DEVTEN Premium",premPer:"/ 30 days",premF1:"Chart uploads in Add Trade",premF2:"Drag & drop, Ctrl+V paste or file upload",premF3:"Auto-compressed and saved with every trade",premNoRenew:"One payment, no auto-renewal. Pay again when it ends.",premPay:"Pay $2.50 with KHQR",premExtend:"Extend 30 days · $2.50",premVerifyDown:"We cannot verify payments right now. If you already paid, your payment is saved — it will unlock automatically once verification is back.",premRestoring:"Checking for an earlier payment…",premGen:"Generating your QR…",premScan:"Scan with any banking app that supports KHQR.",premWait:"Waiting for payment…",premExpIn:"Expires in",premCheck:"I've paid — check now",premExpired:"This QR has expired.",premNew:"Generate new QR",premPaidT:"You're Premium!",premPaidSub:"Chart uploads are unlocked until {d}.",premDone:"Start uploading charts",premErr:"Could not start the payment.",premNoSvc:"The payment service is not set up yet. Please try again later.",premActive:"Active until {d}",lockTitle:"Chart uploads are a Premium feature",lockSub:"$2.50 / 30 days · pay with KHQR",lockCta:"Unlock",tPremOk:"Premium activated!",tPremNeed:"Chart upload needs Premium — your trade was saved without the new chart.",
     stTitle:"COMMUNITY",stSub:"Numbers across all DEVTEN users",stUsers:"Traders joined",stUsersFoot:"Registered accounts",stTrades:"Trades logged",stTradesFoot:"Total trades recorded by all users",stAvg:"≈ {n} trades per trader",stUpd:"Updated {t} ICT · refresh",stFail:"Unavailable",tLoggedIn:"Logged in successfully",rateLimit:"Too many emails were sent recently. Please wait about an hour, or ask the site owner to set up a custom email sender.",lUsername:"Username",phUsername:"your_username",emailHint:"We will send a verification link to this address.",passHint:"At least 8 characters.",uBad:"Use 3–20 letters, numbers or underscore.",uTaken:"That username is already taken.",uOk:"Username is available.",verifyTitle:"Verify your email",verifyBody1:"We sent a confirmation link to",verifyBody2:"Open it to activate your account, then log in with your username.",verifyResend:"Resend email",verifyBack:"Back to log in",verifySent:"Email sent again.",verifyWait:"You can resend in {n}s",badLogin:"Wrong username or password.",notVerified:"Please verify your email first. We sent you a new link.",authNoSvc:"Sign-in service is not set up yet. Please try again later.",emailTaken:"This email is already registered.",weakPass:"Password must be at least 8 characters.",forgot:"Forgot password?",forgotNeedUser:"Enter your username first.",forgotSent:"If that account exists, a reset link was emailed.",resetTitle:"Set a new password",resetSave:"Save password",resetDone:"Password updated.",emailVerified:"Email verified — welcome!",pfTitle:"My Profile",pfPlan:"Plan",pfActive:"Active plan",pfFree:"FREE",pfPro:"PRO",pfExpires:"Expires",pfRemain:"Time left",pfLifetime:"Never (lifetime)",pfDaysLeft:"{n} days left",pfExpiredOn:"Expired {d}",pfUpgrade:"Upgrade to Pro",pfExtend:"Extend Pro",pfProfile:"Profile",pfName:"Display name",pfSaveName:"Save name",pfAvatar:"Profile photo",pfUpload:"Upload photo",pfRemove:"Remove",pfUsername:"Username",pfClaim:"Set username",pfSecurity:"Password",pfCurPass:"Current password",pfNewPass:"New password",pfConfPass:"Confirm new password",pfChangePass:"Change password",pfCooldown:"Locked — you can change this again on {d} ({n} days).",pfCooldownNote:"Name, photo and password can each be changed once every 15 days.",pfSaved:"Profile updated.",pfPassOk:"Password changed.",pfMismatch:"New passwords do not match.",pfWrongPass:"Current password is incorrect.",pfSamePass:"New password must be different.",pfNeedSql:"Profile editing needs the account SQL setup (devten-account-setup.sql). Plan details still work.",pfBadName:"Name must be 2–40 characters.",pfUserSet:"Username saved.",pfVerified:"VERIFIED",pfUnverified:"NOT VERIFIED",pfErr:"Could not save. Please try again.",pfPhotoHint:"Photos are resized to a small square.",
-    ptTitle:"PARTNERS & PLATFORMS",ptSub:"Brokers and tools that power the DEVTEN trading workflow",ptBroker:"Broker",ptInfra:"Platform",newsTitle:"USD NEWS CALENDAR",newsSub:"US Dollar events only · times in Cambodia",newsThis:"This week",newsNext:"Next week",impHigh:"High",impMed:"Medium",impLow:"Low",impHol:"Holiday",newsRefreshTip:"Refresh calendar",newsLoading:"Loading USD events…",newsEmpty:"No USD events match these impact filters.",newsErr:"Could not load the calendar. Check your connection and try again.",newsUpd:"Updated",newsCached:"offline copy",newsSrc:"Source: Forex Factory weekly feed. Times converted to Asia/Phnom_Penh (UTC+7).",newsAllDay:"All day",newsNextEv:"Next event",newsIn:"in",newsNow:"NOW",newsFc:"Forecast",newsPrev:"Previous",newsToday:"TODAY",
+    ptTitle:"PARTNERS & PLATFORMS",ptSub:"Brokers and tools that power the DEVTEN trading workflow",ptBroker:"Broker",ptInfra:"Platform",naTitle:"MARKET NEWS ANALYSIS",naSub:"USD High & Medium impact news today → expected BUY / SELL bias",naUsdBias:"USD bias",naBull:"USD Bullish",naBear:"USD Bearish",naFlat:"Neutral / Mixed",naFromActual:"Based on {n} released result(s)",naFromFc:"Forecast-based (no results entered yet)",naNone:"No USD High/Medium events today — no news bias.",naBuy:"BUY",naSell:"SELL",naWait:"WAIT",naStrong:"Strong",naModerate:"Moderate",naWeak:"Weak",naNoBias:"No clear bias",naIfHigher:"Actual above forecast",naIfLower:"Actual below forecast",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"Speech / event risk — direction depends on tone. Expect volatility; wait for the reaction.",naActual:"Actual (after release)",naActPh:"e.g. 0.4%",naLean:"Forecast lean",naRes:"Result",naBetter:"Better than expected → USD ↑",naWorse:"Worse than expected → USD ↓",naInline:"In line → little reaction",naDisc:"Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.",newsTitle:"USD NEWS CALENDAR",newsSub:"US Dollar events only · times in Cambodia",newsThis:"This week",newsNext:"Next week",impHigh:"High",impMed:"Medium",impLow:"Low",impHol:"Holiday",newsRefreshTip:"Refresh calendar",newsLoading:"Loading USD events…",newsEmpty:"No USD events match these impact filters.",newsErr:"Could not load the calendar. Check your connection and try again.",newsUpd:"Updated",newsCached:"offline copy",newsSrc:"Source: Forex Factory weekly feed. Times converted to Asia/Phnom_Penh (UTC+7).",newsAllDay:"All day",newsNextEv:"Next event",newsIn:"in",newsNow:"NOW",newsFc:"Forecast",newsPrev:"Previous",newsToday:"TODAY",
     gp:"Gross profit",gl:"Gross loss",gpTip:"Sum of all winning trades",glTip:"Sum of all losing trades",prevSave:"Will save as",prevBad:"Enter a valid number, e.g. 25.50",prevFix:"sign set by Result",
     expectancy:"Expectancy",expFoot:"Average P/L per trade",avgWL:"Avg win / loss",maxDD:"Max drawdown",ddFoot:"Peak to trough",keep:"Keep showing up",streakW:"win streak",streakL:"loss streak",rr:"Reward : risk",
     equity:"EQUITY CURVE",equitySub:"Balance after every trade",rAll:"All",chartEmpty:"Add your first trade to build your curve.",chartNone:"No trades in this period.",
@@ -1403,7 +1457,7 @@ const T = {
     eyebrow:"ដំណើរការ • ការរីកចម្រើន • គោលដៅ",heroH1:"វិន័យលើសពី <span>អារម្មណ៍។</span>",heroP:"កន្លែងផ្ទាល់ខ្លួនសម្រាប់កត់ត្រា Setup ការសម្រេចចិត្ត លទ្ធផល និងមេរៀនពីរាល់ការជួញដូរ។",heroNote:"ដំណើររបស់អ្នក • ការទទួលខុសត្រូវរបស់អ្នក",
     netPL:"ចំណេញ / ខាតសរុប",netFoot:"ពីប្រតិបត្តិការដែលបានកត់ត្រា",balance:"សមតុល្យ",balStart:"ចាប់ផ្តើម",winRate:"អត្រាឈ្នះ",wl:"ឈ្នះ / ខាត",totalTrades:"ចំនួន Trade សរុប",pf:"កត្តាចំណេញ",pfFoot:"ចំណេញសរុប ÷ ខាតសរុប",premBtnUp:"ដំឡើង",premBtnPro:"PRO",premTitle:"DEVTEN Premium",premPer:"/ ៣០ ថ្ងៃ",premF1:"ផ្ទុករូបភាពគំនូសតាងក្នុង Add Trade",premF2:"អូស & ទម្លាក់ បិទភ្ជាប់ Ctrl+V ឬជ្រើសឯកសារ",premF3:"បង្ហាប់ដោយស្វ័យប្រវត្តិ ហើយរក្សាទុកជាមួយរាល់ Trade",premNoRenew:"បង់ម្តង មិនកាត់លុយស្វ័យប្រវត្តិទេ។ បង់ម្តងទៀតពេលផុតកំណត់។",premPay:"បង់ $2.50 ជាមួយ KHQR",premExtend:"បន្ថែម ៣០ ថ្ងៃ · $2.50",premVerifyDown:"យើងមិនអាចផ្ទៀងផ្ទាត់ការបង់ប្រាក់បានទេនៅពេលនេះ។ ប្រសិនបើអ្នកបានបង់ហើយ ការបង់ប្រាក់ត្រូវបានរក្សាទុក — វានឹងបើកដោយស្វ័យប្រវត្តិនៅពេលការផ្ទៀងផ្ទាត់ដំណើរការឡើងវិញ។",premRestoring:"កំពុងពិនិត្យការបង់ប្រាក់មុន…",premGen:"កំពុងបង្កើត QR…",premScan:"ស្កេនជាមួយកម្មវិធីធនាគារណាមួយដែលគាំទ្រ KHQR។",premWait:"កំពុងរង់ចាំការបង់ប្រាក់…",premExpIn:"ផុតកំណត់ក្នុង",premCheck:"ខ្ញុំបានបង់ហើយ — ពិនិត្យឥឡូវ",premExpired:"QR នេះផុតកំណត់ហើយ។",premNew:"បង្កើត QR ថ្មី",premPaidT:"អ្នកជា Premium ហើយ!",premPaidSub:"ការផ្ទុករូបភាពគំនូសតាងត្រូវបានបើករហូតដល់ {d}។",premDone:"ចាប់ផ្តើមផ្ទុករូបភាព",premErr:"មិនអាចចាប់ផ្តើមការបង់ប្រាក់បានទេ។",premNoSvc:"សេវាបង់ប្រាក់មិនទាន់រួចរាល់ទេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",premActive:"សកម្មរហូតដល់ {d}",lockTitle:"ការផ្ទុករូបភាពគំនូសតាងជាមុខងារ Premium",lockSub:"$2.50 / ៣០ ថ្ងៃ · បង់ជាមួយ KHQR",lockCta:"បើកដំណើរការ",tPremOk:"បានបើក Premium!",tPremNeed:"ការផ្ទុករូបភាពត្រូវការ Premium — Trade ត្រូវបានរក្សាទុកដោយគ្មានរូបភាពថ្មី។",
     stTitle:"សហគមន៍",stSub:"ចំនួនសរុបរបស់អ្នកប្រើ DEVTEN ទាំងអស់",stUsers:"អ្នកជួញដូរចូលរួម",stUsersFoot:"គណនីដែលបានចុះឈ្មោះ",stTrades:"Trade ដែលបានកត់ត្រា",stTradesFoot:"ចំនួន Trade សរុបរបស់អ្នកប្រើទាំងអស់",stAvg:"ប្រហែល {n} Trade ក្នុងម្នាក់",stUpd:"ធ្វើបច្ចុប្បន្នភាព {t} ICT · ផ្ទុកឡើងវិញ",stFail:"មិនមាន",tLoggedIn:"បានចូលគណនីដោយជោគជ័យ",rateLimit:"បានផ្ញើអ៊ីមែលច្រើនពេកថ្មីៗនេះ។ សូមរង់ចាំប្រហែល ១ ម៉ោង ឬសុំម្ចាស់គេហទំព័រកំណត់អ្នកផ្ញើអ៊ីមែលផ្ទាល់ខ្លួន។",lUsername:"ឈ្មោះអ្នកប្រើ",phUsername:"ឈ្មោះ_របស់អ្នក",emailHint:"យើងនឹងផ្ញើតំណផ្ទៀងផ្ទាត់ទៅអាសយដ្ឋាននេះ។",passHint:"យ៉ាងតិច ៨ តួអក្សរ។",uBad:"ប្រើ ៣–២០ តួអក្សរ លេខ ឬ _ ។",uTaken:"ឈ្មោះអ្នកប្រើនេះមានគេប្រើហើយ។",uOk:"ឈ្មោះអ្នកប្រើនេះអាចប្រើបាន។",verifyTitle:"ផ្ទៀងផ្ទាត់អ៊ីមែលរបស់អ្នក",verifyBody1:"យើងបានផ្ញើតំណបញ្ជាក់ទៅ",verifyBody2:"បើកវាដើម្បីដំណើរការគណនី រួចចូលគណនីដោយឈ្មោះអ្នកប្រើ។",verifyResend:"ផ្ញើអ៊ីមែលម្តងទៀត",verifyBack:"ត្រឡប់ទៅចូលគណនី",verifySent:"បានផ្ញើអ៊ីមែលម្តងទៀត។",verifyWait:"អាចផ្ញើម្តងទៀតក្នុង {n}វិនាទី",badLogin:"ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។",notVerified:"សូមផ្ទៀងផ្ទាត់អ៊ីមែលជាមុន។ យើងបានផ្ញើតំណថ្មីជូនអ្នក។",authNoSvc:"សេវាចូលគណនីមិនទាន់រួចរាល់ទេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",emailTaken:"អ៊ីមែលនេះបានចុះឈ្មោះរួចហើយ។",weakPass:"ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ។",forgot:"ភ្លេចពាក្យសម្ងាត់?",forgotNeedUser:"សូមបញ្ចូលឈ្មោះអ្នកប្រើជាមុន។",forgotSent:"ប្រសិនបើគណនីមាន យើងបានផ្ញើតំណកំណត់ឡើងវិញតាមអ៊ីមែល។",resetTitle:"កំណត់ពាក្យសម្ងាត់ថ្មី",resetSave:"រក្សាទុកពាក្យសម្ងាត់",resetDone:"បានធ្វើបច្ចុប្បន្នភាពពាក្យសម្ងាត់។",emailVerified:"បានផ្ទៀងផ្ទាត់អ៊ីមែល — សូមស្វាគមន៍!",pfTitle:"ប្រវត្តិរូបរបស់ខ្ញុំ",pfPlan:"គម្រោង",pfActive:"គម្រោងដែលកំពុងប្រើ",pfFree:"ឥតគិតថ្លៃ",pfPro:"PRO",pfExpires:"ផុតកំណត់",pfRemain:"ពេលនៅសល់",pfLifetime:"មិនផុតកំណត់ (ពេញមួយជីវិត)",pfDaysLeft:"នៅសល់ {n} ថ្ងៃ",pfExpiredOn:"ផុតកំណត់ {d}",pfUpgrade:"ដំឡើងទៅ Pro",pfExtend:"បន្ថែម Pro",pfProfile:"ប្រវត្តិរូប",pfName:"ឈ្មោះបង្ហាញ",pfSaveName:"រក្សាទុកឈ្មោះ",pfAvatar:"រូបភាពប្រវត្តិរូប",pfUpload:"ផ្ទុករូបភាព",pfRemove:"លុប",pfUsername:"ឈ្មោះអ្នកប្រើ",pfClaim:"កំណត់ឈ្មោះអ្នកប្រើ",pfSecurity:"ពាក្យសម្ងាត់",pfCurPass:"ពាក្យសម្ងាត់បច្ចុប្បន្ន",pfNewPass:"ពាក្យសម្ងាត់ថ្មី",pfConfPass:"បញ្ជាក់ពាក្យសម្ងាត់ថ្មី",pfChangePass:"ប្តូរពាក្យសម្ងាត់",pfCooldown:"ត្រូវបានចាក់សោ — អ្នកអាចផ្លាស់ប្តូរម្តងទៀតនៅ {d} ({n} ថ្ងៃ)។",pfCooldownNote:"ឈ្មោះ រូបភាព និងពាក្យសម្ងាត់ អាចផ្លាស់ប្តូរម្នាក់ម្តងរៀងរាល់ ១៥ ថ្ងៃ។",pfSaved:"បានធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូប។",pfPassOk:"បានប្តូរពាក្យសម្ងាត់។",pfMismatch:"ពាក្យសម្ងាត់ថ្មីមិនដូចគ្នាទេ។",pfWrongPass:"ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវ។",pfSamePass:"ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីមុន។",pfNeedSql:"ការកែប្រវត្តិរូបត្រូវការ SQL (devten-account-setup.sql)។ ព័ត៌មានគម្រោងនៅតែដំណើរការ។",pfBadName:"ឈ្មោះត្រូវមាន ២–៤០ តួអក្សរ។",pfUserSet:"បានរក្សាទុកឈ្មោះអ្នកប្រើ។",pfVerified:"បានផ្ទៀងផ្ទាត់",pfUnverified:"មិនទាន់ផ្ទៀងផ្ទាត់",pfErr:"មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត។",pfPhotoHint:"រូបភាពនឹងត្រូវបង្រួមជារូបការ៉េតូច។",
-    ptTitle:"ដៃគូ និងវេទិកា",ptSub:"ឈ្មួញកណ្តាល និងឧបករណ៍ដែលជំរុញការងារជួញដូររបស់ DEVTEN",ptBroker:"ឈ្មួញកណ្តាល",ptInfra:"វេទិកា",newsTitle:"ប្រតិទិនព័ត៌មាន USD",newsSub:"តែព្រឹត្តិការណ៍ដុល្លារអាមេរិក · ម៉ោងនៅកម្ពុជា",newsThis:"សប្តាហ៍នេះ",newsNext:"សប្តាហ៍ក្រោយ",impHigh:"ខ្ពស់",impMed:"មធ្យម",impLow:"ទាប",impHol:"ថ្ងៃឈប់សម្រាក",newsRefreshTip:"ផ្ទុកប្រតិទិនឡើងវិញ",newsLoading:"កំពុងផ្ទុកព្រឹត្តិការណ៍ USD…",newsEmpty:"គ្មានព្រឹត្តិការណ៍ USD ត្រូវនឹងតម្រងនេះទេ។",newsErr:"មិនអាចផ្ទុកប្រតិទិនបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត រួចព្យាយាមម្តងទៀត។",newsUpd:"ធ្វើបច្ចុប្បន្នភាព",newsCached:"ច្បាប់ចម្លងក្រៅបណ្តាញ",newsSrc:"ប្រភព៖ Forex Factory។ ម៉ោងបម្លែងទៅ Asia/Phnom_Penh (UTC+7)។",newsAllDay:"ពេញមួយថ្ងៃ",newsNextEv:"ព្រឹត្តិការណ៍បន្ទាប់",newsIn:"ក្នុងរយៈពេល",newsNow:"ឥឡូវនេះ",newsFc:"ការព្យាករណ៍",newsPrev:"មុន",newsToday:"ថ្ងៃនេះ",
+    ptTitle:"ដៃគូ និងវេទិកា",ptSub:"ឈ្មួញកណ្តាល និងឧបករណ៍ដែលជំរុញការងារជួញដូររបស់ DEVTEN",ptBroker:"ឈ្មួញកណ្តាល",ptInfra:"វេទិកា",naTitle:"ការវិភាគព័ត៌មានទីផ្សារ",naSub:"ព័ត៌មាន USD ផលប៉ះពាល់ខ្ពស់ និងមធ្យមថ្ងៃនេះ → ទិសដៅ BUY / SELL ដែលរំពឹងទុក",naUsdBias:"ទិសដៅ USD",naBull:"USD ខ្លាំង",naBear:"USD ខ្សោយ",naFlat:"អព្យាក្រឹត / ចម្រុះ",naFromActual:"ផ្អែកលើលទ្ធផលដែលបានចេញ {n}",naFromFc:"ផ្អែកលើការព្យាករណ៍ (មិនទាន់បញ្ចូលលទ្ធផល)",naNone:"ថ្ងៃនេះគ្មានព្រឹត្តិការណ៍ USD ខ្ពស់/មធ្យមទេ — គ្មានទិសដៅព័ត៌មាន។",naBuy:"BUY",naSell:"SELL",naWait:"រង់ចាំ",naStrong:"ខ្លាំង",naModerate:"មធ្យម",naWeak:"ខ្សោយ",naNoBias:"គ្មានទិសដៅច្បាស់",naIfHigher:"លទ្ធផលខ្ពស់ជាងការព្យាករណ៍",naIfLower:"លទ្ធផលទាបជាងការព្យាករណ៍",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"សុន្ទរកថា / ហានិភ័យព្រឹត្តិការណ៍ — ទិសដៅអាស្រ័យលើសម្លេង។ រំពឹងការប្រែប្រួលខ្លាំង រង់ចាំប្រតិកម្មទីផ្សារ។",naActual:"លទ្ធផលពិត (ក្រោយចេញ)",naActPh:"ឧ. 0.4%",naLean:"ទំនោរការព្យាករណ៍",naRes:"លទ្ធផល",naBetter:"ល្អជាងរំពឹង → USD ↑",naWorse:"អន់ជាងរំពឹង → USD ↓",naInline:"ស្របនឹងការរំពឹង → ប្រតិកម្មតិច",naDisc:"សម្រាប់ការសិក្សាប៉ុណ្ណោះ — មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ ទិសដៅផ្អែកលើប្រតិកម្មធម្មតា (ទិន្នន័យអាមេរិកល្អជាងរំពឹង → USD ខ្លាំង)។ ទីផ្សារអាចលោតទាំងសងខាង ត្រឡប់វិញក្នុងរយៈពេលប៉ុន្មាននាទី ឬបានគណនាព័ត៌មានរួចហើយ។ សូមពិនិត្យជាមួយការវិភាគផ្ទាល់ខ្លួន និងប្រើ Stop Loss ជានិច្ច។",newsTitle:"ប្រតិទិនព័ត៌មាន USD",newsSub:"តែព្រឹត្តិការណ៍ដុល្លារអាមេរិក · ម៉ោងនៅកម្ពុជា",newsThis:"សប្តាហ៍នេះ",newsNext:"សប្តាហ៍ក្រោយ",impHigh:"ខ្ពស់",impMed:"មធ្យម",impLow:"ទាប",impHol:"ថ្ងៃឈប់សម្រាក",newsRefreshTip:"ផ្ទុកប្រតិទិនឡើងវិញ",newsLoading:"កំពុងផ្ទុកព្រឹត្តិការណ៍ USD…",newsEmpty:"គ្មានព្រឹត្តិការណ៍ USD ត្រូវនឹងតម្រងនេះទេ។",newsErr:"មិនអាចផ្ទុកប្រតិទិនបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត រួចព្យាយាមម្តងទៀត។",newsUpd:"ធ្វើបច្ចុប្បន្នភាព",newsCached:"ច្បាប់ចម្លងក្រៅបណ្តាញ",newsSrc:"ប្រភព៖ Forex Factory។ ម៉ោងបម្លែងទៅ Asia/Phnom_Penh (UTC+7)។",newsAllDay:"ពេញមួយថ្ងៃ",newsNextEv:"ព្រឹត្តិការណ៍បន្ទាប់",newsIn:"ក្នុងរយៈពេល",newsNow:"ឥឡូវនេះ",newsFc:"ការព្យាករណ៍",newsPrev:"មុន",newsToday:"ថ្ងៃនេះ",
     gp:"ចំណេញសរុប",gl:"ខាតសរុប",gpTip:"ផលបូកនៃ Trade ឈ្នះទាំងអស់",glTip:"ផលបូកនៃ Trade ខាតទាំងអស់",prevSave:"នឹងរក្សាទុកជា",prevBad:"សូមបញ្ចូលលេខត្រឹមត្រូវ ឧ. 25.50",prevFix:"សញ្ញាកំណត់ដោយលទ្ធផល",
     expectancy:"តម្លៃរំពឹងទុក",expFoot:"ចំណេញ/ខាតមធ្យមក្នុងមួយ Trade",avgWL:"ឈ្នះ / ខាត មធ្យម",maxDD:"ការធ្លាក់ចុះអតិបរមា",ddFoot:"ពីកំពូលទៅបាត",keep:"បន្តអនុវត្តឱ្យបានទៀងទាត់",streakW:"ឈ្នះជាប់គ្នា",streakL:"ខាតជាប់គ្នា",rr:"ចំណេញ : ហានិភ័យ",
     equity:"ក្រាហ្វសមតុល្យ",equitySub:"សមតុល្យក្រោយរាល់ Trade",rAll:"ទាំងអស់",chartEmpty:"បន្ថែម Trade ដំបូងរបស់អ្នក ដើម្បីបង្កើតក្រាហ្វ។",chartNone:"គ្មាន Trade ក្នុងរយៈពេលនេះទេ។",
@@ -3051,6 +3105,7 @@ async function loadNews(force){
   renderNews();
 }
 function renderNews(){
+  setTimeout(() => { try{ renderNewsAnalysis(); }catch(e){} }, 0);
   const list = $('newsList'); if(!list) return;
   document.querySelectorAll('#newsWeekSeg button').forEach(b => b.classList.toggle('on', b.dataset.w===News.week));
   document.querySelectorAll('#newsImpactSeg button').forEach(b => b.classList.toggle('on', News.impacts.has(b.dataset.i)));
@@ -3458,6 +3513,113 @@ function initStats(){
   };
   go();
 }
+
+/* ---------- 17a2. Market News Analysis: USD data surprise -> BUY/SELL bias ----------
+   Rule (classic reaction): better-than-expected US data => USD stronger => XAUUSD/EURUSD/GBPUSD lower, USDJPY higher.
+   The free calendar feed has no "actual" numbers, so the trader types the actual after release; until then we show
+   the forecast-vs-previous lean and both scenarios. Actuals are remembered in this browser only. */
+const NA_PAIRS = [{s:'XAUUSD',k:-1},{s:'EURUSD',k:-1},{s:'GBPUSD',k:-1},{s:'USDJPY',k:1}];
+const NA_W = {High:3, Medium:2};
+let naActuals = {};
+try{ naActuals = JSON.parse(localStorage.getItem('devten_na_actuals') || '{}') || {}; }catch(e){}
+const naKey = e => e.title + '|' + e.ms;
+function naSaveActuals(){
+  try{
+    const cutoff = Date.now() - 14*86400000;   // forget entries older than two weeks
+    Object.keys(naActuals).forEach(k => { if(+k.split('|').pop() < cutoff) delete naActuals[k]; });
+    localStorage.setItem('devten_na_actuals', JSON.stringify(naActuals));
+  }catch(e){}
+}
+/* +1: higher number is good for USD, -1: lower is good (unemployment, claims), 0: not a number to compare (speeches, statements, oil) */
+function naPolarity(title){
+  const x = String(title).toLowerCase();
+  if(/speak|speech|testif|minutes|statement|press conf|beige book|holiday|auction|crude|natural gas|meeting|projections|outlook|report$/.test(x)) return 0;
+  if(/unemployment rate|unemployment claims|jobless|continuing claims|claimant|layoff|challenger/.test(x)) return -1;
+  return 1;
+}
+/* "0.3%" -> {v:0.3,pct:true}; "215K" -> 215000; "-1.2B" -> -1.2e9; "<0.1%" -> 0.1 */
+function naNum(v){
+  const m = String(v ?? '').replace(/,/g,'').match(/(-?\d*\.?\d+)\s*([KMBT%])?/i);
+  if(!m) return null;
+  const mult = {K:1e3, M:1e6, B:1e9, T:1e12}[String(m[2] || '').toUpperCase()] || 1;
+  return {v: parseFloat(m[1]) * mult, pct: m[2] === '%'};
+}
+/* Compare a vs b; returns {dir:+1/-1/0 (raw number direction), str:1 weak / 2 moderate / 3 strong} */
+function naDiff(a, b){
+  if(!a || !b) return null;
+  const d = a.v - b.v;
+  if(Math.abs(d) < 1e-9) return {dir:0, str:0};
+  let str;
+  if(a.pct || b.pct){ const pp = Math.abs(d); str = pp >= 0.2 ? 3 : pp >= 0.1 ? 2 : 1; }
+  else { const r = Math.abs(d) / Math.max(Math.abs(b.v), 1e-9); str = r >= 0.15 ? 3 : r >= 0.05 ? 2 : 1; }
+  return {dir: Math.sign(d), str};
+}
+const naStrWord = n => t(n >= 3 ? 'naStrong' : n >= 2 ? 'naModerate' : 'naWeak');
+function naPairText(usdDir){
+  return NA_PAIRS.map(p => `${p.s} <b class="${usdDir*p.k > 0 ? 'up' : 'dn'}">${t(usdDir*p.k > 0 ? 'naBuy' : 'naSell')}</b>`).join(' · ');
+}
+function renderNewsAnalysis(){
+  const list = $('naList'); if(!list) return;
+  if(News.state !== 'ok'){ list.innerHTML = `<div class="news-empty">${esc(t(News.state === 'error' ? 'newsErr' : 'newsLoading'))}</div>`; return; }
+  const todayKey = fmtKey.format(new Date());
+  const ev = News.events.filter(e => (e.impact === 'High' || e.impact === 'Medium') && fmtKey.format(new Date(e.ms)) === todayKey);
+  let score = 0, fcScore = 0, released = 0;
+  const rows = ev.map(e => {
+    const pol = naPolarity(e.title), w = NA_W[e.impact], key = naKey(e);
+    const fc = naNum(e.forecast), pv = naNum(e.previous), act = naNum(naActuals[key]);
+    const time = fmtTime.format(new Date(e.ms));
+    let lean = '', scn, res = '';
+    if(pol === 0 || !fc){
+      scn = esc(t('naEventRisk'));
+    } else {
+      const up = pol, dn = -pol;   // USD direction when actual is above / below forecast
+      scn = `${esc(t('naIfHigher'))} → <b class="${up>0?'up':'dn'}">${esc(t(up>0?'naUsdUp':'naUsdDn'))}</b>: ${naPairText(up)}<br>` +
+            `${esc(t('naIfLower'))} → <b class="${dn>0?'up':'dn'}">${esc(t(dn>0?'naUsdUp':'naUsdDn'))}</b>: ${naPairText(dn)}`;
+      const ld = naDiff(fc, pv);
+      if(ld && ld.dir){ const u = ld.dir * pol; fcScore += u * w; lean = `<span class="na-lean ${u>0?'up':'dn'}">${esc(t('naLean'))}: ${esc(t(u>0?'naUsdUp':'naUsdDn'))}</span>`; }
+      const ad = naDiff(act, fc);
+      if(ad){
+        released++;
+        const u = ad.dir * pol;
+        score += u * w * ad.str;
+        res = `<div class="na-res ${u>0?'up':u<0?'dn':'flat'}">${esc(t(u>0?'naBetter':u<0?'naWorse':'naInline'))}${u ? ' · ' + esc(naStrWord(ad.str)) : ''}</div>`;
+      }
+    }
+    const canInput = pol !== 0 && !!fc;
+    return `<div class="na-ev${res ? ' done' : ''}">
+      <div><div class="ttl">${esc(e.title)}${lean}</div>
+        <div class="meta"><span class="news-imp ${e.impact}" style="display:inline-flex"><i></i>${esc(t(e.impact==='High'?'impHigh':'impMed'))}</span> · ${time} ICT · ${esc(t('newsFc'))} ${esc(e.forecast || '—')} · ${esc(t('newsPrev'))} ${esc(e.previous || '—')}</div></div>
+      <div class="na-scn">${scn}</div>
+      <div class="na-act">${canInput ? `<input class="field" data-na="${esc(key)}" value="${esc(naActuals[key] || '')}" placeholder="${esc(t('naActPh'))}" aria-label="${esc(t('naActual'))}: ${esc(e.title)}" inputmode="decimal">` : ''}${res}</div>
+    </div>`;
+  });
+  list.innerHTML = rows.length ? rows.join('') : `<div class="news-empty">${esc(t('naNone'))}</div>`;
+
+  // Summary: released results win; otherwise fall back to the (weaker) forecast lean.
+  const useActual = released > 0, sc = useActual ? score : fcScore;
+  const thr = useActual ? 3 : 2;
+  const usdDir = sc >= thr ? 1 : sc <= -thr ? -1 : 0;
+  const mag = Math.abs(sc), str = useActual ? (mag >= 9 ? 3 : mag >= 5 ? 2 : 1) : 1;
+  const big = $('naUsd');
+  big.className = 'big ' + (usdDir > 0 ? 'bull' : usdDir < 0 ? 'bear' : 'flat');
+  big.textContent = ev.length ? t(usdDir > 0 ? 'naBull' : usdDir < 0 ? 'naBear' : 'naFlat') : '—';
+  $('naSrc').textContent = !ev.length ? '' : useActual ? t('naFromActual').replace('{n}', released) : t('naFromFc');
+  const pct = Math.max(-1, Math.min(1, sc / 12)) * 50, m = $('naMeter');
+  m.style.left = (pct >= 0 ? 50 : 50 + pct) + '%'; m.style.width = Math.abs(pct) + '%';
+  m.style.background = pct >= 0 ? 'var(--green)' : 'var(--red)';
+  $('naPairs').innerHTML = NA_PAIRS.map(p => {
+    const d = usdDir * p.k;
+    const cls = d > 0 ? 'buy' : d < 0 ? 'sell' : 'wait';
+    return `<div class="na-pair"><div class="sym">${p.s}</div><div class="na-sig ${cls}">${esc(t(d > 0 ? 'naBuy' : d < 0 ? 'naSell' : 'naWait'))}</div>
+      <div class="str">${esc(d ? naStrWord(str) : t('naNoBias'))}</div></div>`;
+  }).join('');
+}
+$('naList').addEventListener('change', e => {
+  const k = e.target.dataset && e.target.dataset.na; if(!k) return;
+  const v = e.target.value.trim();
+  if(v) naActuals[k] = v; else delete naActuals[k];
+  naSaveActuals(); renderNewsAnalysis();
+});
 
 /* ---------- 17b. Sticky header: gold-tinted shadow once the page scrolls ---------- */
 (function(){
