@@ -325,6 +325,57 @@ button.auth-avatar:hover{border-color:var(--gold)}
 .pf-sql{padding:10px 12px;border-radius:12px;border:1px solid #7a4a2a;background:#2a1d10;color:#ffb454;font-size:12px}
 .pf-pass{display:grid;gap:10px}
 @media(max-width:560px){.pf-hero{flex-direction:column;text-align:center}.pf-mail{justify-content:center}.plan-meta{grid-template-columns:1fr}}
+/* Plan picker (Premium / Elite) */
+.plan-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 12px;text-align:left}
+.plan-opt{position:relative;display:block;width:100%;text-align:left;padding:14px;border-radius:14px;cursor:pointer;color:var(--text);font:inherit;
+  background:#0e0e12;border:1px solid var(--line);transition:border-color .2s,box-shadow .2s,transform .15s}
+.plan-opt:hover{border-color:#5b4a20}
+.plan-opt.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 10px 28px rgba(212,175,55,.14);background:linear-gradient(145deg,#1c1a12,#0f0f13)}
+.plan-opt .po-name{font-weight:900;letter-spacing:.6px;font-size:14px}
+.plan-opt .po-price{font-size:24px;font-weight:900;color:var(--gold2);margin:4px 0 2px;letter-spacing:-.5px}
+.plan-opt .po-price small{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0}
+.plan-opt .po-badge{position:absolute;top:-9px;right:10px;font-size:9px;font-weight:900;letter-spacing:.8px;padding:3px 8px;border-radius:999px;color:#17130a;background:linear-gradient(135deg,var(--gold2),var(--gold))}
+.plan-opt .po-cur{position:absolute;top:-9px;left:10px;font-size:9px;font-weight:900;letter-spacing:.8px;padding:3px 8px;border-radius:999px;color:var(--green);background:#10251c;border:1px solid #1f6f4d;display:none}
+.plan-opt.cur .po-cur{display:inline-block}
+.plan-opt .prem-feats{margin:10px 0 0;gap:6px;font-size:12px}
+.plan-opt .prem-feats li::before{width:16px;height:16px;font-size:10px}
+@media(max-width:520px){.plan-pick{grid-template-columns:1fr}}
+.prem-chip.elite{color:#17130a;background:linear-gradient(135deg,#fff3c4,var(--gold2) 40%,var(--gold));border-color:#d4af37;box-shadow:0 0 14px rgba(212,175,55,.35)}
+.plan-badge.elite{color:#17130a;background:linear-gradient(135deg,#fff3c4,var(--gold2) 40%,var(--gold));box-shadow:0 6px 22px rgba(212,175,55,.45)}
+/* Signal provider */
+.sg-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sg-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.sg-stat{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0e0e12}
+.sg-stat small{display:block;font-size:10px;letter-spacing:1.2px;color:var(--muted);font-weight:800;text-transform:uppercase}
+.sg-stat b{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+.sg-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.sg-card{position:relative;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(145deg,#17171c,#0e0e12);overflow:hidden}
+.sg-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--muted)}
+.sg-card.buy::before{background:var(--green)}.sg-card.sell::before{background:var(--red)}
+.sg-card.closed{opacity:.72}
+.sg-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sg-sym{font-weight:900;font-size:16px;letter-spacing:.5px}
+.sg-side{font-size:11px;font-weight:900;letter-spacing:.8px;padding:3px 10px;border-radius:999px}
+.sg-side.buy{color:var(--green);background:rgba(45,206,137,.13);border:1px solid #1f6f4d}
+.sg-side.sell{color:var(--red);background:rgba(240,91,120,.12);border:1px solid #6e2737}
+.sg-st{margin-left:auto;font-size:9.5px;font-weight:900;letter-spacing:.7px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.sg-st.active{color:var(--gold2);border-color:#55451d;background:#231e10}
+.sg-st.win{color:var(--green);border-color:#1f6f4d;background:#10251c}
+.sg-st.loss{color:var(--red);border-color:#6e2737;background:#2a141b}
+.sg-lv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:12px}
+.sg-lv div{padding:7px 8px;border-radius:9px;background:#121217;border:1px solid #1d1d22}
+.sg-lv small{display:block;font-size:9px;letter-spacing:1px;color:var(--muted);font-weight:800}
+.sg-lv b{font-size:13px;font-variant-numeric:tabular-nums}
+.sg-lv .sl b{color:var(--red)}.sg-lv .tp b{color:var(--green)}
+.sg-note{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
+.sg-foot{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.sg-foot select{height:30px;font-size:12px;min-width:0;padding:0 8px}
+.sg-foot .sg-del{margin-left:auto}
+.sg-form{display:none;margin-bottom:14px;padding:14px;border-radius:14px;border:1px solid #55451d;background:#0e0e12}
+.sg-form.show{display:block}
+.sg-form .form-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sg-msg{padding:22px;text-align:center;color:var(--muted);font-size:12.5px;grid-column:1/-1}
+@media(max-width:700px){.sg-form .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sg-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.sg-stat b{font-size:18px}}
 /* Market News Analysis (USD news -> BUY/SELL bias) */
 .na-wrap{position:relative}
 .na-wrap.locked .na-body{filter:blur(7px);opacity:.45;pointer-events:none;user-select:none}
@@ -993,9 +1044,9 @@ tbody tr:hover{background:#ffffff05}
   <div class="na-lock" id="naLock">
     <div class="na-lock-card">
       <div class="na-lock-ico"><svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-      <h3 data-i18n="naLockTitle">Premium feature</h3>
+      <h3 data-i18n="eliteFeature">Elite feature</h3>
       <p data-i18n="naLockSub">Unlock Market News Analysis: BUY / SELL bias for XAUUSD, EURUSD, GBPUSD and USDJPY from today's USD news. $2.50 / 30 days via KHQR.</p>
-      <button type="button" class="btn" id="naUnlock" data-i18n="naLockCta">Unlock with Premium</button>
+      <button type="button" class="btn" id="naUnlock" data-i18n="eliteCta">Unlock Elite</button>
     </div>
   </div>
   <div class="na-body">
@@ -1012,6 +1063,56 @@ tbody tr:hover{background:#ffffff05}
   </div>
   </div>
   <div class="na-disc" data-i18n="naDisc">Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.</div>
+</section>
+
+<!-- Signal Provider (Elite): signals posted by the admin, live for Elite members -->
+<section class="panel section" id="sgPanel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-title" data-i18n="sgTitle">SIGNAL PROVIDER</div>
+      <div class="panel-sub" data-i18n="sgSub">Live trade signals from DEVTEN · Elite members</div>
+    </div>
+    <div class="sg-tools">
+      <div class="seg" id="sgFilter">
+        <button type="button" data-f="active" class="on" data-i18n="sgActive">Active</button>
+        <button type="button" data-f="all" data-i18n="sgAll">All</button>
+      </div>
+      <button type="button" class="btn small" id="sgNewBtn" style="display:none"><svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span data-i18n="sgNew">New signal</span></button>
+    </div>
+  </div>
+  <div class="na-wrap" id="sgWrap">
+    <div class="na-lock">
+      <div class="na-lock-card">
+        <div class="na-lock-ico"><svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3 data-i18n="eliteFeature">Elite feature</h3>
+        <p data-i18n="sgLockSub">Unlock live BUY / SELL signals with entry, stop loss and take-profit levels. Elite: $14.99 / 30 days via KHQR.</p>
+        <button type="button" class="btn" id="sgUnlock" data-i18n="eliteCta">Unlock Elite</button>
+      </div>
+    </div>
+    <div class="na-body">
+      <form class="sg-form" id="sgForm" autocomplete="off">
+        <div class="form-grid">
+          <div class="form-group"><label data-i18n="sgSymbol">Symbol</label><input class="field" id="sgSym" value="XAUUSD" maxlength="15" required></div>
+          <div class="form-group"><label data-i18n="sgSide">Side</label><select class="field" id="sgSideIn"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+          <div class="form-group"><label data-i18n="sgEntry">Entry</label><input class="field" id="sgEntryIn" inputmode="decimal" required></div>
+          <div class="form-group"><label>SL</label><input class="field" id="sgSlIn" inputmode="decimal" required></div>
+          <div class="form-group"><label>TP1</label><input class="field" id="sgTp1In" inputmode="decimal" required></div>
+          <div class="form-group"><label>TP2</label><input class="field" id="sgTp2In" inputmode="decimal"></div>
+          <div class="form-group"><label>TP3</label><input class="field" id="sgTp3In" inputmode="decimal"></div>
+          <div class="form-group"><label>&nbsp;</label><button type="submit" class="btn" data-i18n="sgPost">Post signal</button></div>
+          <div class="form-group full" style="grid-column:1/-1"><label data-i18n="sgNote">Note</label><input class="field" id="sgNoteIn" maxlength="500"></div>
+        </div>
+        <div class="prem-err" id="sgFormErr" role="alert"></div>
+      </form>
+      <div class="sg-stats">
+        <div class="sg-stat"><small data-i18n="sgStatActive">Active signals</small><b id="sgStActive">—</b></div>
+        <div class="sg-stat"><small data-i18n="sgStatClosed">Closed</small><b id="sgStClosed">—</b></div>
+        <div class="sg-stat"><small data-i18n="sgStatWin">Win rate</small><b id="sgStWin">—</b></div>
+      </div>
+      <div class="sg-list" id="sgList"></div>
+    </div>
+  </div>
+  <div class="na-disc" data-i18n="sgDisc">Signals are the provider's own trade ideas, not financial advice. Past results do not guarantee future results. Trade at your own risk and size positions sensibly.</div>
 </section>
 
 <!-- Community stats: users joined + total trades logged -->
@@ -1219,13 +1320,28 @@ tbody tr:hover{background:#ffffff05}
     </div>
     <div class="pv on" id="pvPlan">
       <div class="tag gold" id="premActiveTag" style="display:none"></div>
-      <div class="prem-price">$2.50 <small data-i18n="premPer">/ 30 days</small></div>
-      <ul class="prem-feats">
-        <li data-i18n="premF1">Chart uploads in Add Trade</li>
-        <li data-i18n="premF2">Drag &amp; drop, Ctrl+V paste or file upload</li>
-        <li data-i18n="premF3">Auto-compressed and saved with every trade</li>
-        <li data-i18n="premF4">Market News Analysis: BUY / SELL bias from USD news</li>
-      </ul>
+      <div class="plan-pick" role="radiogroup" id="planPick">
+        <button type="button" class="plan-opt" data-plan="premium" role="radio">
+          <span class="po-cur" data-i18n="planCurrent">CURRENT</span>
+          <div class="po-name" data-i18n="planPremium">Premium</div>
+          <div class="po-price">$2.50 <small data-i18n="premPer">/ 30 days</small></div>
+          <ul class="prem-feats">
+            <li data-i18n="premF1">Chart uploads in Add Trade</li>
+            <li data-i18n="premF2">Drag &amp; drop, Ctrl+V paste or file upload</li>
+          </ul>
+        </button>
+        <button type="button" class="plan-opt" data-plan="elite" role="radio">
+          <span class="po-cur" data-i18n="planCurrent">CURRENT</span>
+          <span class="po-badge" data-i18n="planBest">ALL FEATURES</span>
+          <div class="po-name" data-i18n="planElite">Elite</div>
+          <div class="po-price">$14.99 <small data-i18n="premPer">/ 30 days</small></div>
+          <ul class="prem-feats">
+            <li data-i18n="premF0">Everything in Premium</li>
+            <li data-i18n="premF4">Market News Analysis: BUY / SELL bias from USD news</li>
+            <li data-i18n="premF5">Signal Provider: live BUY / SELL signals with entry, SL &amp; TP</li>
+          </ul>
+        </button>
+      </div>
       <div class="hint" data-i18n="premNoRenew" style="margin-bottom:14px">One payment, no auto-renewal. Pay again when it ends.</div>
       <button type="button" class="btn" id="premPayBtn" style="width:100%;justify-content:center" data-i18n="premPay">Pay $2.50 with KHQR</button>
       <div class="prem-err" id="premErr" role="alert"></div>
@@ -1442,8 +1558,9 @@ const T = {
     preMarketNav:"Pre-Market",summaryNav:"Summary",calcNav:"Position Calc",
     eyebrow:"THE PROCESS. THE PROGRESS. THE PURPOSE.",heroH1:"Discipline over <span>emotion.</span>",heroP:"A private space to document every setup, decision, result and lesson. Build consistency one trade at a time.",heroNote:"YOUR JOURNEY, YOUR RESPONSIBILITY",
     netPL:"Net P/L",netFoot:"Across recorded trades",balance:"Balance",balStart:"Start",winRate:"Win rate",wl:"wins / losses",totalTrades:"Total trades",pf:"Profit factor",pfFoot:"Gross profit ÷ gross loss",premBtnUp:"Upgrade",premBtnPro:"PRO",premTitle:"DEVTEN Premium",premPer:"/ 30 days",premF1:"Chart uploads in Add Trade",premF2:"Drag & drop, Ctrl+V paste or file upload",premF3:"Auto-compressed and saved with every trade",premNoRenew:"One payment, no auto-renewal. Pay again when it ends.",premPay:"Pay $2.50 with KHQR",premExtend:"Extend 30 days · $2.50",premVerifyDown:"We cannot verify payments right now. If you already paid, your payment is saved — it will unlock automatically once verification is back.",premRestoring:"Checking for an earlier payment…",premGen:"Generating your QR…",premScan:"Scan with any banking app that supports KHQR.",premWait:"Waiting for payment…",premExpIn:"Expires in",premCheck:"I've paid — check now",premExpired:"This QR has expired.",premNew:"Generate new QR",premPaidT:"You're Premium!",premPaidSub:"Chart uploads are unlocked until {d}.",premDone:"Start uploading charts",premErr:"Could not start the payment.",premNoSvc:"The payment service is not set up yet. Please try again later.",premActive:"Active until {d}",lockTitle:"Chart uploads are a Premium feature",lockSub:"$2.50 / 30 days · pay with KHQR",lockCta:"Unlock",tPremOk:"Premium activated!",tPremNeed:"Chart upload needs Premium — your trade was saved without the new chart.",
-    stTitle:"COMMUNITY",stSub:"Numbers across all DEVTEN users",stUsers:"Traders joined",stUsersFoot:"Registered accounts",stTrades:"Trades logged",stTradesFoot:"Total trades recorded by all users",stAvg:"≈ {n} trades per trader",stUpd:"Updated {t} ICT · refresh",stFail:"Unavailable",tLoggedIn:"Logged in successfully",rateLimit:"Too many emails were sent recently. Please wait about an hour, or ask the site owner to set up a custom email sender.",lUsername:"Username",phUsername:"your_username",emailHint:"We will send a verification link to this address.",passHint:"At least 8 characters.",uBad:"Use 3–20 letters, numbers or underscore.",uTaken:"That username is already taken.",uOk:"Username is available.",verifyTitle:"Verify your email",verifyBody1:"We sent a confirmation link to",verifyBody2:"Open it to activate your account, then log in with your username.",verifyResend:"Resend email",verifyBack:"Back to log in",verifySent:"Email sent again.",verifyWait:"You can resend in {n}s",badLogin:"Wrong username or password.",notVerified:"Please verify your email first. We sent you a new link.",authNoSvc:"Sign-in service is not set up yet. Please try again later.",emailTaken:"This email is already registered.",weakPass:"Password must be at least 8 characters.",forgot:"Forgot password?",forgotNeedUser:"Enter your username first.",forgotSent:"If that account exists, a reset link was emailed.",resetTitle:"Set a new password",resetSave:"Save password",resetDone:"Password updated.",emailVerified:"Email verified — welcome!",pfTitle:"My Profile",pfPlan:"Plan",pfActive:"Active plan",pfFree:"FREE",pfPro:"PRO",pfExpires:"Expires",pfRemain:"Time left",pfLifetime:"Never (lifetime)",pfDaysLeft:"{n} days left",pfExpiredOn:"Expired {d}",pfUpgrade:"Upgrade to Pro",pfExtend:"Extend Pro",pfProfile:"Profile",pfName:"Display name",pfSaveName:"Save name",pfAvatar:"Profile photo",pfUpload:"Upload photo",pfRemove:"Remove",pfUsername:"Username",pfClaim:"Set username",pfSecurity:"Password",pfCurPass:"Current password",pfNewPass:"New password",pfConfPass:"Confirm new password",pfChangePass:"Change password",pfCooldown:"Locked — you can change this again on {d} ({n} days).",pfCooldownNote:"Name, photo and password can each be changed once every 15 days.",pfSaved:"Profile updated.",pfPassOk:"Password changed.",pfMismatch:"New passwords do not match.",pfWrongPass:"Current password is incorrect.",pfSamePass:"New password must be different.",pfNeedSql:"Profile editing needs the account SQL setup (devten-account-setup.sql). Plan details still work.",pfBadName:"Name must be 2–40 characters.",pfUserSet:"Username saved.",pfVerified:"VERIFIED",pfUnverified:"NOT VERIFIED",pfErr:"Could not save. Please try again.",pfPhotoHint:"Photos are resized to a small square.",
-    ptTitle:"PARTNERS & PLATFORMS",ptSub:"Brokers and tools that power the DEVTEN trading workflow",ptBroker:"Broker",ptInfra:"Platform",naLockTitle:"Premium feature",naLockSub:"Unlock Market News Analysis: BUY / SELL bias for XAUUSD, EURUSD, GBPUSD and USDJPY from today's USD news. $2.50 / 30 days via KHQR.",naLockCta:"Unlock with Premium",premF4:"Market News Analysis: BUY / SELL bias from USD news",naTitle:"MARKET NEWS ANALYSIS",naSub:"USD High & Medium impact news today → expected BUY / SELL bias",naUsdBias:"USD bias",naBull:"USD Bullish",naBear:"USD Bearish",naFlat:"Neutral / Mixed",naFromActual:"Based on {n} released result(s)",naFromFc:"Forecast-based (no results entered yet)",naNone:"No USD High/Medium events today — no news bias.",naBuy:"BUY",naSell:"SELL",naWait:"WAIT",naStrong:"Strong",naModerate:"Moderate",naWeak:"Weak",naNoBias:"No clear bias",naIfHigher:"Actual above forecast",naIfLower:"Actual below forecast",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"Speech / event risk — direction depends on tone. Expect volatility; wait for the reaction.",naActual:"Actual (after release)",naActPh:"e.g. 0.4%",naLean:"Forecast lean",naRes:"Result",naBetter:"Better than expected → USD ↑",naWorse:"Worse than expected → USD ↓",naInline:"In line → little reaction",naDisc:"Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.",newsTitle:"USD NEWS CALENDAR",newsSub:"US Dollar events only · times in Cambodia",newsThis:"This week",newsNext:"Next week",impHigh:"High",impMed:"Medium",impLow:"Low",impHol:"Holiday",newsRefreshTip:"Refresh calendar",newsLoading:"Loading USD events…",newsEmpty:"No USD events match these impact filters.",newsErr:"Could not load the calendar. Check your connection and try again.",newsUpd:"Updated",newsCached:"offline copy",newsSrc:"Source: Forex Factory weekly feed. Times converted to Asia/Phnom_Penh (UTC+7).",newsAllDay:"All day",newsNextEv:"Next event",newsIn:"in",newsNow:"NOW",newsFc:"Forecast",newsPrev:"Previous",newsToday:"TODAY",
+    stTitle:"COMMUNITY",stSub:"Numbers across all DEVTEN users",stUsers:"Traders joined",stUsersFoot:"Registered accounts",stTrades:"Trades logged",stTradesFoot:"Total trades recorded by all users",stAvg:"≈ {n} trades per trader",stUpd:"Updated {t} ICT · refresh",stFail:"Unavailable",tLoggedIn:"Logged in successfully",rateLimit:"Too many emails were sent recently. Please wait about an hour, or ask the site owner to set up a custom email sender.",lUsername:"Username",phUsername:"your_username",emailHint:"We will send a verification link to this address.",passHint:"At least 8 characters.",uBad:"Use 3–20 letters, numbers or underscore.",uTaken:"That username is already taken.",uOk:"Username is available.",verifyTitle:"Verify your email",verifyBody1:"We sent a confirmation link to",verifyBody2:"Open it to activate your account, then log in with your username.",verifyResend:"Resend email",verifyBack:"Back to log in",verifySent:"Email sent again.",verifyWait:"You can resend in {n}s",badLogin:"Wrong username or password.",notVerified:"Please verify your email first. We sent you a new link.",authNoSvc:"Sign-in service is not set up yet. Please try again later.",emailTaken:"This email is already registered.",weakPass:"Password must be at least 8 characters.",forgot:"Forgot password?",forgotNeedUser:"Enter your username first.",forgotSent:"If that account exists, a reset link was emailed.",resetTitle:"Set a new password",resetSave:"Save password",resetDone:"Password updated.",emailVerified:"Email verified — welcome!",pfTitle:"My Profile",pfPlan:"Plan",pfActive:"Active plan",pfFree:"FREE",pfPro:"PRO",pfExpires:"Expires",pfRemain:"Time left",pfLifetime:"Never (lifetime)",pfDaysLeft:"{n} days left",pfExpiredOn:"Expired {d}",pfUpgrade:"Upgrade plan",pfExtend:"Extend Elite",pfToElite:"Upgrade to Elite",pfProfile:"Profile",pfName:"Display name",pfSaveName:"Save name",pfAvatar:"Profile photo",pfUpload:"Upload photo",pfRemove:"Remove",pfUsername:"Username",pfClaim:"Set username",pfSecurity:"Password",pfCurPass:"Current password",pfNewPass:"New password",pfConfPass:"Confirm new password",pfChangePass:"Change password",pfCooldown:"Locked — you can change this again on {d} ({n} days).",pfCooldownNote:"Name, photo and password can each be changed once every 15 days.",pfSaved:"Profile updated.",pfPassOk:"Password changed.",pfMismatch:"New passwords do not match.",pfWrongPass:"Current password is incorrect.",pfSamePass:"New password must be different.",pfNeedSql:"Profile editing needs the account SQL setup (devten-account-setup.sql). Plan details still work.",pfBadName:"Name must be 2–40 characters.",pfUserSet:"Username saved.",pfVerified:"VERIFIED",pfUnverified:"NOT VERIFIED",pfErr:"Could not save. Please try again.",pfPhotoHint:"Photos are resized to a small square.",
+    ptTitle:"PARTNERS & PLATFORMS",ptSub:"Brokers and tools that power the DEVTEN trading workflow",ptBroker:"Broker",ptInfra:"Platform",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"ALL FEATURES",planCurrent:"CURRENT",premF0:"Everything in Premium",premF5:"Signal Provider: live BUY / SELL signals with entry, SL & TP",premPayX:"Pay {p} with KHQR",premExtendX:"Extend 30 days · {p}",premPaidSub2:"{plan} is active until {d}.",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"Elite feature",eliteCta:"Unlock Elite",sgTitle:"SIGNAL PROVIDER",sgSub:"Live trade signals from DEVTEN · Elite members",sgActive:"Active",sgAll:"All",sgNew:"New signal",sgLockSub:"Unlock live BUY / SELL signals with entry, stop loss and take-profit levels. Elite: $14.99 / 30 days via KHQR.",sgStatActive:"Active signals",sgStatClosed:"Closed",sgStatWin:"Win rate",sgEmpty:"No signals yet. New signals appear here instantly.",sgEmptyActive:"No active signals right now.",sgEntry:"Entry",sgSymbol:"Symbol",sgSide:"Side",sgNote:"Note",sgPost:"Post signal",sgBad:"Check levels: for BUY, SL < Entry < TP1; for SELL, SL > Entry > TP1.",sgPosted:"Signal posted",sgNewToast:"New signal: {s}",sgNeedSql:"Signals need the Elite SQL setup (devten-elite-setup.sql).",sgDel:"Delete",sgDelQ:"Delete this signal?",sgUpdated:"Signal updated",sgLoading:"Loading signals…",stActive:"ACTIVE",stTp1:"TP1 HIT",stTp2:"TP2 HIT",stTp3:"TP3 HIT",stSl:"SL HIT",stBe:"BREAKEVEN",stCancelled:"CANCELLED",sgDisc:"Signals are the provider's own trade ideas, not financial advice. Past results do not guarantee future results. Trade at your own risk and size positions sensibly.",
+    naLockTitle:"Premium feature",naLockSub:"Unlock Market News Analysis: BUY / SELL bias for XAUUSD, EURUSD, GBPUSD and USDJPY from today's USD news. Elite: $14.99 / 30 days via KHQR.",naLockCta:"Unlock with Premium",premF4:"Market News Analysis: BUY / SELL bias from USD news",naTitle:"MARKET NEWS ANALYSIS",naSub:"USD High & Medium impact news today → expected BUY / SELL bias",naUsdBias:"USD bias",naBull:"USD Bullish",naBear:"USD Bearish",naFlat:"Neutral / Mixed",naFromActual:"Based on {n} released result(s)",naFromFc:"Forecast-based (no results entered yet)",naNone:"No USD High/Medium events today — no news bias.",naBuy:"BUY",naSell:"SELL",naWait:"WAIT",naStrong:"Strong",naModerate:"Moderate",naWeak:"Weak",naNoBias:"No clear bias",naIfHigher:"Actual above forecast",naIfLower:"Actual below forecast",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"Speech / event risk — direction depends on tone. Expect volatility; wait for the reaction.",naActual:"Actual (after release)",naActPh:"e.g. 0.4%",naLean:"Forecast lean",naRes:"Result",naBetter:"Better than expected → USD ↑",naWorse:"Worse than expected → USD ↓",naInline:"In line → little reaction",naDisc:"Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.",newsTitle:"USD NEWS CALENDAR",newsSub:"US Dollar events only · times in Cambodia",newsThis:"This week",newsNext:"Next week",impHigh:"High",impMed:"Medium",impLow:"Low",impHol:"Holiday",newsRefreshTip:"Refresh calendar",newsLoading:"Loading USD events…",newsEmpty:"No USD events match these impact filters.",newsErr:"Could not load the calendar. Check your connection and try again.",newsUpd:"Updated",newsCached:"offline copy",newsSrc:"Source: Forex Factory weekly feed. Times converted to Asia/Phnom_Penh (UTC+7).",newsAllDay:"All day",newsNextEv:"Next event",newsIn:"in",newsNow:"NOW",newsFc:"Forecast",newsPrev:"Previous",newsToday:"TODAY",
     gp:"Gross profit",gl:"Gross loss",gpTip:"Sum of all winning trades",glTip:"Sum of all losing trades",prevSave:"Will save as",prevBad:"Enter a valid number, e.g. 25.50",prevFix:"sign set by Result",
     expectancy:"Expectancy",expFoot:"Average P/L per trade",avgWL:"Avg win / loss",maxDD:"Max drawdown",ddFoot:"Peak to trough",keep:"Keep showing up",streakW:"win streak",streakL:"loss streak",rr:"Reward : risk",
     equity:"EQUITY CURVE",equitySub:"Balance after every trade",rAll:"All",chartEmpty:"Add your first trade to build your curve.",chartNone:"No trades in this period.",
@@ -1478,8 +1595,9 @@ const T = {
     preMarketNav:"មុនជួញដូរ",summaryNav:"របាយការណ៍",calcNav:"គណនា Lot",
     eyebrow:"ដំណើរការ • ការរីកចម្រើន • គោលដៅ",heroH1:"វិន័យលើសពី <span>អារម្មណ៍។</span>",heroP:"កន្លែងផ្ទាល់ខ្លួនសម្រាប់កត់ត្រា Setup ការសម្រេចចិត្ត លទ្ធផល និងមេរៀនពីរាល់ការជួញដូរ។",heroNote:"ដំណើររបស់អ្នក • ការទទួលខុសត្រូវរបស់អ្នក",
     netPL:"ចំណេញ / ខាតសរុប",netFoot:"ពីប្រតិបត្តិការដែលបានកត់ត្រា",balance:"សមតុល្យ",balStart:"ចាប់ផ្តើម",winRate:"អត្រាឈ្នះ",wl:"ឈ្នះ / ខាត",totalTrades:"ចំនួន Trade សរុប",pf:"កត្តាចំណេញ",pfFoot:"ចំណេញសរុប ÷ ខាតសរុប",premBtnUp:"ដំឡើង",premBtnPro:"PRO",premTitle:"DEVTEN Premium",premPer:"/ ៣០ ថ្ងៃ",premF1:"ផ្ទុករូបភាពគំនូសតាងក្នុង Add Trade",premF2:"អូស & ទម្លាក់ បិទភ្ជាប់ Ctrl+V ឬជ្រើសឯកសារ",premF3:"បង្ហាប់ដោយស្វ័យប្រវត្តិ ហើយរក្សាទុកជាមួយរាល់ Trade",premNoRenew:"បង់ម្តង មិនកាត់លុយស្វ័យប្រវត្តិទេ។ បង់ម្តងទៀតពេលផុតកំណត់។",premPay:"បង់ $2.50 ជាមួយ KHQR",premExtend:"បន្ថែម ៣០ ថ្ងៃ · $2.50",premVerifyDown:"យើងមិនអាចផ្ទៀងផ្ទាត់ការបង់ប្រាក់បានទេនៅពេលនេះ។ ប្រសិនបើអ្នកបានបង់ហើយ ការបង់ប្រាក់ត្រូវបានរក្សាទុក — វានឹងបើកដោយស្វ័យប្រវត្តិនៅពេលការផ្ទៀងផ្ទាត់ដំណើរការឡើងវិញ។",premRestoring:"កំពុងពិនិត្យការបង់ប្រាក់មុន…",premGen:"កំពុងបង្កើត QR…",premScan:"ស្កេនជាមួយកម្មវិធីធនាគារណាមួយដែលគាំទ្រ KHQR។",premWait:"កំពុងរង់ចាំការបង់ប្រាក់…",premExpIn:"ផុតកំណត់ក្នុង",premCheck:"ខ្ញុំបានបង់ហើយ — ពិនិត្យឥឡូវ",premExpired:"QR នេះផុតកំណត់ហើយ។",premNew:"បង្កើត QR ថ្មី",premPaidT:"អ្នកជា Premium ហើយ!",premPaidSub:"ការផ្ទុករូបភាពគំនូសតាងត្រូវបានបើករហូតដល់ {d}។",premDone:"ចាប់ផ្តើមផ្ទុករូបភាព",premErr:"មិនអាចចាប់ផ្តើមការបង់ប្រាក់បានទេ។",premNoSvc:"សេវាបង់ប្រាក់មិនទាន់រួចរាល់ទេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",premActive:"សកម្មរហូតដល់ {d}",lockTitle:"ការផ្ទុករូបភាពគំនូសតាងជាមុខងារ Premium",lockSub:"$2.50 / ៣០ ថ្ងៃ · បង់ជាមួយ KHQR",lockCta:"បើកដំណើរការ",tPremOk:"បានបើក Premium!",tPremNeed:"ការផ្ទុករូបភាពត្រូវការ Premium — Trade ត្រូវបានរក្សាទុកដោយគ្មានរូបភាពថ្មី។",
-    stTitle:"សហគមន៍",stSub:"ចំនួនសរុបរបស់អ្នកប្រើ DEVTEN ទាំងអស់",stUsers:"អ្នកជួញដូរចូលរួម",stUsersFoot:"គណនីដែលបានចុះឈ្មោះ",stTrades:"Trade ដែលបានកត់ត្រា",stTradesFoot:"ចំនួន Trade សរុបរបស់អ្នកប្រើទាំងអស់",stAvg:"ប្រហែល {n} Trade ក្នុងម្នាក់",stUpd:"ធ្វើបច្ចុប្បន្នភាព {t} ICT · ផ្ទុកឡើងវិញ",stFail:"មិនមាន",tLoggedIn:"បានចូលគណនីដោយជោគជ័យ",rateLimit:"បានផ្ញើអ៊ីមែលច្រើនពេកថ្មីៗនេះ។ សូមរង់ចាំប្រហែល ១ ម៉ោង ឬសុំម្ចាស់គេហទំព័រកំណត់អ្នកផ្ញើអ៊ីមែលផ្ទាល់ខ្លួន។",lUsername:"ឈ្មោះអ្នកប្រើ",phUsername:"ឈ្មោះ_របស់អ្នក",emailHint:"យើងនឹងផ្ញើតំណផ្ទៀងផ្ទាត់ទៅអាសយដ្ឋាននេះ។",passHint:"យ៉ាងតិច ៨ តួអក្សរ។",uBad:"ប្រើ ៣–២០ តួអក្សរ លេខ ឬ _ ។",uTaken:"ឈ្មោះអ្នកប្រើនេះមានគេប្រើហើយ។",uOk:"ឈ្មោះអ្នកប្រើនេះអាចប្រើបាន។",verifyTitle:"ផ្ទៀងផ្ទាត់អ៊ីមែលរបស់អ្នក",verifyBody1:"យើងបានផ្ញើតំណបញ្ជាក់ទៅ",verifyBody2:"បើកវាដើម្បីដំណើរការគណនី រួចចូលគណនីដោយឈ្មោះអ្នកប្រើ។",verifyResend:"ផ្ញើអ៊ីមែលម្តងទៀត",verifyBack:"ត្រឡប់ទៅចូលគណនី",verifySent:"បានផ្ញើអ៊ីមែលម្តងទៀត។",verifyWait:"អាចផ្ញើម្តងទៀតក្នុង {n}វិនាទី",badLogin:"ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។",notVerified:"សូមផ្ទៀងផ្ទាត់អ៊ីមែលជាមុន។ យើងបានផ្ញើតំណថ្មីជូនអ្នក។",authNoSvc:"សេវាចូលគណនីមិនទាន់រួចរាល់ទេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",emailTaken:"អ៊ីមែលនេះបានចុះឈ្មោះរួចហើយ។",weakPass:"ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ។",forgot:"ភ្លេចពាក្យសម្ងាត់?",forgotNeedUser:"សូមបញ្ចូលឈ្មោះអ្នកប្រើជាមុន។",forgotSent:"ប្រសិនបើគណនីមាន យើងបានផ្ញើតំណកំណត់ឡើងវិញតាមអ៊ីមែល។",resetTitle:"កំណត់ពាក្យសម្ងាត់ថ្មី",resetSave:"រក្សាទុកពាក្យសម្ងាត់",resetDone:"បានធ្វើបច្ចុប្បន្នភាពពាក្យសម្ងាត់។",emailVerified:"បានផ្ទៀងផ្ទាត់អ៊ីមែល — សូមស្វាគមន៍!",pfTitle:"ប្រវត្តិរូបរបស់ខ្ញុំ",pfPlan:"គម្រោង",pfActive:"គម្រោងដែលកំពុងប្រើ",pfFree:"ឥតគិតថ្លៃ",pfPro:"PRO",pfExpires:"ផុតកំណត់",pfRemain:"ពេលនៅសល់",pfLifetime:"មិនផុតកំណត់ (ពេញមួយជីវិត)",pfDaysLeft:"នៅសល់ {n} ថ្ងៃ",pfExpiredOn:"ផុតកំណត់ {d}",pfUpgrade:"ដំឡើងទៅ Pro",pfExtend:"បន្ថែម Pro",pfProfile:"ប្រវត្តិរូប",pfName:"ឈ្មោះបង្ហាញ",pfSaveName:"រក្សាទុកឈ្មោះ",pfAvatar:"រូបភាពប្រវត្តិរូប",pfUpload:"ផ្ទុករូបភាព",pfRemove:"លុប",pfUsername:"ឈ្មោះអ្នកប្រើ",pfClaim:"កំណត់ឈ្មោះអ្នកប្រើ",pfSecurity:"ពាក្យសម្ងាត់",pfCurPass:"ពាក្យសម្ងាត់បច្ចុប្បន្ន",pfNewPass:"ពាក្យសម្ងាត់ថ្មី",pfConfPass:"បញ្ជាក់ពាក្យសម្ងាត់ថ្មី",pfChangePass:"ប្តូរពាក្យសម្ងាត់",pfCooldown:"ត្រូវបានចាក់សោ — អ្នកអាចផ្លាស់ប្តូរម្តងទៀតនៅ {d} ({n} ថ្ងៃ)។",pfCooldownNote:"ឈ្មោះ រូបភាព និងពាក្យសម្ងាត់ អាចផ្លាស់ប្តូរម្នាក់ម្តងរៀងរាល់ ១៥ ថ្ងៃ។",pfSaved:"បានធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូប។",pfPassOk:"បានប្តូរពាក្យសម្ងាត់។",pfMismatch:"ពាក្យសម្ងាត់ថ្មីមិនដូចគ្នាទេ។",pfWrongPass:"ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវ។",pfSamePass:"ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីមុន។",pfNeedSql:"ការកែប្រវត្តិរូបត្រូវការ SQL (devten-account-setup.sql)។ ព័ត៌មានគម្រោងនៅតែដំណើរការ។",pfBadName:"ឈ្មោះត្រូវមាន ២–៤០ តួអក្សរ។",pfUserSet:"បានរក្សាទុកឈ្មោះអ្នកប្រើ។",pfVerified:"បានផ្ទៀងផ្ទាត់",pfUnverified:"មិនទាន់ផ្ទៀងផ្ទាត់",pfErr:"មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត។",pfPhotoHint:"រូបភាពនឹងត្រូវបង្រួមជារូបការ៉េតូច។",
-    ptTitle:"ដៃគូ និងវេទិកា",ptSub:"ឈ្មួញកណ្តាល និងឧបករណ៍ដែលជំរុញការងារជួញដូររបស់ DEVTEN",ptBroker:"ឈ្មួញកណ្តាល",ptInfra:"វេទិកា",naLockTitle:"មុខងារ Premium",naLockSub:"បើកការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL សម្រាប់ XAUUSD, EURUSD, GBPUSD និង USDJPY ពីព័ត៌មាន USD ថ្ងៃនេះ។ $2.50 / ៣០ ថ្ងៃ តាម KHQR។",naLockCta:"បើកជាមួយ Premium",premF4:"ការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL ពីព័ត៌មាន USD",naTitle:"ការវិភាគព័ត៌មានទីផ្សារ",naSub:"ព័ត៌មាន USD ផលប៉ះពាល់ខ្ពស់ និងមធ្យមថ្ងៃនេះ → ទិសដៅ BUY / SELL ដែលរំពឹងទុក",naUsdBias:"ទិសដៅ USD",naBull:"USD ខ្លាំង",naBear:"USD ខ្សោយ",naFlat:"អព្យាក្រឹត / ចម្រុះ",naFromActual:"ផ្អែកលើលទ្ធផលដែលបានចេញ {n}",naFromFc:"ផ្អែកលើការព្យាករណ៍ (មិនទាន់បញ្ចូលលទ្ធផល)",naNone:"ថ្ងៃនេះគ្មានព្រឹត្តិការណ៍ USD ខ្ពស់/មធ្យមទេ — គ្មានទិសដៅព័ត៌មាន។",naBuy:"BUY",naSell:"SELL",naWait:"រង់ចាំ",naStrong:"ខ្លាំង",naModerate:"មធ្យម",naWeak:"ខ្សោយ",naNoBias:"គ្មានទិសដៅច្បាស់",naIfHigher:"លទ្ធផលខ្ពស់ជាងការព្យាករណ៍",naIfLower:"លទ្ធផលទាបជាងការព្យាករណ៍",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"សុន្ទរកថា / ហានិភ័យព្រឹត្តិការណ៍ — ទិសដៅអាស្រ័យលើសម្លេង។ រំពឹងការប្រែប្រួលខ្លាំង រង់ចាំប្រតិកម្មទីផ្សារ។",naActual:"លទ្ធផលពិត (ក្រោយចេញ)",naActPh:"ឧ. 0.4%",naLean:"ទំនោរការព្យាករណ៍",naRes:"លទ្ធផល",naBetter:"ល្អជាងរំពឹង → USD ↑",naWorse:"អន់ជាងរំពឹង → USD ↓",naInline:"ស្របនឹងការរំពឹង → ប្រតិកម្មតិច",naDisc:"សម្រាប់ការសិក្សាប៉ុណ្ណោះ — មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ ទិសដៅផ្អែកលើប្រតិកម្មធម្មតា (ទិន្នន័យអាមេរិកល្អជាងរំពឹង → USD ខ្លាំង)។ ទីផ្សារអាចលោតទាំងសងខាង ត្រឡប់វិញក្នុងរយៈពេលប៉ុន្មាននាទី ឬបានគណនាព័ត៌មានរួចហើយ។ សូមពិនិត្យជាមួយការវិភាគផ្ទាល់ខ្លួន និងប្រើ Stop Loss ជានិច្ច។",newsTitle:"ប្រតិទិនព័ត៌មាន USD",newsSub:"តែព្រឹត្តិការណ៍ដុល្លារអាមេរិក · ម៉ោងនៅកម្ពុជា",newsThis:"សប្តាហ៍នេះ",newsNext:"សប្តាហ៍ក្រោយ",impHigh:"ខ្ពស់",impMed:"មធ្យម",impLow:"ទាប",impHol:"ថ្ងៃឈប់សម្រាក",newsRefreshTip:"ផ្ទុកប្រតិទិនឡើងវិញ",newsLoading:"កំពុងផ្ទុកព្រឹត្តិការណ៍ USD…",newsEmpty:"គ្មានព្រឹត្តិការណ៍ USD ត្រូវនឹងតម្រងនេះទេ។",newsErr:"មិនអាចផ្ទុកប្រតិទិនបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត រួចព្យាយាមម្តងទៀត។",newsUpd:"ធ្វើបច្ចុប្បន្នភាព",newsCached:"ច្បាប់ចម្លងក្រៅបណ្តាញ",newsSrc:"ប្រភព៖ Forex Factory។ ម៉ោងបម្លែងទៅ Asia/Phnom_Penh (UTC+7)។",newsAllDay:"ពេញមួយថ្ងៃ",newsNextEv:"ព្រឹត្តិការណ៍បន្ទាប់",newsIn:"ក្នុងរយៈពេល",newsNow:"ឥឡូវនេះ",newsFc:"ការព្យាករណ៍",newsPrev:"មុន",newsToday:"ថ្ងៃនេះ",
+    stTitle:"សហគមន៍",stSub:"ចំនួនសរុបរបស់អ្នកប្រើ DEVTEN ទាំងអស់",stUsers:"អ្នកជួញដូរចូលរួម",stUsersFoot:"គណនីដែលបានចុះឈ្មោះ",stTrades:"Trade ដែលបានកត់ត្រា",stTradesFoot:"ចំនួន Trade សរុបរបស់អ្នកប្រើទាំងអស់",stAvg:"ប្រហែល {n} Trade ក្នុងម្នាក់",stUpd:"ធ្វើបច្ចុប្បន្នភាព {t} ICT · ផ្ទុកឡើងវិញ",stFail:"មិនមាន",tLoggedIn:"បានចូលគណនីដោយជោគជ័យ",rateLimit:"បានផ្ញើអ៊ីមែលច្រើនពេកថ្មីៗនេះ។ សូមរង់ចាំប្រហែល ១ ម៉ោង ឬសុំម្ចាស់គេហទំព័រកំណត់អ្នកផ្ញើអ៊ីមែលផ្ទាល់ខ្លួន។",lUsername:"ឈ្មោះអ្នកប្រើ",phUsername:"ឈ្មោះ_របស់អ្នក",emailHint:"យើងនឹងផ្ញើតំណផ្ទៀងផ្ទាត់ទៅអាសយដ្ឋាននេះ។",passHint:"យ៉ាងតិច ៨ តួអក្សរ។",uBad:"ប្រើ ៣–២០ តួអក្សរ លេខ ឬ _ ។",uTaken:"ឈ្មោះអ្នកប្រើនេះមានគេប្រើហើយ។",uOk:"ឈ្មោះអ្នកប្រើនេះអាចប្រើបាន។",verifyTitle:"ផ្ទៀងផ្ទាត់អ៊ីមែលរបស់អ្នក",verifyBody1:"យើងបានផ្ញើតំណបញ្ជាក់ទៅ",verifyBody2:"បើកវាដើម្បីដំណើរការគណនី រួចចូលគណនីដោយឈ្មោះអ្នកប្រើ។",verifyResend:"ផ្ញើអ៊ីមែលម្តងទៀត",verifyBack:"ត្រឡប់ទៅចូលគណនី",verifySent:"បានផ្ញើអ៊ីមែលម្តងទៀត។",verifyWait:"អាចផ្ញើម្តងទៀតក្នុង {n}វិនាទី",badLogin:"ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។",notVerified:"សូមផ្ទៀងផ្ទាត់អ៊ីមែលជាមុន។ យើងបានផ្ញើតំណថ្មីជូនអ្នក។",authNoSvc:"សេវាចូលគណនីមិនទាន់រួចរាល់ទេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",emailTaken:"អ៊ីមែលនេះបានចុះឈ្មោះរួចហើយ។",weakPass:"ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ។",forgot:"ភ្លេចពាក្យសម្ងាត់?",forgotNeedUser:"សូមបញ្ចូលឈ្មោះអ្នកប្រើជាមុន។",forgotSent:"ប្រសិនបើគណនីមាន យើងបានផ្ញើតំណកំណត់ឡើងវិញតាមអ៊ីមែល។",resetTitle:"កំណត់ពាក្យសម្ងាត់ថ្មី",resetSave:"រក្សាទុកពាក្យសម្ងាត់",resetDone:"បានធ្វើបច្ចុប្បន្នភាពពាក្យសម្ងាត់។",emailVerified:"បានផ្ទៀងផ្ទាត់អ៊ីមែល — សូមស្វាគមន៍!",pfTitle:"ប្រវត្តិរូបរបស់ខ្ញុំ",pfPlan:"គម្រោង",pfActive:"គម្រោងដែលកំពុងប្រើ",pfFree:"ឥតគិតថ្លៃ",pfPro:"PRO",pfExpires:"ផុតកំណត់",pfRemain:"ពេលនៅសល់",pfLifetime:"មិនផុតកំណត់ (ពេញមួយជីវិត)",pfDaysLeft:"នៅសល់ {n} ថ្ងៃ",pfExpiredOn:"ផុតកំណត់ {d}",pfUpgrade:"ដំឡើងគម្រោង",pfExtend:"បន្ថែម Elite",pfToElite:"ដំឡើងទៅ Elite",pfProfile:"ប្រវត្តិរូប",pfName:"ឈ្មោះបង្ហាញ",pfSaveName:"រក្សាទុកឈ្មោះ",pfAvatar:"រូបភាពប្រវត្តិរូប",pfUpload:"ផ្ទុករូបភាព",pfRemove:"លុប",pfUsername:"ឈ្មោះអ្នកប្រើ",pfClaim:"កំណត់ឈ្មោះអ្នកប្រើ",pfSecurity:"ពាក្យសម្ងាត់",pfCurPass:"ពាក្យសម្ងាត់បច្ចុប្បន្ន",pfNewPass:"ពាក្យសម្ងាត់ថ្មី",pfConfPass:"បញ្ជាក់ពាក្យសម្ងាត់ថ្មី",pfChangePass:"ប្តូរពាក្យសម្ងាត់",pfCooldown:"ត្រូវបានចាក់សោ — អ្នកអាចផ្លាស់ប្តូរម្តងទៀតនៅ {d} ({n} ថ្ងៃ)។",pfCooldownNote:"ឈ្មោះ រូបភាព និងពាក្យសម្ងាត់ អាចផ្លាស់ប្តូរម្នាក់ម្តងរៀងរាល់ ១៥ ថ្ងៃ។",pfSaved:"បានធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូប។",pfPassOk:"បានប្តូរពាក្យសម្ងាត់។",pfMismatch:"ពាក្យសម្ងាត់ថ្មីមិនដូចគ្នាទេ។",pfWrongPass:"ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវ។",pfSamePass:"ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីមុន។",pfNeedSql:"ការកែប្រវត្តិរូបត្រូវការ SQL (devten-account-setup.sql)។ ព័ត៌មានគម្រោងនៅតែដំណើរការ។",pfBadName:"ឈ្មោះត្រូវមាន ២–៤០ តួអក្សរ។",pfUserSet:"បានរក្សាទុកឈ្មោះអ្នកប្រើ។",pfVerified:"បានផ្ទៀងផ្ទាត់",pfUnverified:"មិនទាន់ផ្ទៀងផ្ទាត់",pfErr:"មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត។",pfPhotoHint:"រូបភាពនឹងត្រូវបង្រួមជារូបការ៉េតូច។",
+    ptTitle:"ដៃគូ និងវេទិកា",ptSub:"ឈ្មួញកណ្តាល និងឧបករណ៍ដែលជំរុញការងារជួញដូររបស់ DEVTEN",ptBroker:"ឈ្មួញកណ្តាល",ptInfra:"វេទិកា",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"មុខងារទាំងអស់",planCurrent:"បច្ចុប្បន្ន",premF0:"មុខងារ Premium ទាំងអស់",premF5:"អ្នកផ្តល់សញ្ញា៖ សញ្ញា BUY / SELL ផ្ទាល់ ជាមួយ Entry, SL និង TP",premPayX:"បង់ {p} ជាមួយ KHQR",premExtendX:"បន្ថែម ៣០ ថ្ងៃ · {p}",premPaidSub2:"{plan} សកម្មរហូតដល់ {d}។",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"មុខងារ Elite",eliteCta:"បើក Elite",sgTitle:"អ្នកផ្តល់សញ្ញា",sgSub:"សញ្ញាជួញដូរផ្ទាល់ពី DEVTEN · សមាជិក Elite",sgActive:"សកម្ម",sgAll:"ទាំងអស់",sgNew:"សញ្ញាថ្មី",sgLockSub:"បើកសញ្ញា BUY / SELL ផ្ទាល់ ជាមួយកម្រិត Entry, Stop Loss និង Take Profit។ Elite៖ $14.99 / ៣០ ថ្ងៃ តាម KHQR។",sgStatActive:"សញ្ញាសកម្ម",sgStatClosed:"បានបិទ",sgStatWin:"អត្រាឈ្នះ",sgEmpty:"មិនទាន់មានសញ្ញាទេ។ សញ្ញាថ្មីនឹងបង្ហាញនៅទីនេះភ្លាមៗ។",sgEmptyActive:"មិនមានសញ្ញាសកម្មនៅពេលនេះទេ។",sgEntry:"Entry",sgSymbol:"និមិត្តសញ្ញា",sgSide:"ទិស",sgNote:"កំណត់ចំណាំ",sgPost:"ផ្សាយសញ្ញា",sgBad:"ពិនិត្យកម្រិត៖ BUY ត្រូវ SL < Entry < TP1; SELL ត្រូវ SL > Entry > TP1។",sgPosted:"បានផ្សាយសញ្ញា",sgNewToast:"សញ្ញាថ្មី៖ {s}",sgNeedSql:"សញ្ញាត្រូវការ SQL Elite (devten-elite-setup.sql)។",sgDel:"លុប",sgDelQ:"លុបសញ្ញានេះ?",sgUpdated:"បានធ្វើបច្ចុប្បន្នភាពសញ្ញា",sgLoading:"កំពុងផ្ទុកសញ្ញា…",stActive:"សកម្ម",stTp1:"ដល់ TP1",stTp2:"ដល់ TP2",stTp3:"ដល់ TP3",stSl:"ដល់ SL",stBe:"រួចខ្លួន",stCancelled:"បានបោះបង់",sgDisc:"សញ្ញាជាគំនិតជួញដូររបស់អ្នកផ្តល់ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ លទ្ធផលកន្លងមកមិនធានាលទ្ធផលអនាគតទេ។ ជួញដូរដោយហានិភ័យផ្ទាល់ខ្លួន និងកំណត់ទំហំឲ្យសមរម្យ។",
+    naLockTitle:"មុខងារ Premium",naLockSub:"បើកការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL សម្រាប់ XAUUSD, EURUSD, GBPUSD និង USDJPY ពីព័ត៌មាន USD ថ្ងៃនេះ។ Elite៖ $14.99 / ៣០ ថ្ងៃ តាម KHQR។",naLockCta:"បើកជាមួយ Premium",premF4:"ការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL ពីព័ត៌មាន USD",naTitle:"ការវិភាគព័ត៌មានទីផ្សារ",naSub:"ព័ត៌មាន USD ផលប៉ះពាល់ខ្ពស់ និងមធ្យមថ្ងៃនេះ → ទិសដៅ BUY / SELL ដែលរំពឹងទុក",naUsdBias:"ទិសដៅ USD",naBull:"USD ខ្លាំង",naBear:"USD ខ្សោយ",naFlat:"អព្យាក្រឹត / ចម្រុះ",naFromActual:"ផ្អែកលើលទ្ធផលដែលបានចេញ {n}",naFromFc:"ផ្អែកលើការព្យាករណ៍ (មិនទាន់បញ្ចូលលទ្ធផល)",naNone:"ថ្ងៃនេះគ្មានព្រឹត្តិការណ៍ USD ខ្ពស់/មធ្យមទេ — គ្មានទិសដៅព័ត៌មាន។",naBuy:"BUY",naSell:"SELL",naWait:"រង់ចាំ",naStrong:"ខ្លាំង",naModerate:"មធ្យម",naWeak:"ខ្សោយ",naNoBias:"គ្មានទិសដៅច្បាស់",naIfHigher:"លទ្ធផលខ្ពស់ជាងការព្យាករណ៍",naIfLower:"លទ្ធផលទាបជាងការព្យាករណ៍",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"សុន្ទរកថា / ហានិភ័យព្រឹត្តិការណ៍ — ទិសដៅអាស្រ័យលើសម្លេង។ រំពឹងការប្រែប្រួលខ្លាំង រង់ចាំប្រតិកម្មទីផ្សារ។",naActual:"លទ្ធផលពិត (ក្រោយចេញ)",naActPh:"ឧ. 0.4%",naLean:"ទំនោរការព្យាករណ៍",naRes:"លទ្ធផល",naBetter:"ល្អជាងរំពឹង → USD ↑",naWorse:"អន់ជាងរំពឹង → USD ↓",naInline:"ស្របនឹងការរំពឹង → ប្រតិកម្មតិច",naDisc:"សម្រាប់ការសិក្សាប៉ុណ្ណោះ — មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ ទិសដៅផ្អែកលើប្រតិកម្មធម្មតា (ទិន្នន័យអាមេរិកល្អជាងរំពឹង → USD ខ្លាំង)។ ទីផ្សារអាចលោតទាំងសងខាង ត្រឡប់វិញក្នុងរយៈពេលប៉ុន្មាននាទី ឬបានគណនាព័ត៌មានរួចហើយ។ សូមពិនិត្យជាមួយការវិភាគផ្ទាល់ខ្លួន និងប្រើ Stop Loss ជានិច្ច។",newsTitle:"ប្រតិទិនព័ត៌មាន USD",newsSub:"តែព្រឹត្តិការណ៍ដុល្លារអាមេរិក · ម៉ោងនៅកម្ពុជា",newsThis:"សប្តាហ៍នេះ",newsNext:"សប្តាហ៍ក្រោយ",impHigh:"ខ្ពស់",impMed:"មធ្យម",impLow:"ទាប",impHol:"ថ្ងៃឈប់សម្រាក",newsRefreshTip:"ផ្ទុកប្រតិទិនឡើងវិញ",newsLoading:"កំពុងផ្ទុកព្រឹត្តិការណ៍ USD…",newsEmpty:"គ្មានព្រឹត្តិការណ៍ USD ត្រូវនឹងតម្រងនេះទេ។",newsErr:"មិនអាចផ្ទុកប្រតិទិនបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត រួចព្យាយាមម្តងទៀត។",newsUpd:"ធ្វើបច្ចុប្បន្នភាព",newsCached:"ច្បាប់ចម្លងក្រៅបណ្តាញ",newsSrc:"ប្រភព៖ Forex Factory។ ម៉ោងបម្លែងទៅ Asia/Phnom_Penh (UTC+7)។",newsAllDay:"ពេញមួយថ្ងៃ",newsNextEv:"ព្រឹត្តិការណ៍បន្ទាប់",newsIn:"ក្នុងរយៈពេល",newsNow:"ឥឡូវនេះ",newsFc:"ការព្យាករណ៍",newsPrev:"មុន",newsToday:"ថ្ងៃនេះ",
     gp:"ចំណេញសរុប",gl:"ខាតសរុប",gpTip:"ផលបូកនៃ Trade ឈ្នះទាំងអស់",glTip:"ផលបូកនៃ Trade ខាតទាំងអស់",prevSave:"នឹងរក្សាទុកជា",prevBad:"សូមបញ្ចូលលេខត្រឹមត្រូវ ឧ. 25.50",prevFix:"សញ្ញាកំណត់ដោយលទ្ធផល",
     expectancy:"តម្លៃរំពឹងទុក",expFoot:"ចំណេញ/ខាតមធ្យមក្នុងមួយ Trade",avgWL:"ឈ្នះ / ខាត មធ្យម",maxDD:"ការធ្លាក់ចុះអតិបរមា",ddFoot:"ពីកំពូលទៅបាត",keep:"បន្តអនុវត្តឱ្យបានទៀងទាត់",streakW:"ឈ្នះជាប់គ្នា",streakL:"ខាតជាប់គ្នា",rr:"ចំណេញ : ហានិភ័យ",
     equity:"ក្រាហ្វសមតុល្យ",equitySub:"សមតុល្យក្រោយរាល់ Trade",rAll:"ទាំងអស់",chartEmpty:"បន្ថែម Trade ដំបូងរបស់អ្នក ដើម្បីបង្កើតក្រាហ្វ។",chartNone:"គ្មាន Trade ក្នុងរយៈពេលនេះទេ។",
@@ -1834,6 +1952,7 @@ function applyLang(){
   if(typeof syncPremiumUI==='function') syncPremiumUI();
   if(typeof renderPartners==='function' && $('ptTrack1')) renderPartners();
   if(typeof statsMeta==='function' && $('stAvg')) statsMeta();
+  if(typeof sgRender==='function' && typeof Sig!=='undefined') try{ sgRender(); }catch(e){}
   if(typeof renderProfile==='function' && $('profileModal') && $('profileModal').classList.contains('show')) renderProfile();
   if(typeof updateAuthTabUI==='function' && $('authModal') && !$('authModal').classList.contains('show')) updateAuthTabUI();
 }
@@ -2936,14 +3055,17 @@ function renderProfile(){
   $('pfVer').textContent = t(ok ? 'pfVerified' : 'pfUnverified'); $('pfVer').className = 'pf-ver' + (ok ? '' : ' no');
 
   // plan
-  const pro = Prem.active, badge = $('pfPlanBadge');
-  badge.className = 'plan-badge ' + (pro ? 'pro' : 'free');
-  badge.textContent = pro ? '★ ' + t('pfPro') : t('pfFree');
-  if(pro && Prem.perm){ $('pfExpires').textContent = t('pfLifetime'); $('pfRemain').textContent = '∞'; }
-  else if(pro && Prem.until){ $('pfExpires').textContent = fmtDay(new Date(Prem.until).getTime()); $('pfRemain').textContent = t('pfDaysLeft').replace('{n}', Math.max(0, Math.ceil((new Date(Prem.until) - Date.now())/86400000))); }
-  else if(Prem.until){ $('pfExpires').textContent = t('pfExpiredOn').replace('{d}', fmtDay(new Date(Prem.until).getTime())); $('pfRemain').textContent = '—'; }
+  const tier = Prem.elite ? 'elite' : Prem.active ? 'premium' : 'free', badge = $('pfPlanBadge');
+  badge.className = 'plan-badge ' + (tier === 'elite' ? 'elite' : tier === 'premium' ? 'pro' : 'free');
+  badge.textContent = tier === 'elite' ? '★ ' + t('pfElite') : tier === 'premium' ? '★ ' + t('pfPremium') : t('pfFree');
+  const lifetime = (tier === 'elite' && Prem.admin) || (tier === 'premium' && Prem.perm);
+  const until = tier === 'elite' ? Prem.eliteUntil : tier === 'premium' ? Prem.until : null;
+  const lastPast = [Prem.eliteUntil, Prem.until].filter(Boolean).sort().pop();
+  if(lifetime){ $('pfExpires').textContent = t('pfLifetime'); $('pfRemain').textContent = '∞'; }
+  else if(until){ $('pfExpires').textContent = fmtDay(new Date(until).getTime()); $('pfRemain').textContent = t('pfDaysLeft').replace('{n}', Math.max(0, Math.ceil((new Date(until) - Date.now())/86400000))); }
+  else if(lastPast){ $('pfExpires').textContent = t('pfExpiredOn').replace('{d}', fmtDay(new Date(lastPast).getTime())); $('pfRemain').textContent = '—'; }
   else { $('pfExpires').textContent = '—'; $('pfRemain').textContent = '—'; }
-  $('pfUpgrade').textContent = t(pro ? 'pfExtend' : 'pfUpgrade');
+  $('pfUpgrade').textContent = t(tier === 'elite' ? 'pfExtend' : tier === 'premium' ? 'pfToElite' : 'pfUpgrade');
 
   // editing
   $('pfSql').style.display = Prof.missing ? '' : 'none';
@@ -2966,7 +3088,7 @@ function openProfile(){
 }
 $('userAvatar').onclick = openProfile;
 $('closeProfile').onclick = () => close('profileModal');
-$('pfUpgrade').onclick = () => { close('profileModal'); openPremium(); };
+$('pfUpgrade').onclick = () => { close('profileModal'); openPremium(Prem.active && !Prem.elite ? 'elite' : undefined); };
 $('pfSignOut').onclick = () => { close('profileModal'); $('logoutBtn').click(); };
 
 function rpcMsg(err){
@@ -3310,18 +3432,26 @@ const QR = (() => {
 
 
 /* ---------- 17c. Premium ($2.50 / 30 days via KHQR) — unlocks Chart uploads in Add Trade ---------- */
-const Prem = {active:false, until:null, perm:false};
+const Prem = {active:false, until:null, perm:false, elite:false, eliteUntil:null, admin:false, plan:'free'};
+const PLAN_PRICE = {premium:'$2.50', elite:'$14.99'};
 const premDate = iso => new Intl.DateTimeFormat(loc(),{timeZone:'Asia/Phnom_Penh',year:'numeric',month:'short',day:'numeric'}).format(new Date(iso));
 
 async function loadPremium(){
-  Prem.active = false; Prem.until = null; Prem.perm = false;
+  Object.assign(Prem, {active:false, until:null, perm:false, elite:false, eliteUntil:null, admin:false, plan:'free'});
   if(currentUser && supabaseClient){
     try{
-      const {data, error} = await supabaseClient.from('profiles').select('is_premium,premium_until').eq('id', currentUser.id).maybeSingle();
-      if(!error && data){
+      let r = await supabaseClient.from('profiles').select('is_premium,premium_until,elite_until,is_admin').eq('id', currentUser.id).maybeSingle();
+      if(r.error) r = await supabaseClient.from('profiles').select('is_premium,premium_until').eq('id', currentUser.id).maybeSingle();   // Elite SQL not run yet
+      const data = r.data;
+      if(!r.error && data){
+        const now = new Date();
         Prem.perm = !!data.is_premium;
         Prem.until = data.premium_until || null;
-        Prem.active = Prem.perm || (!!Prem.until && new Date(Prem.until) > new Date());
+        Prem.eliteUntil = data.elite_until || null;
+        Prem.admin = !!data.is_admin;
+        Prem.elite = Prem.admin || (!!Prem.eliteUntil && new Date(Prem.eliteUntil) > now);
+        Prem.active = Prem.elite || Prem.perm || (!!Prem.until && new Date(Prem.until) > now);
+        Prem.plan = Prem.elite ? 'elite' : Prem.active ? 'premium' : 'free';
       }
     }catch(e){ console.error('Premium check failed:', e); }
   }
@@ -3329,8 +3459,8 @@ async function loadPremium(){
 }
 function syncPremiumUI(){
   const chip = $('premiumChip'); if(!chip) return;
-  chip.className = 'prem-chip' + (Prem.active ? ' pro' : '');
-  const lbl = t(Prem.active ? 'premBtnPro' : 'premBtnUp');
+  chip.className = 'prem-chip' + (Prem.elite ? ' elite' : Prem.active ? ' pro' : '');
+  const lbl = t(Prem.elite ? 'premBtnElite' : Prem.active ? 'premBtnPro' : 'premBtnUp');
   chip.innerHTML = '<span aria-hidden="true">★</span><span class="prem-lbl">' + esc(lbl) + '</span>';
   chip.setAttribute('aria-label', lbl);
   chip.title = Prem.active ? (Prem.perm ? '' : t('premActive').replace('{d}', premDate(Prem.until))) : t('lockSub');
@@ -3339,11 +3469,13 @@ function syncPremiumUI(){
   $('chartImg').disabled = !Prem.active;
   const tag = $('premActiveTag');
   if(tag){
-    tag.style.display = Prem.active && !Prem.perm ? 'inline-block' : 'none';
-    tag.textContent = Prem.until ? t('premActive').replace('{d}', premDate(Prem.until)) : '';
+    const u = Prem.elite ? Prem.eliteUntil : Prem.until;
+    tag.style.display = Prem.active && u && !Prem.admin ? 'inline-block' : 'none';
+    tag.textContent = u ? t(Prem.elite ? 'planElite' : 'planPremium') + ' · ' + t('premActive').replace('{d}', premDate(u)) : '';
   }
-  $('premPayBtn').textContent = t(Prem.active ? 'premExtend' : 'premPay');
+  premPickSync();
   if(typeof renderNewsAnalysis === 'function') try{ renderNewsAnalysis(); }catch(e){}
+  if(typeof sgSync === 'function') try{ sgSync(); }catch(e){}
 }
 /* Returns true (and opens the upgrade dialog) when the user is NOT premium. */
 function needPremium(){
@@ -3352,11 +3484,21 @@ function needPremium(){
   return true;
 }
 
-const Pay = {id:null, expiresMs:0, poll:null, tick:null, busy:false};
+const Pay = {id:null, expiresMs:0, poll:null, tick:null, busy:false, plan:'premium'};
+function premPickSync(){
+  document.querySelectorAll('#planPick .plan-opt').forEach(b => {
+    const on = b.dataset.plan === Pay.plan;
+    b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+    b.classList.toggle('cur', (b.dataset.plan === 'elite' && Prem.elite) || (b.dataset.plan === 'premium' && Prem.active && !Prem.elite));
+  });
+  const current = (Pay.plan === 'elite' && Prem.elite) || (Pay.plan === 'premium' && Prem.active && !Prem.elite);
+  $('premPayBtn').textContent = t(current ? 'premExtendX' : 'premPayX').replace('{p}', PLAN_PRICE[Pay.plan]);
+}
 function premView(v){ ['pvPlan','pvQr','pvOk'].forEach(id => $(id).classList.toggle('on', id===v)); }
 function premStop(){ clearInterval(Pay.poll); clearInterval(Pay.tick); Pay.poll = Pay.tick = null; }
-function openPremium(){
+function openPremium(plan){
   if(!requireAuth()) return;
+  Pay.plan = plan === 'elite' || plan === 'premium' ? plan : (Prem.elite ? 'elite' : 'premium');
   premStop();
   $('premErr').textContent = ''; $('premErr2').textContent = '';
   premView('pvPlan'); syncPremiumUI();
@@ -3370,9 +3512,10 @@ async function fnError(error){
   try{ const j = await error.context.json(); msg = j.error || ''; }catch(e){}
   return msg || (error && error.message) || '';
 }
-function premShowPaid(until){
-  if(until && !Prem.until){ Prem.until = until; Prem.active = true; syncPremiumUI(); }
-  $('premPaidSub').textContent = t('premPaidSub').replace('{d}', Prem.until ? premDate(Prem.until) : '—');
+function premShowPaid(data){
+  const plan = (data && data.plan) === 'elite' ? 'elite' : 'premium';
+  const until = (data && (data.until || data.premium_until)) || (plan === 'elite' ? Prem.eliteUntil : Prem.until);
+  $('premPaidSub').textContent = t('premPaidSub2').replace('{plan}', t(plan === 'elite' ? 'planElite' : 'planPremium')).replace('{d}', until ? premDate(until) : '—');
   premView('pvOk');
   toast(t('tPremOk'));
 }
@@ -3381,7 +3524,7 @@ async function premRecover(){
   if(Prem.active || !supabaseClient || !currentUser) return false;
   try{
     const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'recover'}});
-    if(!error && data && data.status === 'paid'){ premStop(); await loadPremium(); premShowPaid(data.premium_until); return true; }
+    if(!error && data && data.status === 'paid'){ premStop(); await loadPremium(); premShowPaid(data); return true; }
   }catch(e){ console.error('Recover failed:', e); }
   return false;
 }
@@ -3392,7 +3535,7 @@ async function premStart(){
   $('premErr').textContent = ''; $('premErr2').textContent = '';
   $('premPayBtn').disabled = true; $('premPayBtn').textContent = t('premGen');
   try{
-    const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'create'}});
+    const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'create', plan:Pay.plan}});
     if(error) throw new Error(await fnError(error) || 'create failed');
     if(!data || !data.payload) throw new Error('bad response');
     Pay.id = data.id; Pay.expiresMs = new Date(data.expires_at).getTime();
@@ -3433,7 +3576,7 @@ async function premCheck(manual){
     if(data && data.status === 'paid'){
       premStop();
       await loadPremium();
-      premShowPaid(data.premium_until);
+      premShowPaid(data);
     } else if(data && data.status === 'expired'){
       premStop(); $('qrStatus').textContent = t('premExpired');
       $('premNewBtn').style.display = ''; $('premCheckBtn').style.display = 'none';
@@ -3446,8 +3589,9 @@ async function premCheck(manual){
     if(manual) $('premErr2').textContent = t('premErr') + ' ' + (e.message || '');
   }finally{ Pay.checking = false; }
 }
-$('premiumChip').onclick = openPremium;
-$('chartLockBtn').onclick = openPremium;
+$('premiumChip').onclick = () => openPremium();
+document.querySelectorAll('#planPick .plan-opt').forEach(b => b.onclick = () => { Pay.plan = b.dataset.plan; premPickSync(); });
+$('chartLockBtn').onclick = () => openPremium('premium');
 $('premPayBtn').onclick = premStart;
 $('premNewBtn').onclick = premStart;
 $('premCheckBtn').onclick = () => premCheck(true);
@@ -3583,7 +3727,7 @@ function naPairText(usdDir){
 }
 function renderNewsAnalysis(){
   const list = $('naList'); if(!list) return;
-  const locked = !(typeof Prem !== 'undefined' && Prem.active);
+  const locked = !(typeof Prem !== 'undefined' && Prem.elite);
   $('naWrap').classList.toggle('locked', locked);
   if(locked){   // placeholder only: no real bias is computed or shown for free accounts
     $('naUsd').className = 'big flat'; $('naUsd').textContent = '—'; $('naSrc').textContent = '';
@@ -3646,13 +3790,120 @@ function renderNewsAnalysis(){
       <div class="str">${esc(d ? naStrWord(str) : t('naNoBias'))}</div></div>`;
   }).join('');
 }
-$('naUnlock').onclick = () => openPremium();
+$('naUnlock').onclick = () => openPremium('elite');
 $('naList').addEventListener('change', e => {
   const k = e.target.dataset && e.target.dataset.na; if(!k) return;
   const v = e.target.value.trim();
   if(v) naActuals[k] = v; else delete naActuals[k];
   naSaveActuals(); renderNewsAnalysis();
 });
+
+/* ---------- 17a3. Signal Provider (Elite) ----------
+   Signals live in public.signals. Row-level security lets ONLY Elite members read them and ONLY the admin write them,
+   so the lock below is a convenience: the database itself refuses free accounts. */
+const Sig = {rows:[], filter:'active', loaded:false, missing:false, channel:null, timer:null, state:'idle'};
+const SG_WIN = ['tp1','tp2','tp3'], SG_CLOSED = ['tp1','tp2','tp3','sl','be','cancelled'];
+const SG_ST = {active:'stActive', tp1:'stTp1', tp2:'stTp2', tp3:'stTp3', sl:'stSl', be:'stBe', cancelled:'stCancelled'};
+const sgNum = v => { const n = parseFloat(String(v ?? '').replace(/,/g,'')); return isFinite(n) ? n : null; };
+const sgFmt = v => v == null ? '—' : Number(v).toLocaleString('en-US', {maximumFractionDigits:5});
+function sgAgo(iso){
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  const abs = new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso));
+  return (m < 60 ? m + 'm' : m < 1440 ? Math.floor(m/60) + 'h' : Math.floor(m/1440) + 'd') + ' · ' + abs + ' ICT';
+}
+function sgSync(){
+  const locked = !Prem.elite;
+  $('sgWrap').classList.toggle('locked', locked);
+  $('sgNewBtn').style.display = Prem.admin ? '' : 'none';
+  if(locked){
+    Sig.rows = []; Sig.loaded = false;
+    $('sgList').innerHTML = '<div class="na-skel"></div><div class="na-skel"></div><div class="na-skel"></div>';
+    ['sgStActive','sgStClosed','sgStWin'].forEach(id => $(id).textContent = '—');
+    if(Sig.channel){ try{ supabaseClient.removeChannel(Sig.channel); }catch(e){} Sig.channel = null; }
+    return;
+  }
+  if(!Sig.loaded) sgLoad(); else sgRender();
+  sgSubscribe();
+}
+async function sgLoad(){
+  if(!supabaseClient || !Prem.elite) return;
+  if(!Sig.loaded){ Sig.state = 'loading'; sgRender(); }
+  const {data, error} = await supabaseClient.from('signals').select('*').order('created_at', {ascending:false}).limit(100);
+  if(error){ Sig.missing = true; Sig.state = 'error'; console.warn('Signals unavailable:', error.message); }
+  else { Sig.rows = data || []; Sig.missing = false; Sig.loaded = true; Sig.state = 'ok'; }
+  sgRender();
+}
+function sgSubscribe(){
+  if(Sig.channel || !supabaseClient || !supabaseClient.channel) return;
+  try{
+    Sig.channel = supabaseClient.channel('signals-feed')
+      .on('postgres_changes', {event:'*', schema:'public', table:'signals'}, payload => {
+        if(payload.eventType === 'INSERT' && payload.new && !Prem.admin) toast(t('sgNewToast').replace('{s}', payload.new.symbol + ' ' + payload.new.side));
+        clearTimeout(Sig.timer); Sig.timer = setTimeout(sgLoad, 300);
+      }).subscribe();
+  }catch(e){ console.warn('Realtime unavailable:', e); }
+}
+function sgRender(){
+  const list = $('sgList'); if(!list || !Prem.elite) return;
+  document.querySelectorAll('#sgFilter button').forEach(b => b.classList.toggle('on', b.dataset.f === Sig.filter));
+  if(Sig.state === 'loading'){ list.innerHTML = `<div class="sg-msg">${esc(t('sgLoading'))}</div>`; return; }
+  if(Sig.missing){ list.innerHTML = `<div class="sg-msg">${esc(t('sgNeedSql'))}</div>`; return; }
+  const closed = Sig.rows.filter(r => SG_CLOSED.includes(r.status));
+  const decided = closed.filter(r => SG_WIN.includes(r.status) || r.status === 'sl');
+  const wins = decided.filter(r => SG_WIN.includes(r.status)).length;
+  $('sgStActive').textContent = Sig.rows.filter(r => r.status === 'active').length;
+  $('sgStClosed').textContent = closed.length;
+  $('sgStWin').textContent = decided.length ? Math.round(wins / decided.length * 100) + '%' : '—';
+  const rows = Sig.filter === 'active' ? Sig.rows.filter(r => r.status === 'active') : Sig.rows;
+  if(!rows.length){ list.innerHTML = `<div class="sg-msg">${esc(t(Sig.filter === 'active' && Sig.rows.length ? 'sgEmptyActive' : 'sgEmpty'))}</div>`; return; }
+  list.innerHTML = rows.map(r => {
+    const side = r.side === 'BUY' ? 'buy' : 'sell';
+    const stCls = r.status === 'active' ? 'active' : SG_WIN.includes(r.status) ? 'win' : r.status === 'sl' ? 'loss' : '';
+    const risk = Math.abs(Number(r.entry) - Number(r.sl)), rr = risk > 0 ? (Math.abs(Number(r.tp1) - Number(r.entry)) / risk) : null;
+    const tps = [['TP1', r.tp1], ['TP2', r.tp2], ['TP3', r.tp3]].filter(x => x[1] != null);
+    const admin = Prem.admin ? `<select class="field" data-sg-status="${esc(r.id)}" aria-label="Status">${Object.keys(SG_ST).map(k => `<option value="${k}"${k === r.status ? ' selected' : ''}>${esc(t(SG_ST[k]))}</option>`).join('')}</select>
+      <button type="button" class="btn secondary small sg-del" data-sg-del="${esc(r.id)}">${esc(t('sgDel'))}</button>` : '';
+    return `<div class="sg-card ${side}${r.status === 'active' ? '' : ' closed'}">
+      <div class="sg-top"><span class="sg-sym">${esc(r.symbol)}</span><span class="sg-side ${side}">${esc(r.side)}</span>${rr ? `<span class="tag">R:R 1:${rr.toFixed(1)}</span>` : ''}<span class="sg-st ${stCls}">${esc(t(SG_ST[r.status] || 'stActive'))}</span></div>
+      <div class="sg-lv">
+        <div><small>${esc(t('sgEntry')).toUpperCase()}</small><b>${sgFmt(r.entry)}</b></div>
+        <div class="sl"><small>SL</small><b>${sgFmt(r.sl)}</b></div>
+        ${tps.map(x => `<div class="tp"><small>${x[0]}</small><b>${sgFmt(x[1])}</b></div>`).join('')}
+      </div>
+      ${r.note ? `<div class="sg-note">${esc(r.note)}</div>` : ''}
+      <div class="sg-foot"><span>${esc(sgAgo(r.created_at))}</span>${admin}</div>
+    </div>`;
+  }).join('');
+}
+$('sgFilter').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; Sig.filter = b.dataset.f; sgRender(); });
+$('sgUnlock').onclick = () => openPremium('elite');
+$('sgNewBtn').onclick = () => { $('sgForm').classList.toggle('show'); if($('sgForm').classList.contains('show')) $('sgEntryIn').focus(); };
+$('sgForm').onsubmit = async e => {
+  e.preventDefault();
+  const err = $('sgFormErr'); err.textContent = '';
+  const side = $('sgSideIn').value, entry = sgNum($('sgEntryIn').value), sl = sgNum($('sgSlIn').value), tp1 = sgNum($('sgTp1In').value);
+  const tp2 = sgNum($('sgTp2In').value), tp3 = sgNum($('sgTp3In').value), symbol = $('sgSym').value.trim().toUpperCase();
+  const ok = entry != null && sl != null && tp1 != null && (side === 'BUY' ? (sl < entry && entry < tp1) : (sl > entry && entry > tp1));
+  if(!symbol || !ok){ err.textContent = t('sgBad'); return; }
+  const {error} = await supabaseClient.from('signals').insert({symbol, side, entry, sl, tp1, tp2, tp3, note: $('sgNoteIn').value.trim() || null});
+  if(error){ err.textContent = error.message; return; }
+  ['sgEntryIn','sgSlIn','sgTp1In','sgTp2In','sgTp3In','sgNoteIn'].forEach(id => $(id).value = '');
+  $('sgForm').classList.remove('show'); toast(t('sgPosted')); Sig.filter = 'active'; sgLoad();
+};
+$('sgList').addEventListener('change', async e => {
+  const id = e.target.dataset && e.target.dataset.sgStatus; if(!id) return;
+  const {error} = await supabaseClient.from('signals').update({status: e.target.value}).eq('id', id);
+  if(error){ toast(error.message, true); } else toast(t('sgUpdated'));
+  sgLoad();
+});
+$('sgList').addEventListener('click', async e => {
+  const id = e.target.dataset && e.target.dataset.sgDel; if(!id) return;
+  if(!(await askConfirm(t('sgDelQ')))) return;
+  const {error} = await supabaseClient.from('signals').delete().eq('id', id);
+  if(error) toast(error.message, true);
+  sgLoad();
+});
+setInterval(() => { if(Prem.elite && Sig.loaded) sgLoad(); }, 60000);
 
 /* ---------- 17b. Sticky header: gold-tinted shadow once the page scrolls ---------- */
 (function(){
