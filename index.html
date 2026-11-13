@@ -1571,6 +1571,20 @@ body.privacy .priv-flag{display:inline-flex;gap:6px;align-items:center}
 body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#avgWL,#dd,#grossSplit b,#best,#worst,#tradesBody td.positive b,#tradesBody td.negative b,#cal .day span,#mNet,.bars .bar-top > div:last-child,#moodAnalyticsBars .bar-top > div:last-child,#moodInsightText,#tip,#prevBox b){filter:blur(7px);-webkit-user-select:none;user-select:none}
 .cc-priv{width:34px;height:34px;border-radius:10px;margin-left:8px}
 .cc-priv .svg-ico{width:17px;height:17px}
+
+/* compact live-market strip */
+.mkt-strip,.mkt-strip.tape{min-height:0;padding:0 12px;gap:10px;margin:0 0 10px;border-radius:14px;box-shadow:none}
+.mkt-strip .mkt-w,.mkt-strip.tape .mkt-w{height:40px}
+.mkt-lbl{font-size:9.5px;letter-spacing:1.2px;gap:6px}
+.mkt-dot{width:6px;height:6px}
+.mkt-src{font-size:9px}
+.mkt-wait{font-size:11px}
+@media(max-width:760px){
+  .mkt-strip,.mkt-strip.tape{flex-wrap:nowrap;padding:0 8px;gap:6px;border-radius:12px}
+  .mkt-w{order:0;flex-basis:auto}
+  .mkt-lbl span:not(.mkt-dot){display:none}
+  .mkt-src{display:none}
+}
 </style>
 </head>
 <body data-page="main">
@@ -5670,7 +5684,7 @@ if((document.body.dataset.page || 'main') === 'main') maLoad();
     sc.async = true;
     sc.src = 'https://s3.tradingview.com/external-embedding/embed-widget-' + (mode === 'tape' ? 'ticker-tape' : 'tickers') + '.js';
     const cfg = {symbols: SYMBOLS, colorTheme:'dark', isTransparent:true, showSymbolLogo:true, locale:'en'};
-    if(mode === 'tape'){ cfg.displayMode = 'regular'; }
+    if(mode === 'tape'){ cfg.displayMode = 'compact'; }
     sc.textContent = JSON.stringify(cfg);
     sc.onerror = fail;
     box.firstChild.appendChild(sc);
