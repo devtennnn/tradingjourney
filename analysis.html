@@ -1568,7 +1568,7 @@ body.privacy .priv-flag{display:inline-flex;gap:6px;align-items:center}
 @media(max-width:480px){.priv-btn{width:36px;height:36px;border-radius:10px}}
 
 /* blur amounts in confidential mode (no layout change; numbers can't be read) */
-body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#avgWL,#dd,#grossSplit b,#best,#worst,#tradesBody td.positive b,#tradesBody td.negative b,#tradesBody td b,#cal .day span,#mNet,.bars .bar-top > div:last-child,#moodAnalyticsBars .bar-top > div:last-child,#moodInsightText,#tip,#prevBox b){filter:blur(7px);-webkit-user-select:none;user-select:none}
+body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#avgWL,#dd,#grossSplit b,#best,#worst,#tradesBody td.positive b,#tradesBody td.negative b,#cal .day span,#mNet,.bars .bar-top > div:last-child,#moodAnalyticsBars .bar-top > div:last-child,#moodInsightText,#tip,#prevBox b){filter:blur(7px);-webkit-user-select:none;user-select:none}
 .cc-priv{width:34px;height:34px;border-radius:10px;margin-left:8px}
 .cc-priv .svg-ico{width:17px;height:17px}
 </style>
@@ -2094,7 +2094,6 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
 </section>
 
 
-<button type="button" class="priv-flag" id="privFlag" data-i18n="privFlag">🔒 CONFIDENTIAL MODE · amounts hidden</button>
 <footer class="footer">
   <div style="display:flex;align-items:center;gap:8px">
     <div class="mark" style="width:24px;height:24px;border-radius:6px"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjE5NiAyMDUgNTkyIDU5MiIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBUk9NIFRSQURFIj4gIDxkZWZzPiA8bGluZWFyR3JhZGllbnQgaWQ9ImFyb20tbGltZSIgeDE9IjAiIHkxPSIxIiB4Mj0iMSIgeTI9IjAiPiA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM4ZmMyM2UiLz4gPHN0b3Agb2Zmc2V0PSIuNTUiIHN0b3AtY29sb3I9IiNiOWYyNWEiLz4gPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZTNmZmE4Ii8+IDwvbGluZWFyR3JhZGllbnQ+IDxtYXNrIGlkPSJhcm9tLWN1dCI+IDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxMDAwIiBoZWlnaHQ9IjEwMDAiIGZpbGw9IiNmZmYiLz4gPHJlY3QgeD0iNTkwIiB5PSI2MTgiIHdpZHRoPSIxNTAiIGhlaWdodD0iMzYiIGZpbGw9IiMwMDAiLz4gPHJlY3QgeD0iNzEyIiB5PSIwIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjEwMDAiIGZpbGw9IiMwMDAiLz4gPC9tYXNrPiA8L2RlZnM+IDxnIG1hc2s9InVybCgjYXJvbS1jdXQpIj4gPHBhdGggZD0iTSAyOTUgMjQwIEggNzEyIFYgNjE4IEggNjA0IFYgMzQ4IEggMjk1IFoiIGZpbGw9InVybCgjYXJvbS1saW1lKSIvPiA8cGF0aCBkPSJNIDY1OCAyOTQgTCAzMjcgNTcyIEEgNzkgNzkgMCAwIDAgMzc4IDcwOCBIIDc1MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2Fyb20tbGltZSkiIHN0cm9rZS13aWR0aD0iMTA4IiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPiA8L2c+IDwvc3ZnPg==" alt="AROM TRADE"></div>
@@ -5553,7 +5552,6 @@ function privToggle(){
   toast(t(PRIV ? 'privOn' : 'privOff'));
 }
 $('privBtn').onclick = privToggle;
-$('privFlag').onclick = privToggle;
 privApply();
 
 /* ---------- Market News Alerts (Gold / USD / Oil / big news) ---------- */
