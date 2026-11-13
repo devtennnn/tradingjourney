@@ -1443,6 +1443,15 @@ header.nav2.nav-burger-mode:not(.nav-open){row-gap:0}
 .term-state{flex:1;min-width:0;font-size:13px;font-weight:700;color:#cfe0d5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .term-sym{flex:none;padding:6px 12px;border-radius:9px;border:1px solid #23402f;font-size:12.5px;font-weight:800}
 .term-tf{flex:none}
+.term-live{flex:none;display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:9px;border:1px solid #23402f;font:700 12.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#eef6f0;font-variant-numeric:tabular-nums;transition:background .3s}
+.term-live i{width:8px;height:8px;border-radius:50%;background:#55705f;flex:none}
+.term-live.on i{background:#2fd28a;box-shadow:0 0 0 0 rgba(47,210,138,.6);animation:liveDot 1.6s infinite}
+.term-live small{font:800 9.5px/1 Inter,sans-serif;letter-spacing:1.2px;color:#7f968a}
+.term-live.on small{color:#5fe0a6}
+.term-live.up{background:rgba(47,210,138,.14)}.term-live.dn{background:rgba(240,91,120,.14)}
+.term-live .chg{font-size:11px}.term-live .chg.u{color:#5fe0a6}.term-live .chg.d{color:#ff8fa3}
+@keyframes liveDot{0%{box-shadow:0 0 0 0 rgba(47,210,138,.6)}70%{box-shadow:0 0 0 7px rgba(47,210,138,0)}100%{box-shadow:0 0 0 0 rgba(47,210,138,0)}}
+@media(prefers-reduced-motion:reduce){.term-live.on i{animation:none}}
 .term-tape{display:flex;gap:14px;align-items:center;padding:7px 12px;border-bottom:1px solid #15291f;font:600 11.5px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#a9bcb0;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
 .term-tape::-webkit-scrollbar{display:none}
 .term-tape b{color:#eef6f0}.term-tape .up{color:#5fe0a6}.term-tape .dn{color:#ff8fa3}.term-tape .w{color:#ffcf70}
@@ -2090,6 +2099,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
         <div class="term-top">
           <span class="term-sess" id="termSess">—</span>
           <span class="term-state" id="termState">—</span>
+          <span class="term-live" id="termLive" title="Live price · the forming candle updates every few seconds"><i></i><small>LIVE</small><b id="termLivePx">—</b><span class="chg" id="termLiveChg"></span></span>
           <span class="term-sym" id="termSym">XAUUSD</span>
           <div class="seg term-tf" id="termTf"><button type="button" data-tf="5" class="on">5m</button><button type="button" data-tf="15">15m</button></div>
         </div>
@@ -5539,6 +5549,7 @@ async function aiFetch(){
     AI.last = AiEng.evalAt(AI.P, n, aiNews);
     AI.hist = AiEng.scan(AI.P, aiNewsHist);
     aiNotify();
+    setTimeout(liveTick, 300);
   }catch(e){ AI.state = 'error'; AI.data = null; AI.last = null; AI.hist = []; }
   aiRender(); aiSchedule();
 }
@@ -5684,7 +5695,7 @@ try{ const sv = JSON.parse(localStorage.getItem('aromTermInd_v1') || 'null'); if
 function termSave(){ try{ localStorage.setItem('aromTermInd_v1', JSON.stringify({on:TERM.on, sub:TERM.sub})); }catch(e){} }
 /* Scalping indicators computed on the candles shown in the terminal (5m or 15m) */
 function termInd(S5){
-  const C = S5.c, N = C.length, key = AI.sym + ':' + TERM.tf + ':' + N + ':' + C[N - 1].t;
+  const C = S5.c, N = C.length, key = AI.sym + ':' + TERM.tf + ':' + N + ':' + C[N - 1].t + ':' + C[N - 1].c + ':' + C[N - 1].h + ':' + C[N - 1].l;
   if(TERM.indKey === key) return TERM.ind;
   const cl = C.map(b => b.c);
   const ema = (a, n) => { const k = 2 / (n + 1), o = []; let pv = null; a.forEach((v, i) => { if(v == null){ o.push(null); return; } if(pv === null){ if(i < n - 1){ o.push(null); return; } pv = a.slice(i - n + 1, i + 1).reduce((x, y) => x + y, 0) / n; } else pv = v * k + pv * (1 - k); o.push(pv); }); return o; };
@@ -5736,14 +5747,50 @@ function termSession(nowS){
   if(h < 21) return {k:'termNY', on:true, phase:'termActive'};
   return {k:'termClosed', on:false};
 }
+/* ---------- real-time feed: forming candle + live price (/api/live, 1-minute data, every 5 s) ---------- */
+const LIVE = {sym:'', m5:[], price:null, prev:null, off:0, at:0, ok:false, busy:false};
+async function liveTick(){
+  if(!Prem.elite || !AI.data || LIVE.busy || document.visibilityState !== 'visible' || !$('termCv')) return;
+  LIVE.busy = true;
+  try{ const r = await fetch('/api/live?symbol=' + AI.sym, {cache:'no-store'}); if(!r.ok) throw new Error(r.status);
+    const j = await r.json(); if(j.symbol === AI.sym && AI.data) liveApply(j); }
+  catch(e){ LIVE.ok = false; }
+  LIVE.busy = false; termDraw();
+}
+function liveApply(j){
+  const c = AI.data.candles, last = c[c.length - 1], m1 = Array.isArray(j.m1) ? j.m1 : [];
+  if(LIVE.sym !== AI.sym){ LIVE.sym = AI.sym; LIVE.price = null; LIVE.prev = null; LIVE.m5 = []; }
+  // candles may be Twelve Data spot while the live feed is Yahoo futures: align on the last closed candle
+  let off = 0;
+  if(!/^Yahoo/i.test(AI.data.source || '')){ const ref = m1.find(b => b.t === last.t + 240) || [...m1].reverse().find(b => b.t <= last.t + 240); if(ref) off = last.c - ref.c; }
+  LIVE.off = off;
+  const px = j.price + off, fresh = m1.filter(b => b.t >= last.t + 300), out = [];
+  fresh.forEach(b => { const bt = b.t - b.t % 300; let k = out[out.length - 1];
+    if(!k || k.t !== bt){ k = {t:bt, o:b.o + off, h:b.h + off, l:b.l + off, c:b.c + off, live:true}; out.push(k); }
+    else { k.h = Math.max(k.h, b.h + off); k.l = Math.min(k.l, b.l + off); k.c = b.c + off; } });
+  const nowB = Math.floor(Date.now() / 1000 / 300) * 300, lk = out[out.length - 1];
+  if(lk && lk.t === nowB){ lk.c = px; lk.h = Math.max(lk.h, px); lk.l = Math.min(lk.l, px); }
+  else if(nowB >= last.t + 300 && (!lk || lk.t < nowB) && isFinite(px)) out.push({t:nowB, o:lk ? lk.c : last.c, h:Math.max(px, lk ? lk.c : last.c), l:Math.min(px, lk ? lk.c : last.c), c:px, live:true});
+  LIVE.m5 = out; LIVE.prev = LIVE.price; LIVE.price = px; LIVE.at = Date.now(); LIVE.ok = true;
+}
+function liveExt(arr, closes, n, from){ // extend an EMA array over the live candles
+  const k = 2 / (n + 1), o = arr.slice(); let pv = o[o.length - 1];
+  closes.slice(from).forEach(v => { pv = pv == null ? null : v * k + pv * (1 - k); o.push(pv); }); return o; }
 function termSeries(){
-  const m5 = AI.data.candles;
-  if(TERM.tf === '5') return {c:m5, e20:AI.P.e20, e50:AI.P.e50, step:300, m5idx:m5.map((_, i) => i)};
-  const h = AI.P.m15, cl = h.map(x => x.c);
+  const m5 = AI.data.candles, lv = LIVE.sym === AI.sym ? LIVE.m5.filter(b => b.t > m5[m5.length - 1].t) : [];
+  if(TERM.tf === '5'){ const c = lv.length ? m5.concat(lv) : m5, cl = c.map(b => b.c);
+    return {c, e20:lv.length ? liveExt(AI.P.e20, cl, 20, m5.length) : AI.P.e20, e50:lv.length ? liveExt(AI.P.e50, cl, 50, m5.length) : AI.P.e50, step:300, m5idx:c.map((_, i) => i < m5.length ? i : -1)}; }
+  let h = AI.P.m15;
+  { // forming 15-minute candle = closed 5m candles after the last full 15m + live 5m candles
+    const endT = h.length ? h[h.length - 1].t + 900 : 0, part = m5.filter(b => b.t >= endT).concat(lv);
+    if(part.length){ const extra = []; part.forEach(b => { const bt = b.t - b.t % 900; let k = extra[extra.length - 1];
+        if(!k || k.t !== bt){ k = {t:bt, o:b.o, h:b.h, l:b.l, c:b.c, live:true}; extra.push(k); } else { k.h = Math.max(k.h, b.h); k.l = Math.min(k.l, b.l); k.c = b.c; } });
+      h = h.concat(extra); } }
+  const cl = h.map(x => x.c);
   const ema = (a, n) => { const k = 2 / (n + 1), o = []; let p = null; a.forEach((v, i) => { if(i < n - 1){ o.push(null); return; } if(p === null){ p = a.slice(0, n).reduce((x, y) => x + y, 0) / n; } else p = v * k + p * (1 - k); o.push(p); }); return o; };
   const map = []; let j = 0;
-  h.forEach(b => { const end = b.t + 900; while(j < m5.length - 1 && m5[j + 1].t + 300 <= end) j++; map.push(j); });
-  return {c:h, e20:ema(cl, 20), e50:AI.P.h50, step:900, m5idx:map};
+  h.forEach(b => { if(b.live){ map.push(-1); return; } const end = b.t + 900; while(j < m5.length - 1 && m5[j + 1].t + 300 <= end) j++; map.push(j); });
+  return {c:h, e20:ema(cl, 20), e50:h.length > AI.P.h50.length ? liveExt(AI.P.h50, cl, 50, AI.P.h50.length) : AI.P.h50, step:900, m5idx:map};
 }
 function termLevels(m5){
   const last = m5[m5.length - 1], day = Math.floor(last.t / 86400) * 86400, out = [];
@@ -5766,6 +5813,12 @@ function termHeader(){
   $('termSess').textContent = t(ss.k) + (ss.phase ? ' ' + t(ss.phase) : '');
   $('termSess').classList.toggle('off', !ss.on);
   $('termSym').textContent = AI.sym;
+  { const el = $('termLive'), on = LIVE.ok && LIVE.sym === AI.sym && LIVE.price != null && Date.now() - LIVE.at < 30000, dp = AI.sym === 'XAGUSD' ? 3 : (/USD$/.test(AI.sym) && AI.sym !== 'XAUUSD' ? (AI.sym === 'USDJPY' ? 3 : 5) : 2);
+    el.classList.toggle('on', on); el.querySelector('small').textContent = on ? 'LIVE' : 'DELAYED';
+    $('termLivePx').textContent = LIVE.price != null && LIVE.sym === AI.sym ? LIVE.price.toFixed(dp) : '—';
+    const dc = AI.data && LIVE.price != null && LIVE.sym === AI.sym ? (() => { const m5 = AI.data.candles, day = Math.floor(Date.now() / 86400000) * 86400, first = m5.find(b => b.t >= day); return first ? LIVE.price - first.o : null; })() : null;
+    $('termLiveChg').textContent = dc == null ? '' : (dc >= 0 ? '+' : '') + dc.toFixed(dp); $('termLiveChg').className = 'chg ' + (dc == null ? '' : dc >= 0 ? 'u' : 'd');
+    el.classList.remove('up', 'dn'); if(on && LIVE.prev != null && LIVE.price !== LIVE.prev && Date.now() - LIVE.at < 1500){ el.classList.add(LIVE.price > LIVE.prev ? 'up' : 'dn'); } }
   $('termTf').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tf === TERM.tf));
   const banner = $('termBanner'), tape = $('termTape');
   if(!AI.data || !L){ $('termState').textContent = AI.state === 'error' ? t('termNoData') : t('aiLoading'); tape.innerHTML = ''; banner.textContent = ''; banner.className = 'term-banner'; return; }
@@ -5792,7 +5845,7 @@ function termDraw(){
   g.fillStyle = '#07110c'; g.fillRect(0, 0, W, H);
   if(!AI.data || !AI.P){ $('termOhlc').innerHTML = ''; g.fillStyle = '#7f968a'; g.font = '600 12px Inter,sans-serif'; g.textAlign = 'center'; g.fillText(AI.state === 'error' ? t('termNoData') : t('aiLoading'), W / 2, H / 2); return; }
   const S5 = termSeries(), C = S5.c, N = C.length, axisW = 66, qH = 96, gap = 18, mainH = H - qH - gap, plotW = W - axisW;
-  const dp = AI.sym === 'XAGUSD' ? 3 : 2, fx = v => v.toFixed(dp);
+  const dp = AI.sym === 'XAGUSD' ? 3 : AI.sym === 'USDJPY' ? 3 : /^(EUR|GBP)USD$/.test(AI.sym) ? 5 : 2, fx = v => v.toFixed(dp);
   if(!TERM.user) TERM.bars = Math.round(Math.max(36, Math.min(110, plotW / 9)));
   TERM.bars = Math.max(20, Math.min(N, TERM.bars)); TERM.off = Math.max(0, Math.min(N - TERM.bars, TERM.off));
   const end = N - TERM.off, start = Math.max(0, end - TERM.bars), vis = C.slice(start, end);
@@ -5853,7 +5906,8 @@ function termDraw(){
   // candles
   vis.forEach((b, k) => { const i = start + k, x = X(i), up = b.c >= b.o, col = up ? '#2fd28a' : '#f05b78';
     g.strokeStyle = col; g.beginPath(); g.moveTo(Math.round(x) + .5, Y(b.h)); g.lineTo(Math.round(x) + .5, Y(b.l)); g.stroke();
-    const y1 = Y(Math.max(b.o, b.c)), y2 = Y(Math.min(b.o, b.c)); g.fillStyle = col; g.fillRect(Math.round(x - bw / 2), y1, Math.max(1, Math.round(bw)), Math.max(1, y2 - y1)); });
+    const y1 = Y(Math.max(b.o, b.c)), y2 = Y(Math.min(b.o, b.c)); g.fillStyle = col; g.globalAlpha = b.live ? .85 : 1; g.fillRect(Math.round(x - bw / 2), y1, Math.max(1, Math.round(bw)), Math.max(1, y2 - y1)); g.globalAlpha = 1;
+    if(b.live){ g.strokeStyle = 'rgba(238,246,240,.55)'; g.setLineDash([2, 2]); g.strokeRect(Math.round(x - bw / 2) - 1.5, y1 - 1.5, Math.max(1, Math.round(bw)) + 3, Math.max(1, y2 - y1) + 3); g.setLineDash([]); } });
   // Scalp Pulse markers (momentum hints, smaller than A+ markers)
   if(O.pulse) I.pulse.forEach(pz => { if(pz.i < start || pz.i >= end) return; const b = C[pz.i], x = X(pz.i), buy = pz.side === 'BUY', y = buy ? Y(b.l) + 11 : Y(b.h) - 11;
     g.fillStyle = buy ? '#2fd28a' : '#f05b78'; g.strokeStyle = '#07110c'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); g.fill(); g.stroke(); g.lineWidth = 1; });
@@ -5877,9 +5931,14 @@ function termDraw(){
     g.fillStyle = '#e8b931'; g.fillRect(4, y - 8 > 30 ? y - 26 : y + 10, tw, 16); g.fillStyle = '#1a1405'; g.textAlign = 'left'; g.fillText(txt, 10, y - 8 > 30 ? y - 18 : y + 18);
   }
   // last price line + axis tags
-  const lb = C[N - 1]; if(lb.c >= lo && lb.c <= hi){ const y = Math.round(Y(lb.c)) + .5; g.strokeStyle = 'rgba(238,246,240,.5)'; g.setLineDash([1, 3]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); tags.push({p:lb.c, col:'#eef6f0', fg:'#07110c', last:true}); }
+  const lb = C[N - 1], isLive = !!lb.live;
+  if(lb.c >= lo && lb.c <= hi){ const y = Math.round(Y(lb.c)) + .5, lc = isLive ? (lb.c >= lb.o ? '#2fd28a' : '#f05b78') : '#eef6f0';
+    g.strokeStyle = isLive ? lc : 'rgba(238,246,240,.5)'; g.globalAlpha = isLive ? .8 : 1; g.setLineDash([1, 3]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+    tags.push({p:lb.c, col:lc, fg:'#07110c', last:true}); }
   g.font = '700 11px Inter,sans-serif';
-  let prevY = -99; tags.sort((a, b) => b.p - a.p).forEach(tg => { let y = Y(tg.p); if(y - prevY < 18) y = prevY + 18; prevY = y; g.fillStyle = tg.col; g.fillRect(plotW + 2, y - 9, axisW - 4, 18); g.fillStyle = tg.fg; g.textAlign = 'left'; g.fillText(fx(tg.p), plotW + 7, y); });
+  let prevY = -99; tags.sort((a, b) => b.p - a.p).forEach(tg => { let y = Y(tg.p); if(y - prevY < 18) y = prevY + 18; prevY = y; g.fillStyle = tg.col; g.fillRect(plotW + 2, y - 9, axisW - 4, 18); g.fillStyle = tg.fg; g.textAlign = 'left'; g.fillText(fx(tg.p), plotW + 7, y);
+    if(tg.last && isLive){ const st = S5.step, left = Math.max(0, lb.t + st - Math.floor(Date.now() / 1000)), cd = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
+      g.fillStyle = '#16281e'; g.fillRect(plotW + 2, y + 9, axisW - 4, 15); g.fillStyle = '#cfe0d5'; g.font = '700 10px Inter,sans-serif'; g.fillText(cd, plotW + 7, y + 16.5); g.font = '700 11px Inter,sans-serif'; prevY = y + 15; } });
   // separator + quality histogram
   g.strokeStyle = '#15291f'; g.beginPath(); g.moveTo(0, mainH + gap + .5); g.lineTo(W, mainH + gap + .5); g.stroke();
   const sc = termScores(), qTop = mainH + gap + 4, qh = qH - 10;
@@ -5913,7 +5972,7 @@ function termDraw(){
     if(hv.y < mainH){ const y = Math.round(hv.y) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.fillStyle = '#23402f'; g.fillRect(plotW + 2, y - 9, axisW - 4, 18); g.fillStyle = '#eef6f0'; g.fillText(fx(P(hv.y)), plotW + 7, y); }
     g.setLineDash([]); }
   const r = sc[S5.m5idx[hi_]];
-  $('termOhlc').innerHTML = `${esc(aiICT.format(new Date(hb.t * 1000)))} · O <b>${fx(hb.o)}</b> H <b>${fx(hb.h)}</b> L <b>${fx(hb.l)}</b> C <b>${fx(hb.c)}</b>` +
+  $('termOhlc').innerHTML = `${hb.live ? '<b style="color:#5fe0a6">● LIVE</b> · ' : ''}${esc(aiICT.format(new Date(hb.t * 1000)))} · O <b>${fx(hb.o)}</b> H <b>${fx(hb.h)}</b> L <b>${fx(hb.l)}</b> C <b>${fx(hb.c)}</b>` +
     `${r ? ` · Q <b>${r.n}/11</b>` : ''}`;
   const lg = [], v = (arr) => arr[hi_] == null ? '—' : fx(arr[hi_]);
   if(O.ema) lg.push(`<span><b style="color:#5cc8ff">EMA20</b> ${v(S5.e20)} · <b style="color:#ffcf70">EMA50</b> ${v(S5.e50)}</span>`);
@@ -5947,6 +6006,8 @@ function termDraw(){
   termIndSync();
   if('ResizeObserver' in window) new ResizeObserver(() => termDraw()).observe(box);
   setInterval(() => { if(Prem.elite && AI.data) termHeader(); }, 30000);
+  setInterval(liveTick, 5000);                                                     // live price + forming candle
+  setInterval(() => { if(Prem.elite && AI.data && LIVE.price != null && document.visibilityState === 'visible' && !TERM.drag) termDraw(); }, 1000);   // candle countdown
 })();
 aiSync();
 
