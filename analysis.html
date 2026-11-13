@@ -1643,12 +1643,7 @@ body.guest .cc-guest{display:block;margin:-2px 0 14px;padding:12px 14px;border-r
     <div class="scene-tilt" id="sceneTilt">
       <!-- centre: today's terminal -->
       <div class="cc-main">
-        <div class="cc-guest">
-          <div class="cc-guest-t" data-i18n="gstT">You're viewing demo data</div>
-          <div class="cc-guest-s" data-i18n="gstS">These sample trades show how your dashboard works. Create a free account or log in to track your real trading journey.</div>
-          <div class="cc-guest-b"><button type="button" class="btn small" data-gst="signup" data-i18n="gstSignup">Create free account</button><button type="button" class="btn secondary small" data-gst="login" data-i18n="gstLogin">Log in</button></div>
-        </div>
-        <div class="cc-top"><span class="cc-live"><i></i><span data-i18n="ccToday">TODAY</span></span><span class="cc-date" id="ccDate"></span><span class="demo-tag">DEMO</span><span class="cc-acct" id="ccAcct"></span></div>
+        <div class="cc-top"><span class="cc-live"><i></i><span data-i18n="ccToday">TODAY</span></span><span class="cc-date" id="ccDate"></span><span class="cc-acct" id="ccAcct"></span></div>
         <div class="cc-big" id="ccToday">$0.00</div>
         <div class="cc-row"><span><small data-i18n="ccWeek">This week</small><b id="ccWeek">$0.00</b></span><span><small data-i18n="ccMonth">This month</small><b id="ccMonth">$0.00</b></span><span><small data-i18n="ccTradesT">Trades today</small><b id="ccTradesToday">0</b></span></div>
         <div class="cc-bars-lbl"><span data-i18n="ccDaily">Daily P/L · last 14 days</span><span class="cc-bars-tip" id="ccTip"></span></div>
@@ -1850,7 +1845,7 @@ body.guest .cc-guest{display:block;margin:-2px 0 14px;padding:12px 14px;border-r
 <!-- Trade History Table -->
 <section class="pg-main panel section" id="secJournal">
   <div class="toolbar">
-    <div><div class="panel-title"><span data-i18n="history">TRADE HISTORY</span><span class="demo-tag">DEMO</span></div><div class="panel-sub" data-i18n="historySub">Review the setup, not just the money</div></div>
+    <div><div class="panel-title"><span data-i18n="history">TRADE HISTORY</span></div><div class="panel-sub" data-i18n="historySub">Review the setup, not just the money</div></div>
     <div class="filters">
       <input class="field" id="search" data-i18n-ph="searchPh" placeholder="Search symbol / setup">
       <select id="resultFilter" class="field">
@@ -1981,7 +1976,7 @@ body.guest .cc-guest{display:block;margin:-2px 0 14px;padding:12px 14px;border-r
 <div class="pg-main main-grid" id="secPerf">
   <section class="panel">
     <div class="panel-head">
-      <div><div class="panel-title"><span data-i18n="equity">EQUITY CURVE</span><span class="demo-tag">DEMO</span></div><div class="panel-sub" data-i18n="equitySub">Balance after every trade</div></div>
+      <div><div class="panel-title"><span data-i18n="equity">EQUITY CURVE</span></div><div class="panel-sub" data-i18n="equitySub">Balance after every trade</div></div>
       <div class="seg" id="rangeSeg"><button type="button" data-r="all" class="on" data-i18n="rAll">All</button><button type="button" data-r="30">30D</button><button type="button" data-r="7">7D</button></div>
     </div>
     <div class="chart-wrap"><canvas id="chart"></canvas><div class="tip" id="tip"></div><div class="chart-empty" id="chartEmpty" data-i18n="chartEmpty">Add your first trade to build your curve.</div></div>
@@ -2928,17 +2923,12 @@ async function wipeCloudData(){
 const DEMO = {day:'', list:[]};
 function demoTrades(){
   const d0 = today(); if(DEMO.day === d0) return DEMO.list;
-  const P = [[0,38,'A','London','Breakout','Buy'],[0,-12,'B','New York','Pullback','Sell'],[1,26,'A','New York','Liquidity Sweep','Buy'],[2,-18,'C','Asia','Reversal','Sell'],
-    [2,44,'A','London','Breakout','Buy'],[3,19,'B','London','Pullback','Buy'],[4,-15,'B','New York','Reversal','Sell'],[6,52,'A','New York','Liquidity Sweep','Buy'],
-    [7,23,'B','London','Pullback','Sell'],[8,-21,'C','Asia','Reversal','Buy'],[9,35,'A','London','Breakout','Buy'],[10,17,'B','New York','Pullback','Sell'],
-    [11,-14,'B','London','Pullback','Buy'],[13,41,'A','New York','Liquidity Sweep','Sell'],[14,28,'A','London','Breakout','Buy'],[15,-19,'C','Asia','Reversal','Sell'],
-    [16,33,'A','New York','Liquidity Sweep','Buy'],[17,22,'B','London','Pullback','Buy'],[18,-11,'B','New York','Pullback','Sell'],[20,47,'A','London','Breakout','Buy'],
-    [21,-24,'C','Asia','Reversal','Buy'],[22,31,'A','New York','Liquidity Sweep','Sell'],[23,18,'B','London','Pullback','Buy'],[24,-13,'B','New York','Reversal','Sell'],
-    [25,39,'A','London','Breakout','Buy'],[27,26,'B','New York','Pullback','Buy'],[28,-17,'B','London','Reversal','Sell'],[29,36,'A','New York','Liquidity Sweep','Buy']];
+  const P = [[0,38,'A','London','Breakout','Buy'],[1,-12,'B','New York','Pullback','Sell'],[2,26,'A','New York','Liquidity Sweep','Buy'],
+    [4,44,'A','London','Breakout','Buy'],[6,-15,'B','New York','Reversal','Sell']];
   const base = new Date(d0 + 'T12:00:00');
   DEMO.list = P.map((x, i) => { const dt = new Date(base); dt.setDate(base.getDate() - x[0]);
-    return norm({id:'demo-' + i, date:ymd(dt), account:BASE_ACCOUNT, symbol:i % 7 === 3 ? 'XAGUSD' : 'XAUUSD', pl:String(x[1]), result:x[1] > 0 ? 'Win' : 'Loss',
-      grade:x[2], session:x[3], setup:x[4], direction:x[5], risk:'1', rmultiple:(x[1] / 18).toFixed(2), notes:'Demo trade'}); });
+    return norm({id:'demo-' + i, date:ymd(dt), account:BASE_ACCOUNT, symbol:'XAUUSD', pl:String(x[1]), result:x[1] > 0 ? 'Win' : 'Loss',
+      grade:x[2], session:x[3], setup:x[4], direction:x[5], risk:'1', rmultiple:(x[1] / 18).toFixed(2)}); });
   DEMO.day = d0; return DEMO.list;
 }
 const view = () => { if(!currentUser) return demoTrades(); return S.account==='all' ? trades : trades.filter(x => x.account===S.account); };
