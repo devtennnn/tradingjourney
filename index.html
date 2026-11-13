@@ -1378,6 +1378,62 @@ header.nav2.nav-burger-mode:not(.nav-open){row-gap:0}
 .mkt-strip.tape{min-height:54px}.mkt-strip.tape .mkt-w{height:46px}
 @media(max-width:760px){.mkt-strip{flex-wrap:wrap;gap:4px 10px;padding:8px 10px 6px}.mkt-w{order:3;flex-basis:100%}.mkt-src{margin-left:auto}}
 @media(prefers-reduced-motion:reduce){.mkt-dot{animation:none}}
+
+/* ================= AI Signal Analysis ================= */
+.ai-chip{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--lime);color:#0b1a0e;font-size:10px;font-weight:900;letter-spacing:.5px;vertical-align:2px}
+.ai-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.15fr) minmax(0,1fr);gap:12px}
+.ai-status,.ai-checks,.ai-sig{padding:16px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(150deg,#173027,#0f2019)}
+.ai-k{font-size:10.5px;letter-spacing:1.2px;color:var(--muted);font-weight:800;text-transform:uppercase}
+.ai-grade{font-size:54px;font-weight:900;letter-spacing:-2px;line-height:1;margin-top:8px;color:#cfe0d5}
+.ai-grade.gAp{color:var(--lime);text-shadow:0 0 30px rgba(185,242,90,.35)}.ai-grade.gA{color:#d6ff86}.ai-grade.gB{color:#ffcf70}.ai-grade.gC,.ai-grade.gN{color:#8fa699;font-size:34px;letter-spacing:-1px}
+.ai-gtxt{font-size:12.5px;color:#cfe0d5;margin-top:6px;min-height:18px}
+.ai-meter{height:6px;border-radius:999px;background:rgba(255,255,255,.07);margin-top:12px;overflow:hidden}
+.ai-meter i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#7fb236,var(--lime));transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.ai-score{font-size:11px;color:var(--muted);margin-top:5px}
+.ai-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.ai-meta div{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid #1e3a2e;min-width:0}
+.ai-meta small{display:block;font-size:9.5px;color:var(--muted);font-weight:700;letter-spacing:.4px}
+.ai-meta b{font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.ai-src{font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.45}
+.ai-src.warn{color:#ffcf70}
+.ai-sig{display:flex;flex-direction:column}
+.ai-sig.live{border-color:rgba(185,242,90,.45);box-shadow:0 0 0 1px rgba(185,242,90,.12),0 20px 50px rgba(0,0,0,.35),0 0 50px rgba(185,242,90,.10)}
+.ai-sig .sg-lv{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ai-sig .sg-lv .en{grid-column:1/-1}.ai-sig .sg-lv .en b{font-size:20px}
+.ai-sig .sg-lv b{font-size:15px}
+.ai-sig-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ai-sig-top .sym{font-size:20px;font-weight:900;letter-spacing:.3px}
+.ai-st{margin-left:auto;font-size:10px;font-weight:900;letter-spacing:.8px;padding:4px 10px;border-radius:999px;background:rgba(185,242,90,.14);color:var(--lime2);border:1px solid rgba(185,242,90,.3)}
+.ai-st.win{background:rgba(52,211,153,.13);color:var(--green);border-color:#1f6f4d}.ai-st.loss{background:rgba(240,91,120,.12);color:var(--red);border-color:#6e2737}.ai-st.exp{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line)}
+.ai-sig-sub{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.ai-sig-sub b{color:#eef6f0;font-weight:700}
+.ai-copy{margin-top:auto;padding-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.ai-wait{margin:auto 0;text-align:center;padding:16px 8px}
+.ai-wait .rad{width:64px;height:64px;margin:0 auto 12px;border-radius:50%;border:1px solid rgba(185,242,90,.35);position:relative}
+.ai-wait .rad::before{content:"";position:absolute;inset:8px;border-radius:50%;border:1px dashed rgba(185,242,90,.25)}
+.ai-wait .rad::after{content:"";position:absolute;left:50%;top:50%;width:50%;height:2px;background:linear-gradient(90deg,var(--lime),transparent);transform-origin:0 50%;animation:aiSweep 2.4s linear infinite}
+@keyframes aiSweep{to{transform:rotate(360deg)}}
+.ai-wait h4{font-size:15px;margin-bottom:6px}.ai-wait p{font-size:12px;color:var(--muted);line-height:1.5}
+.ai-checks ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:5px}
+.ai-checks li.na{color:#7f968a}.ai-checks li.na i{background:rgba(255,255,255,.06);color:#7f968a}
+.ai-checks li{display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.35;padding:5px 7px;border-radius:8px}
+.ai-checks li i{flex:none;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:900;margin-top:1px}
+.ai-checks li.ok i{background:rgba(185,242,90,.18);color:var(--lime)}.ai-checks li.no i{background:rgba(240,91,120,.14);color:#ff8fa3}
+.ai-checks li.no{color:#9fb3a7}.ai-checks li.ok{color:#e6f1ea}
+.ai-checks li em{font-style:normal;margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap;padding-left:6px}
+.ai-checks li .core{font-size:8.5px;font-weight:900;letter-spacing:.6px;color:#8fa699;border:1px solid #2a4a3a;border-radius:4px;padding:0 4px;margin-left:4px;vertical-align:1px}
+.ai-how{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:#10211a}
+.ai-how summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--lime2)}
+.ai-how ol{margin:10px 0 2px 18px;display:grid;gap:6px;font-size:12px;color:#cfe0d5;line-height:1.5}
+.ai-hist-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 8px}
+.ai-hstats{display:flex;gap:6px;flex-wrap:wrap}
+.ai-hist{display:grid;gap:6px}
+.ai-row{display:grid;grid-template-columns:130px 70px 1fr 90px;gap:10px;align-items:center;padding:9px 12px;border-radius:12px;border:1px solid #1e3a2e;background:#10211a;font-size:12px;font-variant-numeric:tabular-nums}
+.ai-row .lv{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ai-row .lv b{color:#eef6f0;font-weight:700}
+.ai-row .ai-st{margin-left:0;text-align:center}
+@media(max-width:1100px){.ai-grid{grid-template-columns:1fr 1fr}.ai-checks{grid-column:1/-1}}
+@media(max-width:680px){.ai-grid{grid-template-columns:1fr}.ai-row{grid-template-columns:1fr auto;}.ai-row .lv{grid-column:1/-1;white-space:normal}.ai-row .ai-st{grid-column:1/-1;justify-self:start}.ai-grade{font-size:46px}}
+@media(prefers-reduced-motion:reduce){.ai-wait .rad::after{animation:none}}
 </style>
 </head>
 <body>
@@ -1401,6 +1457,7 @@ header.nav2.nav-burger-mode:not(.nav-open){row-gap:0}
     <a href="#hero" data-sec="hero" data-i18n="nlOverview">Overview</a>
     <a href="#newsPanel" data-sec="newsPanel" data-i18n="nlNews">News</a>
     <a href="#naPanel" data-sec="naPanel" data-i18n="nlAnalysis">Analysis</a>
+    <a href="#aiPanel" data-sec="aiPanel" data-i18n="nlAi">AI Signal</a>
     <a href="#sgPanel" data-sec="sgPanel" data-i18n="nlSignals">Signals</a>
     <a href="#secJournal" data-sec="secJournal" data-i18n="nlJournal">Journal</a>
     <a href="#secPerf" data-sec="secPerf" data-i18n="nlPerf">Performance</a>
@@ -1597,6 +1654,71 @@ header.nav2.nav-burger-mode:not(.nav-open){row-gap:0}
   </div>
   </div>
   <div class="na-disc" data-i18n="naDisc">Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.</div>
+</section>
+
+<!-- AI Signal Analysis (Elite): rule-based A+ scalping engine on real M5/M15 candles -->
+<section class="panel section" id="aiPanel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-title"><span data-i18n="aiTitle">AI SIGNAL ANALYSIS</span> <span class="ai-chip">A+</span></div>
+      <div class="panel-sub" data-i18n="aiSub">Trend-pullback scalping engine · M15 bias + M5 entry · signals drop only on A+ setups</div>
+    </div>
+    <div class="sg-tools">
+      <div class="seg" id="aiSym">
+        <button type="button" data-s="XAUUSD" class="on">XAUUSD</button>
+        <button type="button" data-s="XAGUSD">XAGUSD</button>
+      </div>
+      <button type="button" class="btn secondary small" id="aiNow" data-i18n="aiNow">Analyze now</button>
+      <button type="button" class="btn secondary small" id="aiAlert" data-i18n="aiAlertOn">Enable alerts</button>
+    </div>
+  </div>
+  <div class="na-wrap locked" id="aiWrap">
+    <div class="na-lock">
+      <div class="na-lock-card">
+        <div class="na-lock-ico"><svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3 data-i18n="eliteFeature">Elite feature</h3>
+        <p data-i18n="aiLockSub">The A+ scalping engine scans XAUUSD every 5 minutes and drops entry, stop loss and take-profit only when all 11 rules confirm. Elite: $14.99 / 30 days.</p>
+        <button type="button" class="btn" id="aiUnlock" data-i18n="eliteCta">Unlock Elite</button>
+      </div>
+    </div>
+    <div class="na-body">
+      <div class="ai-grid">
+        <div class="ai-status" id="aiStatus">
+          <div class="ai-k" data-i18n="aiGrade">Setup grade</div>
+          <div class="ai-grade" id="aiGrade">—</div>
+          <div class="ai-gtxt" id="aiGradeTxt"></div>
+          <div class="ai-meter"><i id="aiScoreBar"></i></div>
+          <div class="ai-score" id="aiScore"></div>
+          <div class="ai-meta">
+            <div><small data-i18n="aiBias">Bias</small><b id="aiBias">—</b></div>
+            <div><small data-i18n="aiPrice">Last close</small><b id="aiPx">—</b></div>
+            <div><small data-i18n="aiCandle">Candle</small><b id="aiBar">—</b></div>
+            <div><small data-i18n="aiNext">Next scan</small><b id="aiCd">—</b></div>
+          </div>
+          <div class="ai-src" id="aiSrc"></div>
+        </div>
+        <div class="ai-sig" id="aiSig"></div>
+        <div class="ai-checks">
+          <div class="ai-k" data-i18n="aiChecklist">A+ confirmation checklist</div>
+          <ul id="aiChecks"></ul>
+        </div>
+      </div>
+      <details class="ai-how">
+        <summary data-i18n="aiHow">How the engine decides</summary>
+        <ol>
+          <li data-i18n="aiHow1">Trend: on M15 the close is above EMA50, EMA50 is above EMA200 and rising → only BUY (mirror for SELL). Ranging = no trade.</li>
+          <li data-i18n="aiHow2">Pullback: on M5, price dips back into the EMA20–EMA50 zone within the last 6 candles without breaking deep through EMA50.</li>
+          <li data-i18n="aiHow3">Trigger: the signal candle closes back with the trend as a bullish/bearish engulfing, a pin bar, or a strong momentum candle.</li>
+          <li data-i18n="aiHow4">Filters: RSI 14 in the momentum zone and turning, higher-low structure, normal ATR volatility, room to the next swing, London/New York session, no high-impact USD news within 30 minutes.</li>
+          <li data-i18n="aiHow5">Risk: stop 0.25 ATR beyond the pullback extreme (must be 0.8–3 ATR). TP1 = 1R, TP2 = 2R, TP3 = 3R. Move stop to entry after TP1.</li>
+          <li data-i18n="aiHow6">Only when all 11 checks pass is the setup graded A+ and a signal released. An "A" grade is shown for watching only.</li>
+        </ol>
+      </details>
+      <div class="ai-hist-head"><div class="ai-k" data-i18n="aiHist">A+ setups in recent data</div><div class="ai-hstats" id="aiHStats"></div></div>
+      <div class="ai-hist" id="aiHist"></div>
+    </div>
+  </div>
+  <div class="na-disc" data-i18n="aiDisc">Algorithmic analysis of real market candles, not financial advice. Scalping is high risk; signals can and do lose. Past setups do not guarantee future results. Always confirm on your own chart, use your broker's prices and risk only what you can afford to lose.</div>
 </section>
 
 <!-- Signal Provider (Elite): signals posted by the admin, live for Elite members -->
@@ -2361,7 +2483,7 @@ const T = {
     eyebrow:"Every trade tells a story",heroH1:"Feel the <em>Market.</em> Master <em>Yourself.</em>",heroCta1:"Add a Trade",heroCta2:"View Performance",phTitle:"Statistic",phAll:"All",phSeeAll:"See all",phTrades:"trades",heroP:"Document the journey. Master the process. Every setup, decision, result and lesson — in one private place.",heroNote:"YOUR JOURNEY, YOUR RESPONSIBILITY",
     netPL:"Net P/L",netFoot:"Across recorded trades",balance:"Balance",balStart:"Start",winRate:"Win rate",wl:"wins / losses",totalTrades:"Total trades",pf:"Profit factor",pfFoot:"Gross profit ÷ gross loss",premBtnUp:"Upgrade",premBtnPro:"PRO",premTitle:"AROM TRADE Premium",premPer:"/ 30 days",premF1:"Chart uploads in Add Trade",premF2:"Drag & drop, Ctrl+V paste or file upload",premF3:"Auto-compressed and saved with every trade",premNoRenew:"One payment, no auto-renewal. Pay again when it ends.",premPay:"Pay $2.50 with KHQR",premExtend:"Extend 30 days · $2.50",premVerifyDown:"We cannot verify payments right now. If you already paid, your payment is saved — it will unlock automatically once verification is back.",premRestoring:"Checking for an earlier payment…",premGen:"Generating your QR…",premScan:"Scan with any banking app that supports KHQR.",premWait:"Waiting for payment…",premExpIn:"Expires in",premCheck:"I've paid — check now",premExpired:"This QR has expired.",premNew:"Generate new QR",premPaidT:"You're Premium!",premPaidSub:"Chart uploads are unlocked until {d}.",premDone:"Continue",premErr:"Could not start the payment.",premNoSvc:"The payment service is not set up yet. Please try again later.",premActive:"Active until {d}",lockTitle:"Chart uploads are a Premium feature",lockSub:"$2.50 / 30 days · activation key",lockCta:"Unlock",tPremOk:"Premium activated!",tPremNeed:"Chart upload needs Premium — your trade was saved without the new chart.",
     stTitle:"COMMUNITY",stSub:"Numbers across all AROM TRADE users",stUsers:"Traders joined",stUsersFoot:"Registered accounts",stTrades:"Trades logged",stTradesFoot:"Total trades recorded by all users",stAvg:"≈ {n} trades per trader",stUpd:"Updated {t} ICT · refresh",stFail:"Unavailable",tLoggedIn:"Logged in successfully",rateLimit:"Too many emails were sent recently. Please wait about an hour, or ask the site owner to set up a custom email sender.",lUsername:"Username",phUsername:"your_username",emailHint:"We will send a verification link to this address.",passHint:"At least 8 characters.",uBad:"Use 3–20 letters, numbers or underscore.",uTaken:"That username is already taken.",uOk:"Username is available.",verifyTitle:"Verify your email",verifyBody1:"We sent a confirmation link to",verifyBody2:"Open it to activate your account, then log in with your username.",verifyResend:"Resend email",verifyBack:"Back to log in",verifySent:"Email sent again.",verifyWait:"You can resend in {n}s",badLogin:"Wrong username or password.",notVerified:"Please verify your email first. We sent you a new link.",authNoSvc:"Sign-in service is not set up yet. Please try again later.",emailTaken:"This email is already registered.",weakPass:"Password must be at least 8 characters.",forgot:"Forgot password?",forgotNeedUser:"Enter your username first.",forgotSent:"If that account exists, a reset link was emailed.",resetTitle:"Set a new password",resetSave:"Save password",resetDone:"Password updated.",emailVerified:"Email verified — welcome!",pfTitle:"My Profile",pfPlan:"Plan",pfActive:"Active plan",pfFree:"FREE",pfPro:"PRO",pfExpires:"Expires",pfRemain:"Time left",pfLifetime:"Never (lifetime)",pfDaysLeft:"{n} days left",pfExpiredOn:"Expired {d}",pfUpgrade:"Upgrade plan",pfExtend:"Extend Elite",pfToElite:"Upgrade to Elite",pfProfile:"Profile",pfName:"Display name",pfSaveName:"Save name",pfAvatar:"Profile photo",pfUpload:"Upload photo",pfRemove:"Remove",pfUsername:"Username",pfClaim:"Set username",pfSecurity:"Password",pfCurPass:"Current password",pfNewPass:"New password",pfConfPass:"Confirm new password",pfChangePass:"Change password",pfCooldown:"Locked — you can change this again on {d} ({n} days).",pfCooldownNote:"Name, photo and password can each be changed once every 15 days.",pfSaved:"Profile updated.",pfPassOk:"Password changed.",pfMismatch:"New passwords do not match.",pfWrongPass:"Current password is incorrect.",pfSamePass:"New password must be different.",pfNeedSql:"Profile editing needs the account SQL setup (devten-account-setup.sql). Plan details still work.",pfBadName:"Name must be 2–40 characters.",pfUserSet:"Username saved.",pfVerified:"VERIFIED",pfUnverified:"NOT VERIFIED",pfErr:"Could not save. Please try again.",pfPhotoHint:"Photos are resized to a small square.",
-    ptTitle:"PARTNERS & PLATFORMS",ptSub:"Brokers and tools that power the AROM TRADE trading workflow",ptBroker:"Broker",ptInfra:"Platform",ccToday:"TODAY",ccWeek:"This week",ccMonth:"This month",ccTradesT:"Trades today",ccDaily:"Daily P/L · last 14 days",ccPreT:"Pre-market checklist",ccPreStart:"Start your checklist",ccPreGo:"{n} of 5 done · keep going",ccPreDone:"Ready to trade ✓",ccNextNews:"Next USD news",ccNoNews:"No high-impact USD news ahead",ccLoading:"Loading calendar…",ccSignal:"Elite signal",ccSigNone:"No active signal right now",ccSigLocked:"Live BUY / SELL signals with entry, SL & TP",ccUnlock:"Unlock",ccStreakW:"🔥 {n} wins in a row",ccStreakL:"{n} losses · reset & refocus",ccStreak0:"Build your streak",ccNoTrades:"No trades yet",ccAll:"All accounts",acctOne:"Account",mktLive:"LIVE MARKETS",mktLoading:"Loading live prices…",mktSrc:"Prices by TradingView",mktFail:"Live prices could not load. Check your connection or ad-blocker.",nlAnalysis:"Analysis",pfAcct:"Trading account",pfAcctHint:"Trades and balance are tracked in this account.",pfAcctMulti:"Switch between your accounts. Older trades keep their original account.",ccAllTime:"All-time performance",ccDiscT:"Discipline score",ccDiscSub:"From your trade grades · plan execution",ccDiscNone:"Grade your trades to build your score",nlOverview:"Overview",nlPerf:"Performance",nlJournal:"Journal",nlSignals:"Signals",nlNews:"News",nlTools:"Tools",ntTitle:"Notifications",ntReadAll:"Mark all read",ntAll:"All",ntUpdate:"Updates",ntPromo:"Promotions",ntSignal:"Signal Alerts",ntDesktop:"Desktop alerts",ntEmpty:"You're all caught up.",ntEmptyUpdate:"No updates yet.",ntEmptyPromo:"No promotions right now.",ntEmptySignal:"No signal alerts yet.",ntEliteOnly:"Signal alerts are for Elite members.",ntOpen:"Open",ntTypeUpdate:"UPDATE",ntTypePromotion:"PROMOTION",ntTypeSignal:"SIGNAL",ntDeskBlocked:"Blocked in browser settings",ntNeedSql:"Notifications need devten-notifications-setup.sql.",ntJustNow:"just now",keyLabel:"Activation key",keyActivate:"Activate",keyHow:"Buy a key from the AROM TRADE admin, then paste it here. The key decides the plan (Premium or Elite) and how many days you get. If you already have that plan, the days are added to it.",keyContact:"Contact admin to buy a key",keyBad:"Enter the full key, e.g. DEVT-7KQ2-M9XP-4HZT.",key_invalid_key:"This key is not valid. Check it and try again.",key_key_revoked:"This key has been cancelled.",key_key_expired:"This key has expired.",key_key_used_up:"This key has already been used.",key_key_already_used_by_you:"You have already used this key.",key_too_many_attempts:"Too many wrong keys. Please wait an hour and try again.",key_not_authenticated:"Please log in first.",keyNoSvc:"Key activation is not set up yet. Please contact the admin.",keyOk:"Activated!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"ALL FEATURES",planCurrent:"CURRENT",premF0:"Everything in Premium",premF5:"Signal Provider: live BUY / SELL signals with entry, SL & TP",premPayX:"Pay {p} with KHQR",premExtendX:"Extend 30 days · {p}",premPaidSub2:"{plan} is active until {d}.",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"Elite feature",eliteCta:"Unlock Elite",sgTitle:"SIGNAL PROVIDER",sgSub:"Live trade signals from AROM TRADE · Elite members",sgActive:"Active",sgAll:"All",sgNew:"New signal",sgLockSub:"Unlock live BUY / SELL signals with entry, stop loss and take-profit levels. Elite: $14.99 / 30 days · activation key.",sgStatActive:"Active signals",sgStatClosed:"Closed",sgStatWin:"Win rate",sgEmpty:"No signals yet. New signals appear here instantly.",sgEmptyActive:"No active signals right now.",sgEntry:"Entry",sgSymbol:"Symbol",sgSide:"Side",sgNote:"Note",sgPost:"Post signal",sgBad:"Check levels: for BUY, SL < Entry < TP1; for SELL, SL > Entry > TP1.",sgPosted:"Signal posted",sgNewToast:"New signal: {s}",sgNeedSql:"Signals need the Elite SQL setup (devten-elite-setup.sql).",sgDel:"Delete",sgDelQ:"Delete this signal?",sgUpdated:"Signal updated",sgLoading:"Loading signals…",stActive:"ACTIVE",stTp1:"TP1 HIT",stTp2:"TP2 HIT",stTp3:"TP3 HIT",stSl:"SL HIT",stBe:"BREAKEVEN",stCancelled:"CANCELLED",sgDisc:"Signals are the provider's own trade ideas, not financial advice. Past results do not guarantee future results. Trade at your own risk and size positions sensibly.",
+    ptTitle:"PARTNERS & PLATFORMS",ptSub:"Brokers and tools that power the AROM TRADE trading workflow",ptBroker:"Broker",ptInfra:"Platform",ccToday:"TODAY",ccWeek:"This week",ccMonth:"This month",ccTradesT:"Trades today",ccDaily:"Daily P/L · last 14 days",ccPreT:"Pre-market checklist",ccPreStart:"Start your checklist",ccPreGo:"{n} of 5 done · keep going",ccPreDone:"Ready to trade ✓",ccNextNews:"Next USD news",ccNoNews:"No high-impact USD news ahead",ccLoading:"Loading calendar…",ccSignal:"Elite signal",ccSigNone:"No active signal right now",ccSigLocked:"Live BUY / SELL signals with entry, SL & TP",ccUnlock:"Unlock",ccStreakW:"🔥 {n} wins in a row",ccStreakL:"{n} losses · reset & refocus",ccStreak0:"Build your streak",ccNoTrades:"No trades yet",ccAll:"All accounts",acctOne:"Account",nlAi:"AI Signal",aiTitle:"AI SIGNAL ANALYSIS",aiSub:"Trend-pullback scalping engine · M15 bias + M5 entry · signals drop only on A+ setups",aiNow:"Analyze now",aiAlertOn:"Enable alerts",aiAlertOff:"Alerts on ✓",aiLockSub:"The A+ scalping engine scans XAUUSD every 5 minutes and drops entry, stop loss and take-profit only when all 11 rules confirm. Elite: $14.99 / 30 days.",aiGrade:"Setup grade",aiBias:"M15 bias",aiPrice:"Last close",aiCandle:"Candle (ICT)",aiNext:"Next scan",aiChecklist:"A+ confirmation checklist",aiHow:"How the engine decides",aiHow1:"Trend: on M15 the close is above EMA50, EMA50 is above EMA200 and rising → only BUY (mirror for SELL). Ranging = no trade.",aiHow2:"Pullback: on M5, price dips back into the EMA20–EMA50 zone within the last 6 candles without breaking deep through EMA50.",aiHow3:"Trigger: the signal candle closes back with the trend as a bullish/bearish engulfing, a pin bar, or a strong momentum candle.",aiHow4:"Filters: RSI 14 in the momentum zone and turning, higher-low structure, normal ATR volatility, room to the next swing, London/New York session, no high-impact USD news within 30 minutes.",aiHow5:"Risk: stop 0.25 ATR beyond the pullback extreme (must be 0.8–3 ATR). TP1 = 1R, TP2 = 2R, TP3 = 3R. Move stop to entry after TP1.",aiHow6:"Only when all 11 checks pass is the setup graded A+ and a signal released. An \"A\" grade is shown for watching only.",aiHist:"A+ setups in recent data",aiDisc:"Algorithmic analysis of real market candles, not financial advice. Scalping is high risk; signals can and do lose. Past setups do not guarantee future results. Always confirm on your own chart, use your broker's prices and risk only what you can afford to lose.",aiC_bias:"M15 trend bias (EMA50 / EMA200)",aiC_align:"M5 EMA20 / EMA50 aligned with M15",aiC_pullback:"Pullback into EMA20–50 zone",aiC_trigger:"Price-action trigger candle",aiC_session:"London / New York session (14:00–24:00 ICT)",aiC_news:"No high-impact USD news ±30 min",aiC_risk:"Stop size 0.8–3 × ATR",aiC_rsi:"RSI 14 in momentum zone & turning",aiC_structure:"Higher low / lower high structure",aiC_vol:"Normal volatility (ATR)",aiC_room:"Room to target ≥ 1.5R",aiCore:"MUST",aiG_Ap:"A+ confirmed — signal released",aiG_A:"A setup — watch only, not every rule confirms",aiG_B:"B — conditions forming, no entry",aiG_C:"C — no edge right now",aiG_N:"M15 is ranging — no trend, no trade",aiG_na:"Not enough data yet",aiWaitT:"Waiting for an A+ setup",aiWaitP:"The engine checks every closed 5-minute candle. A signal drops here only when all 11 rules confirm.",aiLive:"LIVE",aiSigNew:"New A+ signal",aiValid:"Valid until",aiTrig:"Trigger",aiRiskT:"Risk",aiMoveBE:"Move SL to entry after TP1",aiCopy:"Copy levels",aiCopied:"Levels copied",aiAddTrade:"Log as trade",aiSt_open:"ACTIVE",aiSt_tp1:"TP1 HIT",aiSt_tp2:"TP2 HIT",aiSt_tp3:"TP3 HIT",aiSt_sl:"STOP HIT",aiSt_expired:"EXPIRED",aiNoHist:"No A+ setups in the loaded candles yet — the engine is strict on purpose.",aiHSetups:"setups",aiHWin:"reached TP1",aiHAvg:"avg",aiLoading:"Loading real candles…",aiNoData:"Live candle feed unavailable — no analysis, no signal. Try again in a minute.",aiSrcDelay:"Futures price — may differ from your broker's spot by a few dollars. Add a Twelve Data key for spot XAU/USD.",aiNewsUnknown:"news feed unavailable",aiTrig_engulf:"Engulfing",aiTrig_pin:"Pin bar",aiTrig_momentum:"Momentum close",aiNotifyDenied:"Browser notifications are blocked for this site.",mktLive:"LIVE MARKETS",mktLoading:"Loading live prices…",mktSrc:"Prices by TradingView",mktFail:"Live prices could not load. Check your connection or ad-blocker.",nlAnalysis:"Analysis",pfAcct:"Trading account",pfAcctHint:"Trades and balance are tracked in this account.",pfAcctMulti:"Switch between your accounts. Older trades keep their original account.",ccAllTime:"All-time performance",ccDiscT:"Discipline score",ccDiscSub:"From your trade grades · plan execution",ccDiscNone:"Grade your trades to build your score",nlOverview:"Overview",nlPerf:"Performance",nlJournal:"Journal",nlSignals:"Signals",nlNews:"News",nlTools:"Tools",ntTitle:"Notifications",ntReadAll:"Mark all read",ntAll:"All",ntUpdate:"Updates",ntPromo:"Promotions",ntSignal:"Signal Alerts",ntDesktop:"Desktop alerts",ntEmpty:"You're all caught up.",ntEmptyUpdate:"No updates yet.",ntEmptyPromo:"No promotions right now.",ntEmptySignal:"No signal alerts yet.",ntEliteOnly:"Signal alerts are for Elite members.",ntOpen:"Open",ntTypeUpdate:"UPDATE",ntTypePromotion:"PROMOTION",ntTypeSignal:"SIGNAL",ntDeskBlocked:"Blocked in browser settings",ntNeedSql:"Notifications need devten-notifications-setup.sql.",ntJustNow:"just now",keyLabel:"Activation key",keyActivate:"Activate",keyHow:"Buy a key from the AROM TRADE admin, then paste it here. The key decides the plan (Premium or Elite) and how many days you get. If you already have that plan, the days are added to it.",keyContact:"Contact admin to buy a key",keyBad:"Enter the full key, e.g. DEVT-7KQ2-M9XP-4HZT.",key_invalid_key:"This key is not valid. Check it and try again.",key_key_revoked:"This key has been cancelled.",key_key_expired:"This key has expired.",key_key_used_up:"This key has already been used.",key_key_already_used_by_you:"You have already used this key.",key_too_many_attempts:"Too many wrong keys. Please wait an hour and try again.",key_not_authenticated:"Please log in first.",keyNoSvc:"Key activation is not set up yet. Please contact the admin.",keyOk:"Activated!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"ALL FEATURES",planCurrent:"CURRENT",premF0:"Everything in Premium",premF5:"Signal Provider: live BUY / SELL signals with entry, SL & TP",premPayX:"Pay {p} with KHQR",premExtendX:"Extend 30 days · {p}",premPaidSub2:"{plan} is active until {d}.",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"Elite feature",eliteCta:"Unlock Elite",sgTitle:"SIGNAL PROVIDER",sgSub:"Live trade signals from AROM TRADE · Elite members",sgActive:"Active",sgAll:"All",sgNew:"New signal",sgLockSub:"Unlock live BUY / SELL signals with entry, stop loss and take-profit levels. Elite: $14.99 / 30 days · activation key.",sgStatActive:"Active signals",sgStatClosed:"Closed",sgStatWin:"Win rate",sgEmpty:"No signals yet. New signals appear here instantly.",sgEmptyActive:"No active signals right now.",sgEntry:"Entry",sgSymbol:"Symbol",sgSide:"Side",sgNote:"Note",sgPost:"Post signal",sgBad:"Check levels: for BUY, SL < Entry < TP1; for SELL, SL > Entry > TP1.",sgPosted:"Signal posted",sgNewToast:"New signal: {s}",sgNeedSql:"Signals need the Elite SQL setup (devten-elite-setup.sql).",sgDel:"Delete",sgDelQ:"Delete this signal?",sgUpdated:"Signal updated",sgLoading:"Loading signals…",stActive:"ACTIVE",stTp1:"TP1 HIT",stTp2:"TP2 HIT",stTp3:"TP3 HIT",stSl:"SL HIT",stBe:"BREAKEVEN",stCancelled:"CANCELLED",sgDisc:"Signals are the provider's own trade ideas, not financial advice. Past results do not guarantee future results. Trade at your own risk and size positions sensibly.",
     naLockTitle:"Premium feature",naLockSub:"Unlock Market News Analysis: BUY / SELL bias for XAUUSD, EURUSD, GBPUSD and USDJPY from today's USD news. Elite: $14.99 / 30 days · activation key.",naLockCta:"Unlock with Premium",premF4:"Market News Analysis: BUY / SELL bias from USD news",naTitle:"MARKET NEWS ANALYSIS",naSub:"USD High & Medium impact news today → expected BUY / SELL bias",naUsdBias:"USD bias",naBull:"USD Bullish",naBear:"USD Bearish",naFlat:"Neutral / Mixed",naFromActual:"Based on {n} released result(s)",naFromFc:"Forecast-based (no results entered yet)",naNone:"No USD High/Medium events today — no news bias.",naBuy:"BUY",naSell:"SELL",naWait:"WAIT",naStrong:"Strong",naModerate:"Moderate",naWeak:"Weak",naNoBias:"No clear bias",naIfHigher:"Actual above forecast",naIfLower:"Actual below forecast",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"Speech / event risk — direction depends on tone. Expect volatility; wait for the reaction.",naActual:"Actual (after release)",naActPh:"e.g. 0.4%",naLean:"Forecast lean",naRes:"Result",naBetter:"Better than expected → USD ↑",naWorse:"Worse than expected → USD ↓",naInline:"In line → little reaction",naDisc:"Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.",newsTitle:"USD NEWS CALENDAR",newsSub:"US Dollar events only · times in Cambodia",newsThis:"This week",newsNext:"Next week",impHigh:"High",impMed:"Medium",impLow:"Low",impHol:"Holiday",newsRefreshTip:"Refresh calendar",newsLoading:"Loading USD events…",newsEmpty:"No USD events match these impact filters.",newsErr:"Could not load the calendar. Check your connection and try again.",newsUpd:"Updated",newsCached:"offline copy",newsSrc:"Source: Forex Factory weekly feed. Times converted to Asia/Phnom_Penh (UTC+7).",newsAllDay:"All day",newsNextEv:"Next event",newsIn:"in",newsNow:"NOW",newsFc:"Forecast",newsPrev:"Previous",newsToday:"TODAY",
     gp:"Gross profit",gl:"Gross loss",gpTip:"Sum of all winning trades",glTip:"Sum of all losing trades",prevSave:"Will save as",prevBad:"Enter a valid number, e.g. 25.50",prevFix:"sign set by Result",
     expectancy:"Expectancy",expFoot:"Average P/L per trade",avgWL:"Avg win / loss",maxDD:"Max drawdown",ddFoot:"Peak to trough",keep:"Keep showing up",streakW:"win streak",streakL:"loss streak",rr:"Reward : risk",
@@ -2398,7 +2520,7 @@ const T = {
     eyebrow:"រាល់ Trade ទាំងអស់មានរឿងរ៉ាវរបស់វា",heroH1:"យល់ពី<em>ទីផ្សារ</em>។ គ្រប់គ្រង<em>ខ្លួនឯង</em>។",heroCta1:"បន្ថែម Trade",heroCta2:"មើលលទ្ធផល",phTitle:"ស្ថិតិ",phAll:"ទាំងអស់",phSeeAll:"មើលទាំងអស់",phTrades:"trades",heroP:"កត់ត្រាដំណើរ។ ធ្វើជាម្ចាស់លើដំណើរការ។ រាល់ការរៀបចំ ការសម្រេចចិត្ត លទ្ធផល និងមេរៀន — នៅកន្លែងឯកជនតែមួយ។",heroNote:"ដំណើររបស់អ្នក • ការទទួលខុសត្រូវរបស់អ្នក",
     netPL:"ចំណេញ / ខាតសរុប",netFoot:"ពីប្រតិបត្តិការដែលបានកត់ត្រា",balance:"សមតុល្យ",balStart:"ចាប់ផ្តើម",winRate:"អត្រាឈ្នះ",wl:"ឈ្នះ / ខាត",totalTrades:"ចំនួន Trade សរុប",pf:"កត្តាចំណេញ",pfFoot:"ចំណេញសរុប ÷ ខាតសរុប",premBtnUp:"ដំឡើង",premBtnPro:"PRO",premTitle:"AROM TRADE Premium",premPer:"/ ៣០ ថ្ងៃ",premF1:"ផ្ទុករូបភាពគំនូសតាងក្នុង Add Trade",premF2:"អូស & ទម្លាក់ បិទភ្ជាប់ Ctrl+V ឬជ្រើសឯកសារ",premF3:"បង្ហាប់ដោយស្វ័យប្រវត្តិ ហើយរក្សាទុកជាមួយរាល់ Trade",premNoRenew:"បង់ម្តង មិនកាត់លុយស្វ័យប្រវត្តិទេ។ បង់ម្តងទៀតពេលផុតកំណត់។",premPay:"បង់ $2.50 ជាមួយ KHQR",premExtend:"បន្ថែម ៣០ ថ្ងៃ · $2.50",premVerifyDown:"យើងមិនអាចផ្ទៀងផ្ទាត់ការបង់ប្រាក់បានទេនៅពេលនេះ។ ប្រសិនបើអ្នកបានបង់ហើយ ការបង់ប្រាក់ត្រូវបានរក្សាទុក — វានឹងបើកដោយស្វ័យប្រវត្តិនៅពេលការផ្ទៀងផ្ទាត់ដំណើរការឡើងវិញ។",premRestoring:"កំពុងពិនិត្យការបង់ប្រាក់មុន…",premGen:"កំពុងបង្កើត QR…",premScan:"ស្កេនជាមួយកម្មវិធីធនាគារណាមួយដែលគាំទ្រ KHQR។",premWait:"កំពុងរង់ចាំការបង់ប្រាក់…",premExpIn:"ផុតកំណត់ក្នុង",premCheck:"ខ្ញុំបានបង់ហើយ — ពិនិត្យឥឡូវ",premExpired:"QR នេះផុតកំណត់ហើយ។",premNew:"បង្កើត QR ថ្មី",premPaidT:"អ្នកជា Premium ហើយ!",premPaidSub:"ការផ្ទុករូបភាពគំនូសតាងត្រូវបានបើករហូតដល់ {d}។",premDone:"បន្ត",premErr:"មិនអាចចាប់ផ្តើមការបង់ប្រាក់បានទេ។",premNoSvc:"សេវាបង់ប្រាក់មិនទាន់រួចរាល់ទេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",premActive:"សកម្មរហូតដល់ {d}",lockTitle:"ការផ្ទុករូបភាពគំនូសតាងជាមុខងារ Premium",lockSub:"$2.50 / ៣០ ថ្ងៃ · លេខកូដបើកដំណើរការ",lockCta:"បើកដំណើរការ",tPremOk:"បានបើក Premium!",tPremNeed:"ការផ្ទុករូបភាពត្រូវការ Premium — Trade ត្រូវបានរក្សាទុកដោយគ្មានរូបភាពថ្មី។",
     stTitle:"សហគមន៍",stSub:"ចំនួនសរុបរបស់អ្នកប្រើ AROM TRADE ទាំងអស់",stUsers:"អ្នកជួញដូរចូលរួម",stUsersFoot:"គណនីដែលបានចុះឈ្មោះ",stTrades:"Trade ដែលបានកត់ត្រា",stTradesFoot:"ចំនួន Trade សរុបរបស់អ្នកប្រើទាំងអស់",stAvg:"ប្រហែល {n} Trade ក្នុងម្នាក់",stUpd:"ធ្វើបច្ចុប្បន្នភាព {t} ICT · ផ្ទុកឡើងវិញ",stFail:"មិនមាន",tLoggedIn:"បានចូលគណនីដោយជោគជ័យ",rateLimit:"បានផ្ញើអ៊ីមែលច្រើនពេកថ្មីៗនេះ។ សូមរង់ចាំប្រហែល ១ ម៉ោង ឬសុំម្ចាស់គេហទំព័រកំណត់អ្នកផ្ញើអ៊ីមែលផ្ទាល់ខ្លួន។",lUsername:"ឈ្មោះអ្នកប្រើ",phUsername:"ឈ្មោះ_របស់អ្នក",emailHint:"យើងនឹងផ្ញើតំណផ្ទៀងផ្ទាត់ទៅអាសយដ្ឋាននេះ។",passHint:"យ៉ាងតិច ៨ តួអក្សរ។",uBad:"ប្រើ ៣–២០ តួអក្សរ លេខ ឬ _ ។",uTaken:"ឈ្មោះអ្នកប្រើនេះមានគេប្រើហើយ។",uOk:"ឈ្មោះអ្នកប្រើនេះអាចប្រើបាន។",verifyTitle:"ផ្ទៀងផ្ទាត់អ៊ីមែលរបស់អ្នក",verifyBody1:"យើងបានផ្ញើតំណបញ្ជាក់ទៅ",verifyBody2:"បើកវាដើម្បីដំណើរការគណនី រួចចូលគណនីដោយឈ្មោះអ្នកប្រើ។",verifyResend:"ផ្ញើអ៊ីមែលម្តងទៀត",verifyBack:"ត្រឡប់ទៅចូលគណនី",verifySent:"បានផ្ញើអ៊ីមែលម្តងទៀត។",verifyWait:"អាចផ្ញើម្តងទៀតក្នុង {n}វិនាទី",badLogin:"ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។",notVerified:"សូមផ្ទៀងផ្ទាត់អ៊ីមែលជាមុន។ យើងបានផ្ញើតំណថ្មីជូនអ្នក។",authNoSvc:"សេវាចូលគណនីមិនទាន់រួចរាល់ទេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",emailTaken:"អ៊ីមែលនេះបានចុះឈ្មោះរួចហើយ។",weakPass:"ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ។",forgot:"ភ្លេចពាក្យសម្ងាត់?",forgotNeedUser:"សូមបញ្ចូលឈ្មោះអ្នកប្រើជាមុន។",forgotSent:"ប្រសិនបើគណនីមាន យើងបានផ្ញើតំណកំណត់ឡើងវិញតាមអ៊ីមែល។",resetTitle:"កំណត់ពាក្យសម្ងាត់ថ្មី",resetSave:"រក្សាទុកពាក្យសម្ងាត់",resetDone:"បានធ្វើបច្ចុប្បន្នភាពពាក្យសម្ងាត់។",emailVerified:"បានផ្ទៀងផ្ទាត់អ៊ីមែល — សូមស្វាគមន៍!",pfTitle:"ប្រវត្តិរូបរបស់ខ្ញុំ",pfPlan:"គម្រោង",pfActive:"គម្រោងដែលកំពុងប្រើ",pfFree:"ឥតគិតថ្លៃ",pfPro:"PRO",pfExpires:"ផុតកំណត់",pfRemain:"ពេលនៅសល់",pfLifetime:"មិនផុតកំណត់ (ពេញមួយជីវិត)",pfDaysLeft:"នៅសល់ {n} ថ្ងៃ",pfExpiredOn:"ផុតកំណត់ {d}",pfUpgrade:"ដំឡើងគម្រោង",pfExtend:"បន្ថែម Elite",pfToElite:"ដំឡើងទៅ Elite",pfProfile:"ប្រវត្តិរូប",pfName:"ឈ្មោះបង្ហាញ",pfSaveName:"រក្សាទុកឈ្មោះ",pfAvatar:"រូបភាពប្រវត្តិរូប",pfUpload:"ផ្ទុករូបភាព",pfRemove:"លុប",pfUsername:"ឈ្មោះអ្នកប្រើ",pfClaim:"កំណត់ឈ្មោះអ្នកប្រើ",pfSecurity:"ពាក្យសម្ងាត់",pfCurPass:"ពាក្យសម្ងាត់បច្ចុប្បន្ន",pfNewPass:"ពាក្យសម្ងាត់ថ្មី",pfConfPass:"បញ្ជាក់ពាក្យសម្ងាត់ថ្មី",pfChangePass:"ប្តូរពាក្យសម្ងាត់",pfCooldown:"ត្រូវបានចាក់សោ — អ្នកអាចផ្លាស់ប្តូរម្តងទៀតនៅ {d} ({n} ថ្ងៃ)។",pfCooldownNote:"ឈ្មោះ រូបភាព និងពាក្យសម្ងាត់ អាចផ្លាស់ប្តូរម្នាក់ម្តងរៀងរាល់ ១៥ ថ្ងៃ។",pfSaved:"បានធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូប។",pfPassOk:"បានប្តូរពាក្យសម្ងាត់។",pfMismatch:"ពាក្យសម្ងាត់ថ្មីមិនដូចគ្នាទេ។",pfWrongPass:"ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវ។",pfSamePass:"ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីមុន។",pfNeedSql:"ការកែប្រវត្តិរូបត្រូវការ SQL (devten-account-setup.sql)។ ព័ត៌មានគម្រោងនៅតែដំណើរការ។",pfBadName:"ឈ្មោះត្រូវមាន ២–៤០ តួអក្សរ។",pfUserSet:"បានរក្សាទុកឈ្មោះអ្នកប្រើ។",pfVerified:"បានផ្ទៀងផ្ទាត់",pfUnverified:"មិនទាន់ផ្ទៀងផ្ទាត់",pfErr:"មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត។",pfPhotoHint:"រូបភាពនឹងត្រូវបង្រួមជារូបការ៉េតូច។",
-    ptTitle:"ដៃគូ និងវេទិកា",ptSub:"ឈ្មួញកណ្តាល និងឧបករណ៍ដែលជំរុញការងារជួញដូររបស់ AROM TRADE",ptBroker:"ឈ្មួញកណ្តាល",ptInfra:"វេទិកា",ccToday:"ថ្ងៃនេះ",ccWeek:"សប្តាហ៍នេះ",ccMonth:"ខែនេះ",ccTradesT:"Trade ថ្ងៃនេះ",ccDaily:"ចំណេញ/ខាតប្រចាំថ្ងៃ · ១៤ ថ្ងៃចុងក្រោយ",ccPreT:"បញ្ជីពិនិត្យមុនបើកទីផ្សារ",ccPreStart:"ចាប់ផ្តើមបញ្ជីពិនិត្យ",ccPreGo:"រួចរាល់ {n} ក្នុង ៥ · បន្តទៀត",ccPreDone:"ត្រៀមខ្លួនជួញដូរ ✓",ccNextNews:"ព័ត៌មាន USD បន្ទាប់",ccNoNews:"គ្មានព័ត៌មាន USD សំខាន់ខាងមុខទេ",ccLoading:"កំពុងផ្ទុកប្រតិទិន…",ccSignal:"សញ្ញា Elite",ccSigNone:"មិនមានសញ្ញាសកម្មនៅពេលនេះ",ccSigLocked:"សញ្ញា BUY / SELL ផ្ទាល់ ជាមួយ Entry, SL និង TP",ccUnlock:"បើក",ccStreakW:"🔥 ឈ្នះ {n} ដងជាប់គ្នា",ccStreakL:"ខាត {n} ដង · ផ្តោតឡើងវិញ",ccStreak0:"កសាងការឈ្នះជាប់គ្នា",ccNoTrades:"មិនទាន់មាន Trade",ccAll:"គណនីទាំងអស់",acctOne:"គណនី",mktLive:"តម្លៃទីផ្សារផ្ទាល់",mktLoading:"កំពុងផ្ទុកតម្លៃផ្ទាល់…",mktSrc:"តម្លៃពី TradingView",mktFail:"មិនអាចផ្ទុកតម្លៃផ្ទាល់បានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ឬកម្មវិធីបិទពាណិជ្ជកម្ម។",nlAnalysis:"វិភាគ",pfAcct:"គណនីជួញដូរ",pfAcctHint:"Trade និងសមតុល្យត្រូវបានកត់ត្រាក្នុងគណនីនេះ។",pfAcctMulti:"ប្តូររវាងគណនីរបស់អ្នក។ Trade ចាស់រក្សាគណនីដើម។",ccAllTime:"លទ្ធផលសរុប",ccDiscT:"ពិន្ទុវិន័យ",ccDiscSub:"ពីការដាក់ពិន្ទុ Trade · ការអនុវត្តផែនការ",ccDiscNone:"ដាក់ពិន្ទុ Trade ដើម្បីកសាងពិន្ទុរបស់អ្នក",nlOverview:"ទិដ្ឋភាពទូទៅ",nlPerf:"លទ្ធផល",nlJournal:"ទិនានុប្បវត្តិ",nlSignals:"សញ្ញា",nlNews:"ព័ត៌មាន",nlTools:"ឧបករណ៍",ntTitle:"ការជូនដំណឹង",ntReadAll:"សម្គាល់ថាបានអានទាំងអស់",ntAll:"ទាំងអស់",ntUpdate:"បច្ចុប្បន្នភាព",ntPromo:"ប្រូម៉ូសិន",ntSignal:"ការជូនដំណឹងសញ្ញា",ntDesktop:"ការជូនដំណឹងលើកុំព្យូទ័រ",ntEmpty:"អ្នកបានមើលទាំងអស់ហើយ។",ntEmptyUpdate:"មិនទាន់មានបច្ចុប្បន្នភាពទេ។",ntEmptyPromo:"មិនមានប្រូម៉ូសិននៅពេលនេះទេ។",ntEmptySignal:"មិនទាន់មានការជូនដំណឹងសញ្ញាទេ។",ntEliteOnly:"ការជូនដំណឹងសញ្ញាសម្រាប់សមាជិក Elite។",ntOpen:"បើក",ntTypeUpdate:"បច្ចុប្បន្នភាព",ntTypePromotion:"ប្រូម៉ូសិន",ntTypeSignal:"សញ្ញា",ntDeskBlocked:"ត្រូវបានបិទក្នុងការកំណត់កម្មវិធីរុករក",ntNeedSql:"ការជូនដំណឹងត្រូវការ devten-notifications-setup.sql។",ntJustNow:"ទើបតែ",keyLabel:"លេខកូដបើកដំណើរការ",keyActivate:"បើកដំណើរការ",keyHow:"ទិញលេខកូដពីអ្នកគ្រប់គ្រង AROM TRADE រួចបិទភ្ជាប់នៅទីនេះ។ លេខកូដកំណត់គម្រោង (Premium ឬ Elite) និងចំនួនថ្ងៃ។ ប្រសិនបើអ្នកមានគម្រោងនោះរួចហើយ ថ្ងៃនឹងត្រូវបន្ថែម។",keyContact:"ទាក់ទងអ្នកគ្រប់គ្រងដើម្បីទិញលេខកូដ",keyBad:"សូមបញ្ចូលលេខកូដពេញ ឧ. DEVT-7KQ2-M9XP-4HZT។",key_invalid_key:"លេខកូដនេះមិនត្រឹមត្រូវ។ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",key_key_revoked:"លេខកូដនេះត្រូវបានលុបចោល។",key_key_expired:"លេខកូដនេះផុតកំណត់ហើយ។",key_key_used_up:"លេខកូដនេះត្រូវបានប្រើរួចហើយ។",key_key_already_used_by_you:"អ្នកបានប្រើលេខកូដនេះរួចហើយ។",key_too_many_attempts:"លេខកូដខុសច្រើនពេក។ សូមរង់ចាំ ១ ម៉ោង ហើយព្យាយាមម្តងទៀត។",key_not_authenticated:"សូមចូលគណនីជាមុន។",keyNoSvc:"ការបើកដោយលេខកូដមិនទាន់រៀបចំទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។",keyOk:"បានបើកដំណើរការ!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"មុខងារទាំងអស់",planCurrent:"បច្ចុប្បន្ន",premF0:"មុខងារ Premium ទាំងអស់",premF5:"អ្នកផ្តល់សញ្ញា៖ សញ្ញា BUY / SELL ផ្ទាល់ ជាមួយ Entry, SL និង TP",premPayX:"បង់ {p} ជាមួយ KHQR",premExtendX:"បន្ថែម ៣០ ថ្ងៃ · {p}",premPaidSub2:"{plan} សកម្មរហូតដល់ {d}។",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"មុខងារ Elite",eliteCta:"បើក Elite",sgTitle:"អ្នកផ្តល់សញ្ញា",sgSub:"សញ្ញាជួញដូរផ្ទាល់ពី AROM TRADE · សមាជិក Elite",sgActive:"សកម្ម",sgAll:"ទាំងអស់",sgNew:"សញ្ញាថ្មី",sgLockSub:"បើកសញ្ញា BUY / SELL ផ្ទាល់ ជាមួយកម្រិត Entry, Stop Loss និង Take Profit។ Elite៖ $14.99 / ៣០ ថ្ងៃ · លេខកូដបើកដំណើរការ។",sgStatActive:"សញ្ញាសកម្ម",sgStatClosed:"បានបិទ",sgStatWin:"អត្រាឈ្នះ",sgEmpty:"មិនទាន់មានសញ្ញាទេ។ សញ្ញាថ្មីនឹងបង្ហាញនៅទីនេះភ្លាមៗ។",sgEmptyActive:"មិនមានសញ្ញាសកម្មនៅពេលនេះទេ។",sgEntry:"Entry",sgSymbol:"និមិត្តសញ្ញា",sgSide:"ទិស",sgNote:"កំណត់ចំណាំ",sgPost:"ផ្សាយសញ្ញា",sgBad:"ពិនិត្យកម្រិត៖ BUY ត្រូវ SL < Entry < TP1; SELL ត្រូវ SL > Entry > TP1។",sgPosted:"បានផ្សាយសញ្ញា",sgNewToast:"សញ្ញាថ្មី៖ {s}",sgNeedSql:"សញ្ញាត្រូវការ SQL Elite (devten-elite-setup.sql)។",sgDel:"លុប",sgDelQ:"លុបសញ្ញានេះ?",sgUpdated:"បានធ្វើបច្ចុប្បន្នភាពសញ្ញា",sgLoading:"កំពុងផ្ទុកសញ្ញា…",stActive:"សកម្ម",stTp1:"ដល់ TP1",stTp2:"ដល់ TP2",stTp3:"ដល់ TP3",stSl:"ដល់ SL",stBe:"រួចខ្លួន",stCancelled:"បានបោះបង់",sgDisc:"សញ្ញាជាគំនិតជួញដូររបស់អ្នកផ្តល់ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ លទ្ធផលកន្លងមកមិនធានាលទ្ធផលអនាគតទេ។ ជួញដូរដោយហានិភ័យផ្ទាល់ខ្លួន និងកំណត់ទំហំឲ្យសមរម្យ។",
+    ptTitle:"ដៃគូ និងវេទិកា",ptSub:"ឈ្មួញកណ្តាល និងឧបករណ៍ដែលជំរុញការងារជួញដូររបស់ AROM TRADE",ptBroker:"ឈ្មួញកណ្តាល",ptInfra:"វេទិកា",ccToday:"ថ្ងៃនេះ",ccWeek:"សប្តាហ៍នេះ",ccMonth:"ខែនេះ",ccTradesT:"Trade ថ្ងៃនេះ",ccDaily:"ចំណេញ/ខាតប្រចាំថ្ងៃ · ១៤ ថ្ងៃចុងក្រោយ",ccPreT:"បញ្ជីពិនិត្យមុនបើកទីផ្សារ",ccPreStart:"ចាប់ផ្តើមបញ្ជីពិនិត្យ",ccPreGo:"រួចរាល់ {n} ក្នុង ៥ · បន្តទៀត",ccPreDone:"ត្រៀមខ្លួនជួញដូរ ✓",ccNextNews:"ព័ត៌មាន USD បន្ទាប់",ccNoNews:"គ្មានព័ត៌មាន USD សំខាន់ខាងមុខទេ",ccLoading:"កំពុងផ្ទុកប្រតិទិន…",ccSignal:"សញ្ញា Elite",ccSigNone:"មិនមានសញ្ញាសកម្មនៅពេលនេះ",ccSigLocked:"សញ្ញា BUY / SELL ផ្ទាល់ ជាមួយ Entry, SL និង TP",ccUnlock:"បើក",ccStreakW:"🔥 ឈ្នះ {n} ដងជាប់គ្នា",ccStreakL:"ខាត {n} ដង · ផ្តោតឡើងវិញ",ccStreak0:"កសាងការឈ្នះជាប់គ្នា",ccNoTrades:"មិនទាន់មាន Trade",ccAll:"គណនីទាំងអស់",acctOne:"គណនី",nlAi:"សញ្ញា AI",aiTitle:"ការវិភាគសញ្ញា AI",aiSub:"ម៉ាស៊ីន Scalping តាមនិន្នាការ-Pullback · ទិសដៅ M15 + ចូល M5 · ចេញសញ្ញាតែ Setup A+ ប៉ុណ្ណោះ",aiNow:"វិភាគឥឡូវ",aiAlertOn:"បើកការជូនដំណឹង",aiAlertOff:"ការជូនដំណឹងបើក ✓",aiLockSub:"ម៉ាស៊ីន A+ ស្កេន XAUUSD រៀងរាល់ ៥ នាទី ហើយចេញ Entry, SL និង TP តែពេលច្បាប់ទាំង ១១ បញ្ជាក់។ Elite: $14.99 / ៣០ ថ្ងៃ។",aiGrade:"កម្រិត Setup",aiBias:"ទិសដៅ M15",aiPrice:"តម្លៃបិទចុងក្រោយ",aiCandle:"ទៀន (ICT)",aiNext:"ស្កេនបន្ទាប់",aiChecklist:"បញ្ជីបញ្ជាក់ A+",aiHow:"របៀបដែលម៉ាស៊ីនសម្រេច",aiHow1:"និន្នាការ៖ លើ M15 តម្លៃបិទលើ EMA50, EMA50 លើ EMA200 និងកំពុងឡើង → BUY តែប៉ុណ្ណោះ (ផ្ទុយសម្រាប់ SELL)។ ទីផ្សារចំហៀង = មិនជួញដូរ។",aiHow2:"Pullback៖ លើ M5 តម្លៃត្រឡប់មកតំបន់ EMA20–EMA50 ក្នុងទៀន ៦ ចុងក្រោយ ដោយមិនបំបែក EMA50 ជ្រៅ។",aiHow3:"Trigger៖ ទៀនសញ្ញាបិទតាមនិន្នាការ ជា Engulfing, Pin bar ឬទៀនកម្លាំងខ្លាំង។",aiHow4:"តម្រង៖ RSI 14 ក្នុងតំបន់កម្លាំង និងកំពុងបត់, រចនាសម្ព័ន្ធ Higher low, ភាពប្រែប្រួល ATR ធម្មតា, មានចន្លោះដល់ Swing បន្ទាប់, វគ្គ London/New York, គ្មានព័ត៌មាន USD សំខាន់ក្នុង ៣០ នាទី។",aiHow5:"ហានិភ័យ៖ SL 0.25 ATR ហួសចំណុចទាបបំផុតនៃ Pullback (ត្រូវនៅចន្លោះ 0.8–3 ATR)។ TP1 = 1R, TP2 = 2R, TP3 = 3R។ ផ្លាស់ SL មក Entry បន្ទាប់ពី TP1។",aiHow6:"លុះត្រាតែច្បាប់ទាំង ១១ ឆ្លងកាត់ ទើប Setup ទទួលបាន A+ ហើយចេញសញ្ញា។ កម្រិត \"A\" បង្ហាញសម្រាប់តាមដានតែប៉ុណ្ណោះ។",aiHist:"Setup A+ ក្នុងទិន្នន័យថ្មីៗ",aiDisc:"ការវិភាគតាមក្បួនលើទិន្នន័យទៀនពិត មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ Scalping មានហានិភ័យខ្ពស់ សញ្ញាអាចខាតបាន។ លទ្ធផលកន្លងមកមិនធានាអនាគតទេ។ សូមផ្ទៀងផ្ទាត់លើក្រាហ្វខ្លួនឯង ប្រើតម្លៃរបស់ Broker អ្នក និងប្រថុយតែប្រាក់ដែលអ្នកអាចបាត់បង់បាន។",aiC_bias:"ទិសដៅ M15 (EMA50 / EMA200)",aiC_align:"M5 EMA20 / EMA50 ស្របនឹង M15",aiC_pullback:"Pullback ចូលតំបន់ EMA20–50",aiC_trigger:"ទៀន Trigger តាម Price action",aiC_session:"វគ្គ London / New York (14:00–24:00 ICT)",aiC_news:"គ្មានព័ត៌មាន USD សំខាន់ ±៣០ នាទី",aiC_risk:"ទំហំ SL 0.8–3 × ATR",aiC_rsi:"RSI 14 ក្នុងតំបន់កម្លាំង និងកំពុងបត់",aiC_structure:"រចនាសម្ព័ន្ធ Higher low / Lower high",aiC_vol:"ភាពប្រែប្រួលធម្មតា (ATR)",aiC_room:"ចន្លោះដល់គោលដៅ ≥ 1.5R",aiCore:"ចាំបាច់",aiG_Ap:"A+ បានបញ្ជាក់ — ចេញសញ្ញា",aiG_A:"Setup A — តាមដានតែប៉ុណ្ណោះ មិនទាន់គ្រប់ច្បាប់",aiG_B:"B — លក្ខខណ្ឌកំពុងបង្កើត មិនចូល",aiG_C:"C — មិនមានអត្ថប្រយោជន៍ពេលនេះ",aiG_N:"M15 ចំហៀង — គ្មាននិន្នាការ មិនជួញដូរ",aiG_na:"ទិន្នន័យមិនទាន់គ្រប់",aiWaitT:"កំពុងរង់ចាំ Setup A+",aiWaitP:"ម៉ាស៊ីនពិនិត្យរាល់ទៀន ៥ នាទីដែលបិទ។ សញ្ញាចេញនៅទីនេះតែពេលច្បាប់ទាំង ១១ បញ្ជាក់។",aiLive:"ផ្ទាល់",aiSigNew:"សញ្ញា A+ ថ្មី",aiValid:"មានសុពលភាពដល់",aiTrig:"Trigger",aiRiskT:"ហានិភ័យ",aiMoveBE:"ផ្លាស់ SL មក Entry បន្ទាប់ TP1",aiCopy:"ចម្លងកម្រិត",aiCopied:"បានចម្លងកម្រិត",aiAddTrade:"កត់ត្រាជា Trade",aiSt_open:"សកម្ម",aiSt_tp1:"ដល់ TP1",aiSt_tp2:"ដល់ TP2",aiSt_tp3:"ដល់ TP3",aiSt_sl:"ដល់ SL",aiSt_expired:"ផុតកំណត់",aiNoHist:"មិនទាន់មាន Setup A+ ក្នុងទិន្នន័យទេ — ម៉ាស៊ីនតឹងរ៉ឹងដោយចេតនា។",aiHSetups:"Setup",aiHWin:"ដល់ TP1",aiHAvg:"មធ្យម",aiLoading:"កំពុងផ្ទុកទៀនពិត…",aiNoData:"មិនអាចទាញទិន្នន័យទៀនបាន — គ្មានការវិភាគ គ្មានសញ្ញា។ សូមព្យាយាមម្តងទៀតក្នុងមួយនាទី។",aiSrcDelay:"តម្លៃ Futures — អាចខុសពីតម្លៃ Spot របស់ Broker ពីរបីដុល្លារ។ បន្ថែម Twelve Data key សម្រាប់ XAU/USD spot។",aiNewsUnknown:"ព័ត៌មានមិនអាចទាញបាន",aiTrig_engulf:"Engulfing",aiTrig_pin:"Pin bar",aiTrig_momentum:"ទៀនកម្លាំង",aiNotifyDenied:"ការជូនដំណឹង Browser ត្រូវបានបិទសម្រាប់គេហទំព័រនេះ។",mktLive:"តម្លៃទីផ្សារផ្ទាល់",mktLoading:"កំពុងផ្ទុកតម្លៃផ្ទាល់…",mktSrc:"តម្លៃពី TradingView",mktFail:"មិនអាចផ្ទុកតម្លៃផ្ទាល់បានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ឬកម្មវិធីបិទពាណិជ្ជកម្ម។",nlAnalysis:"វិភាគ",pfAcct:"គណនីជួញដូរ",pfAcctHint:"Trade និងសមតុល្យត្រូវបានកត់ត្រាក្នុងគណនីនេះ។",pfAcctMulti:"ប្តូររវាងគណនីរបស់អ្នក។ Trade ចាស់រក្សាគណនីដើម។",ccAllTime:"លទ្ធផលសរុប",ccDiscT:"ពិន្ទុវិន័យ",ccDiscSub:"ពីការដាក់ពិន្ទុ Trade · ការអនុវត្តផែនការ",ccDiscNone:"ដាក់ពិន្ទុ Trade ដើម្បីកសាងពិន្ទុរបស់អ្នក",nlOverview:"ទិដ្ឋភាពទូទៅ",nlPerf:"លទ្ធផល",nlJournal:"ទិនានុប្បវត្តិ",nlSignals:"សញ្ញា",nlNews:"ព័ត៌មាន",nlTools:"ឧបករណ៍",ntTitle:"ការជូនដំណឹង",ntReadAll:"សម្គាល់ថាបានអានទាំងអស់",ntAll:"ទាំងអស់",ntUpdate:"បច្ចុប្បន្នភាព",ntPromo:"ប្រូម៉ូសិន",ntSignal:"ការជូនដំណឹងសញ្ញា",ntDesktop:"ការជូនដំណឹងលើកុំព្យូទ័រ",ntEmpty:"អ្នកបានមើលទាំងអស់ហើយ។",ntEmptyUpdate:"មិនទាន់មានបច្ចុប្បន្នភាពទេ។",ntEmptyPromo:"មិនមានប្រូម៉ូសិននៅពេលនេះទេ។",ntEmptySignal:"មិនទាន់មានការជូនដំណឹងសញ្ញាទេ។",ntEliteOnly:"ការជូនដំណឹងសញ្ញាសម្រាប់សមាជិក Elite។",ntOpen:"បើក",ntTypeUpdate:"បច្ចុប្បន្នភាព",ntTypePromotion:"ប្រូម៉ូសិន",ntTypeSignal:"សញ្ញា",ntDeskBlocked:"ត្រូវបានបិទក្នុងការកំណត់កម្មវិធីរុករក",ntNeedSql:"ការជូនដំណឹងត្រូវការ devten-notifications-setup.sql។",ntJustNow:"ទើបតែ",keyLabel:"លេខកូដបើកដំណើរការ",keyActivate:"បើកដំណើរការ",keyHow:"ទិញលេខកូដពីអ្នកគ្រប់គ្រង AROM TRADE រួចបិទភ្ជាប់នៅទីនេះ។ លេខកូដកំណត់គម្រោង (Premium ឬ Elite) និងចំនួនថ្ងៃ។ ប្រសិនបើអ្នកមានគម្រោងនោះរួចហើយ ថ្ងៃនឹងត្រូវបន្ថែម។",keyContact:"ទាក់ទងអ្នកគ្រប់គ្រងដើម្បីទិញលេខកូដ",keyBad:"សូមបញ្ចូលលេខកូដពេញ ឧ. DEVT-7KQ2-M9XP-4HZT។",key_invalid_key:"លេខកូដនេះមិនត្រឹមត្រូវ។ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",key_key_revoked:"លេខកូដនេះត្រូវបានលុបចោល។",key_key_expired:"លេខកូដនេះផុតកំណត់ហើយ។",key_key_used_up:"លេខកូដនេះត្រូវបានប្រើរួចហើយ។",key_key_already_used_by_you:"អ្នកបានប្រើលេខកូដនេះរួចហើយ។",key_too_many_attempts:"លេខកូដខុសច្រើនពេក។ សូមរង់ចាំ ១ ម៉ោង ហើយព្យាយាមម្តងទៀត។",key_not_authenticated:"សូមចូលគណនីជាមុន។",keyNoSvc:"ការបើកដោយលេខកូដមិនទាន់រៀបចំទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។",keyOk:"បានបើកដំណើរការ!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"មុខងារទាំងអស់",planCurrent:"បច្ចុប្បន្ន",premF0:"មុខងារ Premium ទាំងអស់",premF5:"អ្នកផ្តល់សញ្ញា៖ សញ្ញា BUY / SELL ផ្ទាល់ ជាមួយ Entry, SL និង TP",premPayX:"បង់ {p} ជាមួយ KHQR",premExtendX:"បន្ថែម ៣០ ថ្ងៃ · {p}",premPaidSub2:"{plan} សកម្មរហូតដល់ {d}។",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"មុខងារ Elite",eliteCta:"បើក Elite",sgTitle:"អ្នកផ្តល់សញ្ញា",sgSub:"សញ្ញាជួញដូរផ្ទាល់ពី AROM TRADE · សមាជិក Elite",sgActive:"សកម្ម",sgAll:"ទាំងអស់",sgNew:"សញ្ញាថ្មី",sgLockSub:"បើកសញ្ញា BUY / SELL ផ្ទាល់ ជាមួយកម្រិត Entry, Stop Loss និង Take Profit។ Elite៖ $14.99 / ៣០ ថ្ងៃ · លេខកូដបើកដំណើរការ។",sgStatActive:"សញ្ញាសកម្ម",sgStatClosed:"បានបិទ",sgStatWin:"អត្រាឈ្នះ",sgEmpty:"មិនទាន់មានសញ្ញាទេ។ សញ្ញាថ្មីនឹងបង្ហាញនៅទីនេះភ្លាមៗ។",sgEmptyActive:"មិនមានសញ្ញាសកម្មនៅពេលនេះទេ។",sgEntry:"Entry",sgSymbol:"និមិត្តសញ្ញា",sgSide:"ទិស",sgNote:"កំណត់ចំណាំ",sgPost:"ផ្សាយសញ្ញា",sgBad:"ពិនិត្យកម្រិត៖ BUY ត្រូវ SL < Entry < TP1; SELL ត្រូវ SL > Entry > TP1។",sgPosted:"បានផ្សាយសញ្ញា",sgNewToast:"សញ្ញាថ្មី៖ {s}",sgNeedSql:"សញ្ញាត្រូវការ SQL Elite (devten-elite-setup.sql)។",sgDel:"លុប",sgDelQ:"លុបសញ្ញានេះ?",sgUpdated:"បានធ្វើបច្ចុប្បន្នភាពសញ្ញា",sgLoading:"កំពុងផ្ទុកសញ្ញា…",stActive:"សកម្ម",stTp1:"ដល់ TP1",stTp2:"ដល់ TP2",stTp3:"ដល់ TP3",stSl:"ដល់ SL",stBe:"រួចខ្លួន",stCancelled:"បានបោះបង់",sgDisc:"សញ្ញាជាគំនិតជួញដូររបស់អ្នកផ្តល់ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ លទ្ធផលកន្លងមកមិនធានាលទ្ធផលអនាគតទេ។ ជួញដូរដោយហានិភ័យផ្ទាល់ខ្លួន និងកំណត់ទំហំឲ្យសមរម្យ។",
     naLockTitle:"មុខងារ Premium",naLockSub:"បើកការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL សម្រាប់ XAUUSD, EURUSD, GBPUSD និង USDJPY ពីព័ត៌មាន USD ថ្ងៃនេះ។ Elite៖ $14.99 / ៣០ ថ្ងៃ · លេខកូដបើកដំណើរការ។",naLockCta:"បើកជាមួយ Premium",premF4:"ការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL ពីព័ត៌មាន USD",naTitle:"ការវិភាគព័ត៌មានទីផ្សារ",naSub:"ព័ត៌មាន USD ផលប៉ះពាល់ខ្ពស់ និងមធ្យមថ្ងៃនេះ → ទិសដៅ BUY / SELL ដែលរំពឹងទុក",naUsdBias:"ទិសដៅ USD",naBull:"USD ខ្លាំង",naBear:"USD ខ្សោយ",naFlat:"អព្យាក្រឹត / ចម្រុះ",naFromActual:"ផ្អែកលើលទ្ធផលដែលបានចេញ {n}",naFromFc:"ផ្អែកលើការព្យាករណ៍ (មិនទាន់បញ្ចូលលទ្ធផល)",naNone:"ថ្ងៃនេះគ្មានព្រឹត្តិការណ៍ USD ខ្ពស់/មធ្យមទេ — គ្មានទិសដៅព័ត៌មាន។",naBuy:"BUY",naSell:"SELL",naWait:"រង់ចាំ",naStrong:"ខ្លាំង",naModerate:"មធ្យម",naWeak:"ខ្សោយ",naNoBias:"គ្មានទិសដៅច្បាស់",naIfHigher:"លទ្ធផលខ្ពស់ជាងការព្យាករណ៍",naIfLower:"លទ្ធផលទាបជាងការព្យាករណ៍",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"សុន្ទរកថា / ហានិភ័យព្រឹត្តិការណ៍ — ទិសដៅអាស្រ័យលើសម្លេង។ រំពឹងការប្រែប្រួលខ្លាំង រង់ចាំប្រតិកម្មទីផ្សារ។",naActual:"លទ្ធផលពិត (ក្រោយចេញ)",naActPh:"ឧ. 0.4%",naLean:"ទំនោរការព្យាករណ៍",naRes:"លទ្ធផល",naBetter:"ល្អជាងរំពឹង → USD ↑",naWorse:"អន់ជាងរំពឹង → USD ↓",naInline:"ស្របនឹងការរំពឹង → ប្រតិកម្មតិច",naDisc:"សម្រាប់ការសិក្សាប៉ុណ្ណោះ — មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ ទិសដៅផ្អែកលើប្រតិកម្មធម្មតា (ទិន្នន័យអាមេរិកល្អជាងរំពឹង → USD ខ្លាំង)។ ទីផ្សារអាចលោតទាំងសងខាង ត្រឡប់វិញក្នុងរយៈពេលប៉ុន្មាននាទី ឬបានគណនាព័ត៌មានរួចហើយ។ សូមពិនិត្យជាមួយការវិភាគផ្ទាល់ខ្លួន និងប្រើ Stop Loss ជានិច្ច។",newsTitle:"ប្រតិទិនព័ត៌មាន USD",newsSub:"តែព្រឹត្តិការណ៍ដុល្លារអាមេរិក · ម៉ោងនៅកម្ពុជា",newsThis:"សប្តាហ៍នេះ",newsNext:"សប្តាហ៍ក្រោយ",impHigh:"ខ្ពស់",impMed:"មធ្យម",impLow:"ទាប",impHol:"ថ្ងៃឈប់សម្រាក",newsRefreshTip:"ផ្ទុកប្រតិទិនឡើងវិញ",newsLoading:"កំពុងផ្ទុកព្រឹត្តិការណ៍ USD…",newsEmpty:"គ្មានព្រឹត្តិការណ៍ USD ត្រូវនឹងតម្រងនេះទេ។",newsErr:"មិនអាចផ្ទុកប្រតិទិនបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត រួចព្យាយាមម្តងទៀត។",newsUpd:"ធ្វើបច្ចុប្បន្នភាព",newsCached:"ច្បាប់ចម្លងក្រៅបណ្តាញ",newsSrc:"ប្រភព៖ Forex Factory។ ម៉ោងបម្លែងទៅ Asia/Phnom_Penh (UTC+7)។",newsAllDay:"ពេញមួយថ្ងៃ",newsNextEv:"ព្រឹត្តិការណ៍បន្ទាប់",newsIn:"ក្នុងរយៈពេល",newsNow:"ឥឡូវនេះ",newsFc:"ការព្យាករណ៍",newsPrev:"មុន",newsToday:"ថ្ងៃនេះ",
     gp:"ចំណេញសរុប",gl:"ខាតសរុប",gpTip:"ផលបូកនៃ Trade ឈ្នះទាំងអស់",glTip:"ផលបូកនៃ Trade ខាតទាំងអស់",prevSave:"នឹងរក្សាទុកជា",prevBad:"សូមបញ្ចូលលេខត្រឹមត្រូវ ឧ. 25.50",prevFix:"សញ្ញាកំណត់ដោយលទ្ធផល",
     expectancy:"តម្លៃរំពឹងទុក",expFoot:"ចំណេញ/ខាតមធ្យមក្នុងមួយ Trade",avgWL:"ឈ្នះ / ខាត មធ្យម",maxDD:"ការធ្លាក់ចុះអតិបរមា",ddFoot:"ពីកំពូលទៅបាត",keep:"បន្តអនុវត្តឱ្យបានទៀងទាត់",streakW:"ឈ្នះជាប់គ្នា",streakL:"ខាតជាប់គ្នា",rr:"ចំណេញ : ហានិភ័យ",
@@ -4308,6 +4430,7 @@ function syncPremiumUI(){
   if(typeof renderNewsAnalysis === 'function') try{ renderNewsAnalysis(); }catch(e){}
   if(typeof sgSync === 'function') try{ sgSync(); }catch(e){}
   if(typeof ccSignal === 'function') try{ ccSignal(); }catch(e){}
+  if(typeof aiSync === 'function') try{ aiSync(); }catch(e){}
   document.querySelectorAll('.adm-only').forEach(el => el.style.display = Prem.admin ? '' : 'none');
   if(!Prem.admin && $('adminModal')) close('adminModal');
 }
@@ -4806,6 +4929,302 @@ $('ccDiscCard').onclick = () => $('preMarketBtn').click();
 $('ccNewsCard').onclick = () => { const el = $('newsPanel'); if(el) window.scrollTo({top: el.getBoundingClientRect().top + scrollY - $('topNav').offsetHeight - 18, behavior:'smooth'}); };
 $('ccSigCard').onclick = () => { if(typeof Prem !== 'undefined' && Prem.elite){ const el = $('sgPanel'); if(el) window.scrollTo({top: el.getBoundingClientRect().top + scrollY - $('topNav').offsetHeight - 18, behavior:'smooth'}); } else openPremium('elite'); };
 setInterval(() => { try{ ccNews(); }catch(e){} }, 1000);
+/* ---------- AROM A+ Scalping Engine (rule-based) ----------
+   Strategy: "Trend-Pullback Scalp" — M15 trend bias, M5 pullback into the EMA20–EMA50 zone,
+   price-action trigger, RSI momentum, ATR-based stop, fixed-R targets, London/NY session,
+   no high-impact USD news. A signal is only released when EVERY check passes (A+).
+   Works on real closed candles only; nothing is simulated or invented. */
+const AiEng = (() => {
+  const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
+    for(let i = 0; i < a.length; i++){ if(i < n - 1){ o[i] = null; continue; }
+      if(p === null){ let s = 0; for(let j = i - n + 1; j <= i; j++) s += a[j]; p = s / n; } else p = a[i] * k + p * (1 - k);
+      o[i] = p; } return o; };
+  const rsiF = (c, n = 14) => { const o = new Array(c.length).fill(null); let g = 0, l = 0;
+    for(let i = 1; i < c.length; i++){ const d = c[i] - c[i - 1], up = Math.max(d, 0), dn = Math.max(-d, 0);
+      if(i <= n){ g += up; l += dn; if(i === n){ g /= n; l /= n; o[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l); } continue; }
+      g = (g * (n - 1) + up) / n; l = (l * (n - 1) + dn) / n; o[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l); } return o; };
+  const atrF = (h, l, c, n = 14) => { const o = new Array(c.length).fill(null); let a = 0;
+    for(let i = 1; i < c.length; i++){ const tr = Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1]));
+      if(i <= n){ a += tr; if(i === n){ a /= n; o[i] = a; } continue; } a = (a * (n - 1) + tr) / n; o[i] = a; } return o; };
+  const median = a => { const s = a.filter(x => x != null).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
+
+  // M5 candles [{t(sec, open time), o,h,l,c}] -> M15 by 15-minute buckets (complete buckets only)
+  function toM15(m5){ const out = []; let cur = null;
+    for(const b of m5){ const k = Math.floor(b.t / 900) * 900;
+      if(!cur || cur.t !== k){ if(cur) out.push(cur); cur = {t:k, o:b.o, h:b.h, l:b.l, c:b.c, n:1}; }
+      else { cur.h = Math.max(cur.h, b.h); cur.l = Math.min(cur.l, b.l); cur.c = b.c; cur.n++; } }
+    if(cur) out.push(cur); return out.filter(x => x.n === 3); }
+
+  function prep(m5, m15){
+    m15 = m15 && m15.length ? m15 : toM15(m5);
+    const P = {m5, m15};
+    const c = m5.map(x => x.c), h = m5.map(x => x.h), l = m5.map(x => x.l);
+    P.e20 = ema(c, 20); P.e50 = ema(c, 50); P.rsi = rsiF(c); P.atr = atrF(h, l, c);
+    const hc = m15.map(x => x.c); P.h50 = ema(hc, 50); P.h200 = ema(hc, 200);
+    return P; }
+
+  const SESSION = {from:7, to:17};          // UTC hours = 14:00–24:00 Cambodia (London + New York overlap)
+  // Evaluate the CLOSED M5 candle at index i. news(tSec) -> true (clear) | false (blocked) | null (unknown)
+  function evalAt(P, i, news){
+    const m = P.m5, b = m[i], closeT = b.t + 300, A = P.atr[i];
+    const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null};
+    if(i < 120 || A == null || P.e50[i] == null) { out.grade = 'n/a'; return out; }
+    // 1) M15 bias from the last M15 candle closed at this time
+    let j = -1; for(let k = P.m15.length - 1; k >= 0; k--){ if(P.m15[k].t + 900 <= closeT){ j = k; break; } }
+    let side = null;
+    if(j >= 3 && P.h200[j] != null){
+      const hc = P.m15[j].c, e50 = P.h50[j], e200 = P.h200[j], slope = e50 - P.h50[j - 3];
+      if(hc > e50 && e50 > e200 && slope > 0) side = 'BUY';
+      else if(hc < e50 && e50 < e200 && slope < 0) side = 'SELL';
+    }
+    out.side = side; const L = side !== 'SELL';  // long logic unless SELL
+    const add = (key, pass, val, core) => out.checks.push({key, pass:!!pass, val, core});
+    add('bias', !!side, side ? side : 'range', true);
+    if(!side){ out.grade = 'No setup'; return out; }
+    const e20 = P.e20[i], e50 = P.e50[i];
+    // 2) M5 trend aligned with M15
+    add('align', L ? e20 > e50 : e20 < e50, null, true);
+    // 3) Pullback into the EMA20–EMA50 zone during the last 6 candles, without a deep break of EMA50
+    let ext = L ? Infinity : -Infinity; for(let k = i - 6; k <= i; k++) ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h);
+    const touched = L ? ext <= e20 + 0.15 * A : ext >= e20 - 0.15 * A;
+    const deep = L ? ext < e50 - 0.6 * A : ext > e50 + 0.6 * A;
+    add('pullback', touched && !deep, null, true);
+    // 4) Price-action trigger on the signal candle
+    const p = m[i - 1], rng = Math.max(b.h - b.l, 1e-9), body = Math.abs(b.c - b.o);
+    let trig = null;
+    if(L && b.c > b.o && b.c > e20){
+      if(p.c < p.o && b.c >= p.o && b.o <= p.c) trig = 'engulf';
+      else if(Math.min(b.o, b.c) - b.l >= 2 * body && b.c >= b.l + 0.66 * rng) trig = 'pin';
+      else if(body >= 0.55 * rng && b.c > p.h) trig = 'momentum';
+    }
+    if(!L && b.c < b.o && b.c < e20){
+      if(p.c > p.o && b.c <= p.o && b.o >= p.c) trig = 'engulf';
+      else if(b.h - Math.max(b.o, b.c) >= 2 * body && b.c <= b.h - 0.66 * rng) trig = 'pin';
+      else if(body >= 0.55 * rng && b.c < p.l) trig = 'momentum';
+    }
+    add('trigger', !!trig, trig, true);
+    // 5) Session: London / New York only, Mon–Fri
+    const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
+    add('session', wd >= 1 && wd <= 5 && hr >= SESSION.from && hr < SESSION.to, null, true);
+    // 6) No high-impact USD news within ±30 min
+    const nz = news ? news(closeT) : true;
+    add('news', nz === true, nz === null ? 'unknown' : null, true);
+    // 7) Risk: stop beyond the pullback extreme (+0.25 ATR); must be between 0.8 and 3 ATR
+    const entry = b.c, sl = L ? ext - 0.25 * A : ext + 0.25 * A, risk = Math.abs(entry - sl);
+    add('risk', risk >= 0.8 * A && risk <= 3 * A, +(risk / A).toFixed(2), true);
+    // 8) RSI momentum in the healthy zone and turning in the trade direction
+    const r = P.rsi[i], r1 = P.rsi[i - 1];
+    add('rsi', L ? r >= 45 && r <= 70 && r > r1 : r >= 30 && r <= 55 && r < r1, r == null ? null : +r.toFixed(1), false);
+    // 9) Structure: pullback low is higher than the earlier swing (lower high for shorts)
+    let prev = L ? Infinity : -Infinity; for(let k = i - 30; k <= i - 7; k++) prev = L ? Math.min(prev, m[k].l) : Math.max(prev, m[k].h);
+    add('structure', L ? ext > prev : ext < prev, null, false);
+    // 10) Volatility: ATR normal (not dead, not a spike)
+    const med = median(P.atr.slice(Math.max(0, i - 100), i + 1));
+    add('vol', med && A >= 0.8 * med && A <= 2.5 * med, med ? +(A / med).toFixed(2) : null, false);
+    // 11) Room to target: nearest swing high/low leaves space for 1.5R (or price is making new extremes)
+    let hiLo = L ? -Infinity : Infinity; for(let k = i - 48; k < i; k++) hiLo = L ? Math.max(hiLo, m[k].h) : Math.min(hiLo, m[k].l);
+    const room = L ? hiLo - entry : entry - hiLo;
+    add('room', room <= 0 || room >= 1.5 * risk, null, false);
+
+    const core = out.checks.filter(x => x.core), extra = out.checks.filter(x => !x.core);
+    const coreOK = core.every(x => x.pass), extraN = extra.filter(x => x.pass).length;
+    out.score = out.checks.filter(x => x.pass).length; out.max = out.checks.length;
+    out.grade = coreOK && extraN === extra.length ? 'A+' : coreOK && extraN >= 2 ? 'A' : out.score >= 7 ? 'B' : 'C';
+    if(out.grade === 'A+'){
+      const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
+      out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * risk), tp2:f(entry + 2 * R * risk), tp3:f(entry + 3 * R * risk),
+        risk:f(risk), t:closeT, validUntil:closeT + 15 * 60, trigger:trig};
+    }
+    return out;
+  }
+
+  // Walk forward from the signal: highest target reached before the stop (same-candle touch counts as stop).
+  function simulate(m5, i, s, maxBars = 48){
+    const L = s.side === 'BUY'; let hit = 0, res = 'open', end = null;
+    for(let k = i + 1; k < m5.length && k <= i + maxBars; k++){
+      const b = m5[k], slHit = L ? b.l <= s.sl : b.h >= s.sl;
+      if(slHit){ res = hit ? 'tp' + hit : 'sl'; end = b.t; break; }
+      const lv = [s.tp1, s.tp2, s.tp3]; for(let q = hit; q < 3; q++){ if(L ? b.h >= lv[q] : b.l <= lv[q]) hit = q + 1; }
+      if(hit === 3){ res = 'tp3'; end = b.t; break; }
+      if(k === i + maxBars){ res = hit ? 'tp' + hit : 'expired'; end = b.t; }
+    }
+    if(res === 'open' && hit) res = 'tp' + hit + '+';
+    return {res, end};
+  }
+
+  // All A+ setups found in the loaded history (news unknown for the past -> session/price rules only)
+  function scan(P, news){
+    const out = []; let last = -99;
+    for(let i = 120; i < P.m5.length; i++){
+      const r = evalAt(P, i, news);
+      if(r.signal && i - last > 6){ out.push({i, ...r.signal, out:simulate(P.m5, i, r.signal)}); last = i; }
+    }
+    return out;
+  }
+  return {prep, evalAt, simulate, scan, toM15};
+})();
+
+/* ---------- AI Signal Analysis panel ---------- */
+const AI = {sym:'XAUUSD', data:null, P:null, last:null, hist:[], state:'idle', timer:null, nextAt:0, seen:null};
+try{ AI.seen = JSON.parse(localStorage.getItem('aiSeen_v1') || '{}'); }catch(e){ AI.seen = {}; }
+const aiICT = new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+const aiHM = new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',hour:'2-digit',minute:'2-digit',hour12:false});
+const aiFmt = v => v == null ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits: v >= 100 ? 2 : 4});
+function aiNews(tSec){
+  if(typeof News === 'undefined' || News.state !== 'ok' || !Array.isArray(News.events)) return null;
+  const ms = tSec * 1000;
+  return !News.events.some(e => e.impact === 'High' && Math.abs(e.ms - ms) <= 30 * 60000);
+}
+function aiNewsHist(tSec){ const r = aiNews(tSec); return r === null ? true : r; }
+async function aiFetch(){
+  if(!Prem.elite) return;
+  AI.state = 'loading'; if(!AI.data) aiRender();
+  try{
+    const r = await fetch('/api/candles?symbol=' + AI.sym, {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if(!Array.isArray(j.candles) || j.candles.length < 300) throw new Error('no candles');
+    AI.data = j; AI.P = AiEng.prep(j.candles); AI.state = 'ok';
+    const n = j.candles.length - 1;
+    AI.last = AiEng.evalAt(AI.P, n, aiNews);
+    AI.hist = AiEng.scan(AI.P, aiNewsHist);
+    aiNotify();
+  }catch(e){ AI.state = 'error'; AI.data = null; AI.last = null; AI.hist = []; }
+  aiRender(); aiSchedule();
+}
+function aiSchedule(){
+  clearTimeout(AI.timer);
+  if(!Prem.elite) return;
+  const now = Date.now() / 1000;
+  AI.nextAt = Math.ceil((now + 1) / 300) * 300 + 35;     // just after each 5-minute candle closes
+  AI.timer = setTimeout(() => { if(document.visibilityState === 'visible') aiFetch(); else aiSchedule(); }, (AI.nextAt - now) * 1000);
+}
+function aiCurrent(){
+  // the most recent A+ setup that is still running, or resolved within the last 2 hours
+  const h = AI.hist[AI.hist.length - 1]; if(!h) return null;
+  const nowS = Date.now() / 1000, res = h.out.res;
+  if(res === 'open' || res.endsWith('+')) return h;
+  return (h.out.end && nowS - h.out.end < 7200) ? h : null;
+}
+const aiStKey = res => res === 'open' ? 'open' : res.replace('+', '');
+const aiStCls = res => res === 'sl' ? 'loss' : res === 'expired' ? 'exp' : res === 'open' ? '' : 'win';
+function aiRender(){
+  if(!$('aiGrade') || !Prem.elite) return;
+  const L = AI.last;
+  $('aiSym').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === AI.sym));
+  $('aiAlert').textContent = t(typeof Notification !== 'undefined' && Notification.permission === 'granted' ? 'aiAlertOff' : 'aiAlertOn');
+  if(AI.state === 'error' || (!L && AI.state !== 'loading')){
+    $('aiGrade').textContent = '—'; $('aiGrade').className = 'ai-grade gN';
+    $('aiGradeTxt').textContent = AI.state === 'error' ? t('aiNoData') : '';
+    $('aiChecks').innerHTML = ''; $('aiScore').textContent = ''; $('aiScoreBar').style.width = '0';
+    ['aiBias','aiPx','aiBar'].forEach(id => $(id).textContent = '—');
+    $('aiSrc').textContent = ''; $('aiSig').className = 'ai-sig'; $('aiSig').innerHTML = aiWaitHtml(); aiHistRender(); return;
+  }
+  if(!L){ $('aiGradeTxt').textContent = t('aiLoading'); return; }
+  const g = L.grade, gk = g === 'A+' ? 'Ap' : g === 'A' ? 'A' : g === 'B' ? 'B' : g === 'C' ? 'C' : g === 'n/a' ? 'na' : 'N';
+  $('aiGrade').textContent = g === 'No setup' ? '—' : g === 'n/a' ? '…' : g;
+  $('aiGrade').className = 'ai-grade g' + (gk === 'na' ? 'N' : gk);
+  $('aiGradeTxt').textContent = t('aiG_' + gk);
+  const sc = L.checks.filter(c => c.pass).length, mx = 11;
+  $('aiScoreBar').style.width = (sc / mx * 100) + '%';
+  $('aiScore').textContent = sc + ' / ' + mx;
+  $('aiBias').innerHTML = L.side ? `<span style="color:${L.side === 'BUY' ? 'var(--green)' : 'var(--red)'}">${L.side}</span>` : esc(t('aiG_N').split('—')[0].trim());
+  const bars = AI.data.candles, lb = bars[bars.length - 1];
+  $('aiPx').textContent = aiFmt(lb.c);
+  $('aiBar').textContent = aiHM.format(new Date((lb.t + 300) * 1000));
+  $('aiSrc').textContent = AI.data.source + (AI.data.delayed ? ' — ' + t('aiSrcDelay') : '');
+  $('aiSrc').classList.toggle('warn', !!AI.data.delayed);
+  const keys = ['bias','align','pullback','trigger','session','news','risk','rsi','structure','vol','room'];
+  $('aiChecks').innerHTML = keys.map(k => {
+    const c = L.checks.find(x => x.key === k);
+    const pass = c && c.pass, core = ['bias','align','pullback','trigger','session','news','risk'].includes(k);
+    let val = '';
+    if(c && c.val != null){
+      if(k === 'trigger') val = t('aiTrig_' + c.val);
+      else if(k === 'news' && c.val === 'unknown') val = t('aiNewsUnknown');
+      else if(k === 'rsi') val = 'RSI ' + c.val;
+      else if(k === 'risk' || k === 'vol') val = c.val + '× ATR';
+      else val = String(c.val);
+    }
+    if(!c) return `<li class="na"><i>·</i><span>${esc(t('aiC_' + k))}${core ? `<span class="core">${esc(t('aiCore'))}</span>` : ''}</span></li>`;
+    return `<li class="${pass ? 'ok' : 'no'}"><i>${pass ? '✓' : '✕'}</i><span>${esc(t('aiC_' + k))}${core ? `<span class="core">${esc(t('aiCore'))}</span>` : ''}</span>${val ? `<em>${esc(val)}</em>` : ''}</li>`;
+  }).join('');
+  const cur = aiCurrent();
+  $('aiSig').className = 'ai-sig' + (cur && aiStKey(cur.out.res) === 'open' ? ' live' : '');
+  $('aiSig').innerHTML = cur ? aiSigHtml(cur) : aiWaitHtml();
+  aiHistRender();
+}
+function aiWaitHtml(){ return `<div class="ai-wait"><div class="rad"></div><h4>${esc(t('aiWaitT'))}</h4><p>${esc(t('aiWaitP'))}</p></div>`; }
+function aiSigHtml(s){
+  const side = s.side === 'BUY' ? 'buy' : 'sell', st = aiStKey(s.out.res);
+  return `<div class="ai-sig-top"><span class="sym">${esc(AI.sym)}</span><span class="sg-side ${side}">${esc(s.side)}</span><span class="tag">A+ · M5</span><span class="ai-st ${aiStCls(s.out.res)}">${esc(t('aiSt_' + st))}</span></div>
+    <div class="sg-lv">
+      <div class="en"><small>${esc(t('sgEntry')).toUpperCase()}</small><b>${aiFmt(s.entry)}</b></div>
+      <div class="sl"><small>SL</small><b>${aiFmt(s.sl)}</b></div>
+      <div class="tp"><small>TP1 · 1R</small><b>${aiFmt(s.tp1)}</b></div>
+      <div class="tp"><small>TP2 · 2R</small><b>${aiFmt(s.tp2)}</b></div>
+      <div class="tp"><small>TP3 · 3R</small><b>${aiFmt(s.tp3)}</b></div>
+    </div>
+    <div class="ai-sig-sub"><span>${esc(t('aiTrig'))}: <b>${esc(t('aiTrig_' + s.trigger))}</b></span><span>${esc(t('aiRiskT'))}: <b>${aiFmt(s.risk)}</b></span><span>${esc(aiICT.format(new Date(s.t * 1000)))} ICT</span><span>${esc(t('aiValid'))}: <b>${esc(aiHM.format(new Date(s.validUntil * 1000)))}</b></span></div>
+    <div class="ai-sig-sub"><span>↪ ${esc(t('aiMoveBE'))}</span></div>
+    <div class="ai-copy"><button type="button" class="btn small" data-ai-copy="1">${esc(t('aiCopy'))}</button><button type="button" class="btn secondary small" data-ai-log="1">${esc(t('aiAddTrade'))}</button></div>`;
+}
+function aiHistRender(){
+  const h = AI.hist.slice().reverse();
+  const done = AI.hist.filter(x => !['open','expired'].includes(x.out.res) && !x.out.res.endsWith('+'));
+  const wins = done.filter(x => x.out.res !== 'sl');
+  const rSum = done.reduce((a, x) => a + (x.out.res === 'sl' ? -1 : +x.out.res.slice(2, 3)), 0);
+  $('aiHStats').innerHTML = AI.hist.length ? `<span class="tag">${AI.hist.length} ${esc(t('aiHSetups'))}</span>` +
+    (done.length ? `<span class="tag">${Math.round(wins.length / done.length * 100)}% ${esc(t('aiHWin'))}</span><span class="tag">${esc(t('aiHAvg'))} ${(rSum / done.length >= 0 ? '+' : '') + (rSum / done.length).toFixed(2)}R</span>` : '') : '';
+  $('aiHist').innerHTML = !AI.data ? '' : h.length ? h.slice(0, 12).map(x => `<div class="ai-row"><span>${esc(aiICT.format(new Date(x.t * 1000)))}</span><span class="sg-side ${x.side === 'BUY' ? 'buy' : 'sell'}" style="text-align:center">${x.side}</span>
+      <span class="lv">${esc(t('sgEntry'))} <b>${aiFmt(x.entry)}</b> · SL <b>${aiFmt(x.sl)}</b> · TP1 <b>${aiFmt(x.tp1)}</b> · TP2 <b>${aiFmt(x.tp2)}</b></span>
+      <span class="ai-st ${aiStCls(x.out.res)}">${esc(t('aiSt_' + aiStKey(x.out.res)))}</span></div>`).join('')
+    : `<div class="sg-msg">${esc(t('aiNoHist'))}</div>`;
+}
+function aiNotify(){
+  const c = aiCurrent(); if(!c || aiStKey(c.out.res) !== 'open') return;
+  const key = AI.sym + ':' + c.t; if(AI.seen[key]) return;
+  AI.seen[key] = 1; try{ localStorage.setItem('aiSeen_v1', JSON.stringify(AI.seen)); }catch(e){}
+  const msg = `${t('aiSigNew')}: ${AI.sym} ${c.side} @ ${aiFmt(c.entry)} · SL ${aiFmt(c.sl)} · TP1 ${aiFmt(c.tp1)}`;
+  toast(msg);
+  try{ if(typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('AROM TRADE · A+', {body:msg, icon: document.querySelector('link[rel=icon]') ? document.querySelector('link[rel=icon]').href : undefined}); }catch(e){}
+}
+function aiSync(){
+  const locked = !Prem.elite;
+  $('aiWrap').classList.toggle('locked', locked);
+  if(locked){ clearTimeout(AI.timer); AI.data = null; AI.last = null; AI.hist = []; return; }
+  if(!AI.data && AI.state !== 'loading') aiFetch(); else aiRender();
+}
+$('aiUnlock').onclick = () => openPremium('elite');
+$('aiNow').onclick = () => { if(requireAuth()) aiFetch(); };
+$('aiSym').onclick = e => { const b = e.target.closest('button[data-s]'); if(!b || b.dataset.s === AI.sym) return; AI.sym = b.dataset.s; AI.data = null; AI.last = null; AI.hist = []; aiFetch(); };
+$('aiAlert').onclick = async () => {
+  if(typeof Notification === 'undefined') return;
+  if(Notification.permission === 'denied'){ toast(t('aiNotifyDenied'), true); return; }
+  if(Notification.permission !== 'granted'){ try{ await Notification.requestPermission(); }catch(e){} }
+  aiRender();
+};
+$('aiSig').onclick = e => {
+  const c = aiCurrent(); if(!c) return;
+  if(e.target.closest('[data-ai-copy]')){
+    const txt = `${AI.sym} ${c.side}\nEntry ${aiFmt(c.entry)}\nSL ${aiFmt(c.sl)}\nTP1 ${aiFmt(c.tp1)}\nTP2 ${aiFmt(c.tp2)}\nTP3 ${aiFmt(c.tp3)}`;
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast(t('aiCopied')), () => {});
+  }
+  if(e.target.closest('[data-ai-log]')){
+    $('addTop').click();
+    setTimeout(() => {
+      try{ if($('symbol')) $('symbol').value = AI.sym; if($('direction')) $('direction').value = c.side === 'BUY' ? 'Buy' : 'Sell';
+        if($('setup') && !$('setup').value) $('setup').value = 'A+ Trend-Pullback (AI)'; }catch(err){}
+    }, 60);
+  }
+};
+setInterval(() => {
+  if(!$('aiCd') || !Prem.elite || !AI.nextAt) return;
+  const d = Math.max(0, Math.round(AI.nextAt - Date.now() / 1000));
+  $('aiCd').textContent = String(Math.floor(d / 60)).padStart(2, '0') + ':' + String(d % 60).padStart(2, '0');
+}, 1000);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && Prem.elite && AI.nextAt && Date.now() / 1000 > AI.nextAt) aiFetch(); });
+aiSync();
 
 /* ---------- live market strip (TradingView widget; quotes are TradingView's, nothing simulated) ---------- */
 (function liveMarkets(){
