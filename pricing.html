@@ -1643,6 +1643,11 @@ body.dk-any .dk-reset{display:none}
 #aiPanel.more .ai-more svg{transform:rotate(180deg)}
 #aiPanel:not(.more) .ai-adv,#aiPanel:not(.more) #termInd,#aiPanel:not(.more) #termLegend,#aiPanel:not(.more) .ai-grid2,#aiPanel:not(.more) .ai-how,#aiPanel:not(.more) .ai-hist-head,#aiPanel:not(.more) #aiHist,#aiPanel:not(.more) .ai-meta,#aiPanel:not(.more) .ai-src{display:none!important}
 #aiMode2 button{padding:7px 12px}
+#naMore{margin:12px 0}
+#naPanel.more #naMore svg{transform:rotate(180deg)}
+#naPanel:not(.more) .na-if,#naPanel:not(.more) .na-act,#naPanel:not(.more) .na-rx,#naPanel:not(.more) .na-res{display:none!important}
+#naPanel:not(.more) .na-ev{grid-template-columns:104px minmax(0,1fr)}
+@media(max-width:900px){#naPanel:not(.more) .na-ev{grid-template-columns:80px minmax(0,1fr)}}
 .ai-cockpit{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start;margin-bottom:12px}
 .ai-cockpit .term{margin-bottom:0}
 .ai-side{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -2382,6 +2387,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
   <div class="na-list" id="naList"></div>
   </div>
   </div>
+  <button type="button" class="ai-more" id="naMore" aria-expanded="false"><span data-i18n="naMoreShow">Show what each result means and enter actual numbers</span><svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
   <div class="na-disc" data-i18n="naDisc">Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.</div>
 </section>
 
@@ -3147,7 +3153,7 @@ const T = {
     naR_srUp:"Room to resistance {v} ({a}× ATR)",naR_srTight:"Resistance close at {v}: limited room",naR_srDnRoom:"Room to support {v} ({a}× ATR)",naR_srDnTight:"Support close at {v}: limited room",
     naUsdUpW:"stronger",naUsdDnW:"weaker",
     naLockNews:"{ev} in {m} min: wait for the release before entering",naLockAfter:"{ev} just released: let the spike settle until {hm} ICT",
-    nlTitle:"NEWS LOCK",aiMoreShow:"Show indicators, checklist and history",aiMoreHide:"Hide details",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
+    nlTitle:"NEWS LOCK",aiMoreShow:"Show indicators, checklist and history",aiMoreHide:"Hide details",naMoreShow:"Show what each result means and enter actual numbers",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
     alSettings:"Alert settings",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
     alGNews:"News alerts · USD high impact",alNews30:"30 minutes before",alNews5:"5 minutes before",alNewsNow:"At release",alNewsMed:"Include medium-impact USD news",
     alGMarket:"Market alerts",alMove:"Gold moves fast: at least",alMove2:"$ within 15 min",alPrice:"Price alerts",alAbove:"Above",alBelow:"Below",alAdd:"Add",alPaNone:"No price alerts yet.",alPaBad:"Enter a price.",
@@ -3209,7 +3215,7 @@ const T = {
     naR_srUp:"មានចន្លោះដល់ resistance {v} ({a}× ATR)",naR_srTight:"Resistance នៅជិត {v}៖ ចន្លោះតិច",naR_srDnRoom:"មានចន្លោះដល់ support {v} ({a}× ATR)",naR_srDnTight:"Support នៅជិត {v}៖ ចន្លោះតិច",
     naUsdUpW:"ខ្លាំងឡើង",naUsdDnW:"ខ្សោយចុះ",
     naLockNews:"{ev} ក្នុង {m} នាទីទៀត៖ រង់ចាំការចេញផ្សាយសិន",naLockAfter:"{ev} ទើបចេញ៖ រង់ចាំឱ្យស្ងប់រហូតដល់ {hm} ICT",
-    nlTitle:"ចាក់សោព័ត៌មាន",aiMoreShow:"បង្ហាញសូចនាករ បញ្ជីពិនិត្យ និងប្រវត្តិ",aiMoreHide:"លាក់ព័ត៌មានលម្អិត",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
+    nlTitle:"ចាក់សោព័ត៌មាន",aiMoreShow:"បង្ហាញសូចនាករ បញ្ជីពិនិត្យ និងប្រវត្តិ",aiMoreHide:"លាក់ព័ត៌មានលម្អិត",naMoreShow:"បង្ហាញអត្ថន័យលទ្ធផលនីមួយៗ និងបញ្ចូលលេខពិត",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
     alSettings:"ការកំណត់ការជូនដំណឹង",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
     alGNews:"ការជូនដំណឹងព័ត៌មាន · USD សំខាន់",alNews30:"៣០ នាទីមុន",alNews5:"៥ នាទីមុន",alNewsNow:"ពេលចេញផ្សាយ",alNewsMed:"រួមទាំងព័ត៌មាន USD កម្រិតមធ្យម",
     alGMarket:"ការជូនដំណឹងទីផ្សារ",alMove:"មាសប្រែប្រួលលឿន៖ យ៉ាងតិច",alMove2:"$ ក្នុង ១៥ នាទី",alPrice:"ការជូនដំណឹងតម្លៃ",alAbove:"លើ",alBelow:"ក្រោម",alAdd:"បន្ថែម",alPaNone:"មិនទាន់មានការជូនដំណឹងតម្លៃ។",alPaBad:"សូមបញ្ចូលតម្លៃ។",
@@ -7656,7 +7662,7 @@ function pwaInit(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pwaInit); else pwaInit();
 /* AI Desk feature flags: switch blocks back on one at a time */
-var DESK = {tiles:false, tabs:false, signal:true, finder:false, news:false};
+var DESK = {tiles:false, tabs:false, signal:true, finder:false, news:true};
 function aiSimple(){ const p = document.getElementById('aiPanel'); return !!p && !p.classList.contains('more'); }
 setTimeout(function aiMoreWire(){
   const p = $('aiPanel'), b = $('aiMore'); if(!p || !b) return;
@@ -7664,6 +7670,12 @@ setTimeout(function aiMoreWire(){
   let on = false; try{ on = localStorage.getItem('aromAiMore') === '1'; }catch(e){}
   set(on); b.onclick = () => set(!p.classList.contains('more'));
   $('aiMode2').addEventListener('click', e => { const x = e.target.closest('button[data-m]'); if(x) aiSetMode(x.dataset.m); });
+  const np = $('naPanel'), nb = $('naMore');
+  if(np && nb){
+    const nset = on => { np.classList.toggle('more', on); nb.setAttribute('aria-expanded', on); nb.querySelector('span').textContent = t(on ? 'aiMoreHide' : 'naMoreShow'); try{ localStorage.setItem('aromNaMore', on ? '1' : '0'); }catch(e){} };
+    let non = false; try{ non = localStorage.getItem('aromNaMore') === '1'; }catch(e){}
+    nset(non); nb.onclick = () => nset(!np.classList.contains('more'));
+  }
 }, 0);
 (function deskFlags(){ const b = document.body; Object.entries(DESK).forEach(([k, v]) => b.classList.toggle('dk-' + (k === 'tabs' ? 'tabs-on' : k), v)); b.classList.toggle('dk-any', Object.values(DESK).some(Boolean)); })();
 (function pageSetup(){
