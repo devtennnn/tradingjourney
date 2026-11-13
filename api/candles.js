@@ -5,6 +5,11 @@
 const SYMBOLS = {
   XAUUSD: {td: 'XAU/USD', yahoo: 'GC=F', yahooName: 'COMEX Gold futures (GC=F)'},
   XAGUSD: {td: 'XAG/USD', yahoo: 'SI=F', yahooName: 'COMEX Silver futures (SI=F)'},
+  EURUSD: {td: 'EUR/USD', yahoo: 'EURUSD=X', yahooName: 'EUR/USD spot (Yahoo)'},
+  GBPUSD: {td: 'GBP/USD', yahoo: 'GBPUSD=X', yahooName: 'GBP/USD spot (Yahoo)'},
+  USDJPY: {td: 'USD/JPY', yahoo: 'JPY=X',    yahooName: 'USD/JPY spot (Yahoo)'},
+  NQ:     {td: null,      yahoo: 'NQ=F',     yahooName: 'Nasdaq 100 E-mini futures (NQ=F)'},
+  OIL:    {td: null,      yahoo: 'CL=F',     yahooName: 'WTI crude futures (CL=F)'},
 };
 
 async function fromTwelveData(sym, key) {
@@ -43,7 +48,7 @@ module.exports = async (req, res) => {
   const now = Math.floor(Date.now() / 1000), next = Math.ceil((now + 1) / 300) * 300 + 20;
   const errors = [];
   const tdKey = process.env.TWELVEDATA_API_KEY;
-  const providers = tdKey ? [() => fromTwelveData(sym, tdKey), () => fromYahoo(sym)] : [() => fromYahoo(sym)];
+  const providers = tdKey && sym.td ? [() => fromTwelveData(sym, tdKey), () => fromYahoo(sym)] : [() => fromYahoo(sym)];
   for (const p of providers) {
     try {
       const out = await p();
