@@ -1637,6 +1637,12 @@ body.dk-any .dk-reset{display:none}
 .dk-mode .desc{font-size:11px;color:var(--muted);max-width:210px;line-height:1.3;white-space:normal}
 @media(max-width:1280px){.dk-mode .desc{display:none}}
 .dk-tabs a:focus-visible{outline:2px solid var(--lime);outline-offset:1px}
+.ai-more{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 12px;padding:11px;border-radius:12px;border:1px dashed var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.ai-more:hover{color:var(--text);border-color:var(--lime)}
+.ai-more:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+#aiPanel.more .ai-more svg{transform:rotate(180deg)}
+#aiPanel:not(.more) .ai-adv,#aiPanel:not(.more) #termInd,#aiPanel:not(.more) #termLegend,#aiPanel:not(.more) .ai-grid2,#aiPanel:not(.more) .ai-how,#aiPanel:not(.more) .ai-hist-head,#aiPanel:not(.more) #aiHist,#aiPanel:not(.more) .ai-meta,#aiPanel:not(.more) .ai-src{display:none!important}
+#aiMode2 button{padding:7px 12px}
 .ai-cockpit{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start;margin-bottom:12px}
 .ai-cockpit .term{margin-bottom:0}
 .ai-side{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -2206,8 +2212,9 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
         <button type="button" data-s="XAUUSD" class="on">XAUUSD</button>
         <button type="button" data-s="XAGUSD">XAGUSD</button>
       </div>
-      <button type="button" class="btn secondary small" id="aiNow" data-i18n="aiNow">Analyze now</button>
-      <button type="button" class="btn secondary small" id="aiAlert" data-i18n="aiAlertOn">Enable alerts</button>
+      <div class="seg" id="aiMode2" role="group" aria-label="Strategy"><button type="button" data-m="scalp" class="on" data-i18n="mode_scalp">Scalping</button><button type="button" data-m="intraday" data-i18n="mode_intraday">Intraday</button><button type="button" data-m="swing" data-i18n="mode_swing">Swing</button></div>
+      <button type="button" class="btn secondary small ai-adv" id="aiNow" data-i18n="aiNow">Analyze now</button>
+      <button type="button" class="btn secondary small ai-adv" id="aiAlert" data-i18n="aiAlertOn">Enable alerts</button>
     </div>
   </div>
   <div class="na-wrap locked" id="aiWrap">
@@ -2268,6 +2275,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
         </div>
       </aside>
       </div>
+      <button type="button" class="ai-more" id="aiMore" aria-expanded="false"><span data-i18n="aiMoreShow">Show indicators, checklist and history</span><svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="ai-grid ai-grid2">
         <div class="ai-checks">
           <div class="ai-k" data-i18n="aiChecklist">A+ confirmation checklist</div>
@@ -3139,7 +3147,7 @@ const T = {
     naR_srUp:"Room to resistance {v} ({a}× ATR)",naR_srTight:"Resistance close at {v}: limited room",naR_srDnRoom:"Room to support {v} ({a}× ATR)",naR_srDnTight:"Support close at {v}: limited room",
     naUsdUpW:"stronger",naUsdDnW:"weaker",
     naLockNews:"{ev} in {m} min: wait for the release before entering",naLockAfter:"{ev} just released: let the spike settle until {hm} ICT",
-    nlTitle:"NEWS LOCK",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
+    nlTitle:"NEWS LOCK",aiMoreShow:"Show indicators, checklist and history",aiMoreHide:"Hide details",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
     alSettings:"Alert settings",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
     alGNews:"News alerts · USD high impact",alNews30:"30 minutes before",alNews5:"5 minutes before",alNewsNow:"At release",alNewsMed:"Include medium-impact USD news",
     alGMarket:"Market alerts",alMove:"Gold moves fast: at least",alMove2:"$ within 15 min",alPrice:"Price alerts",alAbove:"Above",alBelow:"Below",alAdd:"Add",alPaNone:"No price alerts yet.",alPaBad:"Enter a price.",
@@ -3201,7 +3209,7 @@ const T = {
     naR_srUp:"មានចន្លោះដល់ resistance {v} ({a}× ATR)",naR_srTight:"Resistance នៅជិត {v}៖ ចន្លោះតិច",naR_srDnRoom:"មានចន្លោះដល់ support {v} ({a}× ATR)",naR_srDnTight:"Support នៅជិត {v}៖ ចន្លោះតិច",
     naUsdUpW:"ខ្លាំងឡើង",naUsdDnW:"ខ្សោយចុះ",
     naLockNews:"{ev} ក្នុង {m} នាទីទៀត៖ រង់ចាំការចេញផ្សាយសិន",naLockAfter:"{ev} ទើបចេញ៖ រង់ចាំឱ្យស្ងប់រហូតដល់ {hm} ICT",
-    nlTitle:"ចាក់សោព័ត៌មាន",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
+    nlTitle:"ចាក់សោព័ត៌មាន",aiMoreShow:"បង្ហាញសូចនាករ បញ្ជីពិនិត្យ និងប្រវត្តិ",aiMoreHide:"លាក់ព័ត៌មានលម្អិត",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
     alSettings:"ការកំណត់ការជូនដំណឹង",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
     alGNews:"ការជូនដំណឹងព័ត៌មាន · USD សំខាន់",alNews30:"៣០ នាទីមុន",alNews5:"៥ នាទីមុន",alNewsNow:"ពេលចេញផ្សាយ",alNewsMed:"រួមទាំងព័ត៌មាន USD កម្រិតមធ្យម",
     alGMarket:"ការជូនដំណឹងទីផ្សារ",alMove:"មាសប្រែប្រួលលឿន៖ យ៉ាងតិច",alMove2:"$ ក្នុង ១៥ នាទី",alPrice:"ការជូនដំណឹងតម្លៃ",alAbove:"លើ",alBelow:"ក្រោម",alAdd:"បន្ថែម",alPaNone:"មិនទាន់មានការជូនដំណឹងតម្លៃ។",alPaBad:"សូមបញ្ចូលតម្លៃ។",
@@ -6020,7 +6028,7 @@ function modeTxt(x){
 function modeApplyTexts(){
   document.querySelectorAll('#aiPanel [data-i18n], #wfPanel [data-i18n], #dkTabs [data-i18n]').forEach(e => { const k = e.dataset.i18n;
     if(k === 'aiSub') e.textContent = t('aiSub_' + AI.mode); else e.textContent = modeTxt(t(k)); });
-  document.querySelectorAll('#aiMode button').forEach(b => { b.classList.toggle('on', b.dataset.m === AI.mode); b.setAttribute('aria-pressed', b.dataset.m === AI.mode); });
+  document.querySelectorAll('#aiMode button, #aiMode2 button').forEach(b => { b.classList.toggle('on', b.dataset.m === AI.mode); b.setAttribute('aria-pressed', b.dataset.m === AI.mode); });
   const d = $('aiModeDesc'); if(d) d.textContent = t('mode_' + AI.mode + '_d');
   const tf = $('termTf'); if(tf){ const M = aiM(); tf.querySelector('[data-tf="5"]').textContent = M.base >= 3600 ? (M.base / 3600) + 'h' : (M.base / 60) + 'm'; tf.querySelector('[data-tf="15"]').textContent = M.htf >= 3600 ? (M.htf / 3600) + 'h' : (M.htf / 60) + 'm'; }
 }
@@ -6400,7 +6408,7 @@ function termDraw(){
   // key levels
   const tags = [];
   const used = [];
-  const I = termInd(S5), O = TERM.on;
+  const I = termInd(S5), O = aiSimple() ? {ema:true, ribbon:false, vwap:false, sr:true, piv:false, keys:true, pulse:false} : TERM.on;
   g.save(); g.beginPath(); g.rect(0, 0, plotW, mainH); g.clip();
   // S/R zones (drawn first, under everything)
   if(O.sr) I.zones.forEach(z => { if(z.hi < lo || z.lo > hi) return;
@@ -6473,13 +6481,13 @@ function termDraw(){
   g.strokeStyle = '#15291f'; g.beginPath(); g.moveTo(0, mainH + gap + .5); g.lineTo(W, mainH + gap + .5); g.stroke();
   const sc = termScores(), qTop = mainH + gap + 4, qh = qH - 10;
   g.font = '800 9.5px Inter,sans-serif'; g.textAlign = 'left';
-  if(TERM.sub === 'rsi'){
+  if(TERM.sub === 'rsi' && !aiSimple()){
     const yR = v => qTop + 12 + (100 - v) / 100 * (qh - 12);
     g.fillStyle = 'rgba(185,242,90,.05)'; g.fillRect(0, yR(70), plotW, yR(30) - yR(70));
     [[70, 'rgba(240,91,120,.5)'], [50, 'rgba(143,166,153,.3)'], [30, 'rgba(47,210,138,.5)']].forEach(([v, c]) => { const y = Math.round(yR(v)) + .5; g.strokeStyle = c; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.fillStyle = '#8fa699'; g.fillText(String(v), plotW + 8, y); });
     g.strokeStyle = '#c9a2ff'; g.lineWidth = 1.4; g.beginPath(); let on = false; for(let i = start; i < end; i++){ const v = I.rsi[i]; if(v == null) continue; on ? g.lineTo(X(i), yR(v)) : g.moveTo(X(i), yR(v)); on = true; } g.stroke(); g.lineWidth = 1;
     const rv = I.rsi[end - 1]; g.fillStyle = '#7f968a'; g.fillText('RSI 14' + (rv != null ? ' · ' + rv.toFixed(1) : ''), 6, qTop + 6);
-  } else if(TERM.sub === 'macd'){
+  } else if(TERM.sub === 'macd' && !aiSimple()){
     let mx = 1e-9; for(let i = start; i < end; i++){ [I.macd[i], I.sigL[i]].forEach(v => { if(v != null) mx = Math.max(mx, Math.abs(v)); }); }
     const mid = qTop + 12 + (qh - 12) / 2, yM = v => mid - v / mx * (qh - 12) / 2;
     g.strokeStyle = 'rgba(143,166,153,.3)'; g.beginPath(); g.moveTo(0, Math.round(mid) + .5); g.lineTo(plotW, Math.round(mid) + .5); g.stroke();
@@ -7648,7 +7656,15 @@ function pwaInit(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pwaInit); else pwaInit();
 /* AI Desk feature flags: switch blocks back on one at a time */
-var DESK = {tiles:false, tabs:false, signal:false, finder:false, news:false};
+var DESK = {tiles:false, tabs:false, signal:true, finder:false, news:false};
+function aiSimple(){ const p = document.getElementById('aiPanel'); return !!p && !p.classList.contains('more'); }
+setTimeout(function aiMoreWire(){
+  const p = $('aiPanel'), b = $('aiMore'); if(!p || !b) return;
+  const set = on => { p.classList.toggle('more', on); b.setAttribute('aria-expanded', on); b.querySelector('span').textContent = t(on ? 'aiMoreHide' : 'aiMoreShow'); try{ localStorage.setItem('aromAiMore', on ? '1' : '0'); }catch(e){} try{ termDraw(); }catch(e){} };
+  let on = false; try{ on = localStorage.getItem('aromAiMore') === '1'; }catch(e){}
+  set(on); b.onclick = () => set(!p.classList.contains('more'));
+  $('aiMode2').addEventListener('click', e => { const x = e.target.closest('button[data-m]'); if(x) aiSetMode(x.dataset.m); });
+}, 0);
 (function deskFlags(){ const b = document.body; Object.entries(DESK).forEach(([k, v]) => b.classList.toggle('dk-' + (k === 'tabs' ? 'tabs-on' : k), v)); b.classList.toggle('dk-any', Object.values(DESK).some(Boolean)); })();
 (function pageSetup(){
   if(PAGE === 'analysis'){
