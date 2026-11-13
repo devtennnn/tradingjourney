@@ -1574,7 +1574,9 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
 
 /* compact live-market strip */
 .mkt-strip,.mkt-strip.tape{min-height:0;padding:0 12px;gap:10px;margin:0 0 10px;border-radius:14px;box-shadow:none}
-.mkt-strip .mkt-w,.mkt-strip.tape .mkt-w{height:40px}
+.mkt-strip .mkt-w,.mkt-strip.tape .mkt-w{height:auto;min-height:34px;max-height:48px;overflow:hidden;align-self:center}
+.mkt-w .tradingview-widget-container,.mkt-w iframe{display:block;max-width:100%}
+.mkt-strip{overflow:hidden;align-items:center}
 .mkt-lbl{font-size:9.5px;letter-spacing:1.2px;gap:6px}
 .mkt-dot{width:6px;height:6px}
 .mkt-src{font-size:9px}
@@ -5675,7 +5677,7 @@ if((document.body.dataset.page || 'main') === 'main') maLoad();
   let mode = null;
   function mount(){
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const next = reduce ? 'tickers' : 'tape';   // scrolling right-to-left tape on every screen size
+    const next = 'tape';   // one-line right-to-left tape on every screen size
     if(next === mode) return;
     mode = next;
     $('mktStrip').classList.toggle('tape', mode === 'tape');
