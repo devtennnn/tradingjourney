@@ -1644,6 +1644,51 @@ body.dk-any .dk-reset{display:none}
 #aiPanel:not(.more) .ai-adv,#aiPanel:not(.more) #termInd,#aiPanel:not(.more) #termLegend,#aiPanel:not(.more) .ai-grid2,#aiPanel:not(.more) .ai-how,#aiPanel:not(.more) .ai-hist-head,#aiPanel:not(.more) #aiHist,#aiPanel:not(.more) .ai-meta,#aiPanel:not(.more) .ai-src{display:none!important}
 #aiMode2 button{padding:7px 12px}
 #naMore{margin:12px 0}
+.mt-screen{position:fixed;inset:0;z-index:9000;display:grid;place-items:center;padding:24px 16px;overflow:auto;background:radial-gradient(1200px 600px at 50% -10%,rgba(214,182,110,.16),transparent 60%),radial-gradient(900px 500px at 100% 110%,rgba(198,255,92,.08),transparent 60%),#07120d}
+.mt-screen[hidden],.mt-admbar[hidden],.mt-eta[hidden],#mtExit[hidden]{display:none!important}
+body.mt-lock{overflow:hidden}
+body.mt-lock>:not(#mtScreen):not(script){visibility:hidden}
+.mt-card{width:min(560px,100%);text-align:center;padding:40px 28px 24px;border-radius:24px;border:1px solid rgba(214,182,110,.28);background:linear-gradient(180deg,rgba(20,38,30,.92),rgba(10,22,17,.94));box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05)}
+.mt-logo{position:relative;width:88px;height:88px;margin:0 auto 22px;display:grid;place-items:center}
+.mt-logo img{width:56px;height:56px;border-radius:14px;position:relative;z-index:1}
+.mt-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(214,182,110,.18);border-top-color:var(--gold,#d6b66e);animation:mtSpin 1.6s linear infinite}
+@keyframes mtSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.mt-ring{animation:none}}
+.mt-eye{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--gold,#d6b66e);margin-bottom:10px}
+.mt-card h1{font-size:clamp(24px,5vw,34px);line-height:1.15;margin:0 0 12px;font-weight:800;letter-spacing:-.5px}
+.mt-card h1 em{font-style:normal;color:var(--lime,#c6ff5c)}
+.mt-msg{color:#cfe0d5;font-size:15px;line-height:1.6;margin:0 auto 18px;max-width:440px;white-space:pre-line}
+.mt-eta{display:inline-flex;flex-direction:column;gap:2px;padding:12px 22px;border-radius:14px;border:1px solid var(--line,#1e3a2e);background:#0f1f19;margin-bottom:20px}
+.mt-eta small{font-size:10.5px;letter-spacing:1.5px;font-weight:800;color:var(--muted,#8aa397);text-transform:uppercase}
+.mt-eta b{font-size:22px}
+.mt-eta span{font-size:12.5px;color:var(--muted,#8aa397)}
+.mt-go{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:22px}
+.mt-go a{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line,#1e3a2e);color:var(--text,#fff);text-decoration:none;font-weight:700;font-size:13.5px;background:#10211a}
+.mt-go a:hover{border-color:var(--lime,#c6ff5c)}
+.mt-go a:focus-visible,.mt-lang:focus-visible{outline:2px solid var(--lime,#c6ff5c);outline-offset:2px}
+.mt-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:16px;border-top:1px solid var(--line,#1e3a2e);font-size:10.5px;letter-spacing:1px;color:var(--muted,#8aa397);font-weight:700}
+.mt-lang{background:none;border:1px solid var(--line,#1e3a2e);color:var(--text,#fff);border-radius:999px;padding:6px 12px;font:inherit;font-size:12px;cursor:pointer;min-height:32px}
+#mtExit{margin-top:14px}
+.mt-admbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:95;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 24px);padding:10px 14px;border-radius:14px;background:#2a2110;border:1px solid #6b5422;color:#ffe3a3;font-size:13px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.mt-admbar button{background:#3b2e15;border:1px solid #6b5422;color:#ffe3a3;border-radius:9px;padding:6px 12px;font:inherit;font-size:12.5px;cursor:pointer;min-height:34px}
+.mt-admbar button:hover{background:#4a3a1b}
+.mtx-grid{display:grid;gap:12px}
+.mtx{border:1px solid var(--line);border-radius:14px;padding:14px;background:#10211a}
+.mtx.on{border-color:#6b5422;background:#1d1a10}
+.mtx-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.mtx-top h3{margin:0;font-size:15px}
+.mtx-top .sp{flex:1}
+.mtx-st{font-size:10.5px;font-weight:800;letter-spacing:1px;padding:4px 9px;border-radius:999px;background:#13261f;color:var(--muted)}
+.mtx.on .mtx-st{background:#3b2e15;color:#ffd98a}
+.mtx-sw{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13px;cursor:pointer}
+.mtx-sw input{width:18px;height:18px;accent-color:#d6b66e}
+.mtx-f{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mtx-f .wide{grid-column:1/-1}
+.mtx-f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.mtx-f textarea{width:100%;resize:vertical;min-height:58px}
+.mtx-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.mtx-row .grow{flex:1;min-width:160px}
+@media(max-width:640px){.mtx-f{grid-template-columns:1fr}}
 #naPanel.more #naMore svg{transform:rotate(180deg)}
 #naPanel:not(.more) .na-if,#naPanel:not(.more) .na-act,#naPanel:not(.more) .na-rx,#naPanel:not(.more) .na-res{display:none!important}
 #naPanel:not(.more) .na-ev{grid-template-columns:104px minmax(0,1fr)}
@@ -1924,6 +1969,19 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
 </style>
 </head>
 <body data-page="pricing">
+<div class="mt-screen" id="mtScreen" hidden role="alertdialog" aria-modal="true" aria-labelledby="mtH">
+  <div class="mt-card">
+    <div class="mt-logo"><img src="/icons/icon-192.png" alt="" width="56" height="56"><span class="mt-ring" aria-hidden="true"></span></div>
+    <div class="mt-eye" data-i18n="mtEye">UNDER MAINTENANCE</div>
+    <h1 id="mtH"><span data-i18n="mtH1">We're upgrading</span> <em id="mtPage"></em></h1>
+    <p class="mt-msg" id="mtMsg"></p>
+    <div class="mt-eta" id="mtEta" hidden><small data-i18n="mtBack">Expected back</small><b id="mtEtaT"></b><span id="mtEtaIn"></span></div>
+    <div class="mt-go" id="mtGo"></div>
+    <div class="mt-foot"><span>AROM TRADE · FEEL THE MARKET. MASTER YOURSELF.</span><button type="button" class="mt-lang" id="mtLang">ខ្មែរ</button></div>
+    <button type="button" class="btn secondary small" id="mtExit" hidden data-i18n="mtExit">Exit preview</button>
+  </div>
+</div>
+<div class="mt-admbar" id="mtAdm" hidden><b>⚠</b><span id="mtAdmTxt"></span><button type="button" id="mtAdmPrev" data-i18n="mtPrev">Preview</button><button type="button" id="mtAdmOff" data-i18n="mtOff">Turn off</button></div>
 <div class="app" id="mainApp">
 
 <!-- 3-Zone Uncluttered Executive Header (100% Vector SVG Icons) -->
@@ -2876,6 +2934,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
       <button type="button" data-t="audit">Audit log</button>
       <button type="button" data-t="pay">Activations</button>
       <button type="button" data-t="nt">Notifications</button>
+      <button type="button" data-t="mt">Maintenance</button>
     </div>
     <div class="adm-body">
       <div class="adm-pane on" id="admOv"></div>
@@ -2891,7 +2950,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
             <optgroup label="Account"><option value="signup">Sign-up</option><option value="email_verified">Email verified</option><option value="login">Login</option><option value="password_changed">Password changed</option><option value="email_changed">Email changed</option><option value="username_set">Username set</option><option value="name_changed">Name changed</option><option value="avatar_changed">Photo changed</option></optgroup>
             <optgroup label="Activation keys"><option value="key_redeemed">Key redeemed</option><option value="key_created">Keys created</option><option value="key_revoked">Key revoked</option><option value="key_failed">Wrong key tried</option></optgroup>
             <optgroup label="Plans &amp; money"><option value="plan_upgrade">Plan upgrade (paid)</option><option value="payment_created">QR created</option><option value="payment_expired">QR expired</option><option value="plan_change">Plan date changed</option><option value="admin_grant">Admin grant / revoke</option></optgroup>
-            <optgroup label="Activity"><option value="trade_added">Trade added</option><option value="trade_deleted">Trade deleted</option><option value="signal_posted">Signal posted</option><option value="signal_status">Signal status</option><option value="signal_deleted">Signal deleted</option><option value="admin_role">Admin role</option></optgroup>
+            <optgroup label="Activity"><option value="trade_added">Trade added</option><option value="trade_deleted">Trade deleted</option><option value="signal_posted">Signal posted</option><option value="signal_status">Signal status</option><option value="signal_deleted">Signal deleted</option><option value="admin_role">Admin role</option><option value="maintenance">Maintenance</option></optgroup>
           </select>
           <input class="field grow" id="admAuditQ" placeholder="Search user or detail">
           <button type="button" class="btn secondary small" id="admCsv">Export CSV</button>
@@ -2925,6 +2984,10 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
         <div id="kList"></div>
       </div>
       <div class="adm-pane" id="admSig" hidden><form id="sgForm"></form><div id="admSigList"></div></div>
+      <div class="adm-pane" id="admMt">
+        <div class="adm-tools"><span class="hint">Take one page offline at a time. Visitors on that page see a maintenance screen with links to the pages that are still open. Admins keep full access.</span></div>
+        <div class="mtx-grid" id="mtxList"><div class="adm-msg">Loading…</div></div>
+      </div>
       <div class="adm-pane" id="admNt">
         <div class="adm-card">
           <h3>Send a notification</h3>
@@ -3153,7 +3216,7 @@ const T = {
     naR_srUp:"Room to resistance {v} ({a}× ATR)",naR_srTight:"Resistance close at {v}: limited room",naR_srDnRoom:"Room to support {v} ({a}× ATR)",naR_srDnTight:"Support close at {v}: limited room",
     naUsdUpW:"stronger",naUsdDnW:"weaker",
     naLockNews:"{ev} in {m} min: wait for the release before entering",naLockAfter:"{ev} just released: let the spike settle until {hm} ICT",
-    nlTitle:"NEWS LOCK",aiMoreShow:"Show indicators, checklist and history",aiMoreHide:"Hide details",naMoreShow:"Show what each result means and enter actual numbers",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
+    nlTitle:"NEWS LOCK",aiMoreShow:"Show indicators, checklist and history",aiMoreHide:"Hide details",mtEye:"UNDER MAINTENANCE",mtH1:"We're upgrading",mtBack:"Expected back",mtExit:"Exit preview",mtPrev:"Preview",mtOff:"Turn off",mtDefMsg:"This page is getting an upgrade. Everything else on AROM TRADE is working. Please check back soon.",mtIn:"in {t}",mtSoon:"any minute now",mtGoTo:"Go to {p}",mtPgjournal:"Journal",mtPgdesk:"AI Desk",mtPgpricing:"Pricing",mtAdmTxt:"Maintenance is ON for {p}. Visitors see the maintenance screen; you still see the page.",naMoreShow:"Show what each result means and enter actual numbers",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
     alSettings:"Alert settings",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
     alGNews:"News alerts · USD high impact",alNews30:"30 minutes before",alNews5:"5 minutes before",alNewsNow:"At release",alNewsMed:"Include medium-impact USD news",
     alGMarket:"Market alerts",alMove:"Gold moves fast: at least",alMove2:"$ within 15 min",alPrice:"Price alerts",alAbove:"Above",alBelow:"Below",alAdd:"Add",alPaNone:"No price alerts yet.",alPaBad:"Enter a price.",
@@ -3215,7 +3278,7 @@ const T = {
     naR_srUp:"មានចន្លោះដល់ resistance {v} ({a}× ATR)",naR_srTight:"Resistance នៅជិត {v}៖ ចន្លោះតិច",naR_srDnRoom:"មានចន្លោះដល់ support {v} ({a}× ATR)",naR_srDnTight:"Support នៅជិត {v}៖ ចន្លោះតិច",
     naUsdUpW:"ខ្លាំងឡើង",naUsdDnW:"ខ្សោយចុះ",
     naLockNews:"{ev} ក្នុង {m} នាទីទៀត៖ រង់ចាំការចេញផ្សាយសិន",naLockAfter:"{ev} ទើបចេញ៖ រង់ចាំឱ្យស្ងប់រហូតដល់ {hm} ICT",
-    nlTitle:"ចាក់សោព័ត៌មាន",aiMoreShow:"បង្ហាញសូចនាករ បញ្ជីពិនិត្យ និងប្រវត្តិ",aiMoreHide:"លាក់ព័ត៌មានលម្អិត",naMoreShow:"បង្ហាញអត្ថន័យលទ្ធផលនីមួយៗ និងបញ្ចូលលេខពិត",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
+    nlTitle:"ចាក់សោព័ត៌មាន",aiMoreShow:"បង្ហាញសូចនាករ បញ្ជីពិនិត្យ និងប្រវត្តិ",aiMoreHide:"លាក់ព័ត៌មានលម្អិត",mtEye:"កំពុងថែទាំ",mtH1:"យើងកំពុងធ្វើបច្ចុប្បន្នភាព",mtBack:"រំពឹងថានឹងត្រលប់មកវិញ",mtExit:"ចាកចេញពីការមើលជាមុន",mtPrev:"មើលជាមុន",mtOff:"បិទ",mtDefMsg:"ទំព័រនេះកំពុងត្រូវបានធ្វើឱ្យប្រសើរឡើង។ ផ្នែកផ្សេងទៀតនៃ AROM TRADE នៅតែដំណើរការ។ សូមត្រលប់មកវិញក្នុងពេលឆាប់ៗ។",mtIn:"ក្នុងរយៈពេល {t}",mtSoon:"ក្នុងពេលឆាប់ៗនេះ",mtGoTo:"ទៅកាន់ {p}",mtPgjournal:"កំណត់ហេតុ",mtPgdesk:"AI Desk",mtPgpricing:"តម្លៃ",mtAdmTxt:"ការថែទាំកំពុងបើកសម្រាប់ {p}។ អ្នកទស្សនាឃើញអេក្រង់ថែទាំ ប៉ុន្តែអ្នកនៅតែឃើញទំព័រ។",naMoreShow:"បង្ហាញអត្ថន័យលទ្ធផលនីមួយៗ និងបញ្ចូលលេខពិត",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
     alSettings:"ការកំណត់ការជូនដំណឹង",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
     alGNews:"ការជូនដំណឹងព័ត៌មាន · USD សំខាន់",alNews30:"៣០ នាទីមុន",alNews5:"៥ នាទីមុន",alNewsNow:"ពេលចេញផ្សាយ",alNewsMed:"រួមទាំងព័ត៌មាន USD កម្រិតមធ្យម",
     alGMarket:"ការជូនដំណឹងទីផ្សារ",alMove:"មាសប្រែប្រួលលឿន៖ យ៉ាងតិច",alMove2:"$ ក្នុង ១៥ នាទី",alPrice:"ការជូនដំណឹងតម្លៃ",alAbove:"លើ",alBelow:"ក្រោម",alAdd:"បន្ថែម",alPaNone:"មិនទាន់មានការជូនដំណឹងតម្លៃ។",alPaBad:"សូមបញ្ចូលតម្លៃ។",
@@ -3598,6 +3661,7 @@ function calc(l){
 /* ---------- 6. Language & UI Rendering ---------- */
 function applyLang(){
   document.documentElement.lang = S.lang==='km' ? 'km' : 'en';
+  setTimeout(() => { try{ mtApply(); }catch(e){} }, 0);
   document.querySelectorAll('[data-i18n]').forEach(e => e.textContent = t(e.dataset.i18n));
   document.querySelectorAll('[data-i18n-html]').forEach(e => e.innerHTML = t(e.dataset.i18nHtml));
   document.querySelectorAll('[data-i18n-ph]').forEach(e => e.placeholder = t(e.dataset.i18nPh));
@@ -5163,6 +5227,7 @@ function syncPremiumUI(){
   if(typeof aiSync === 'function') try{ aiSync(); }catch(e){}
   if(typeof wfSync === 'function') try{ wfSync(); }catch(e){}
   document.querySelectorAll('.adm-only').forEach(el => el.style.display = Prem.admin ? '' : 'none');
+  if(typeof mtApply === 'function') try{ mtApply(); }catch(e){}
   if(!Prem.admin && $('adminModal')) close('adminModal');
 }
 /* Returns true (and opens the upgrade dialog) when the user is NOT premium. */
@@ -6988,7 +7053,7 @@ function openAdmin(){
 function admShow(tab, force){
   Adm.tab = tab;
   document.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', nt:'admNt'};
+  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', nt:'admNt', mt:'admMt'};
   Object.entries(map).forEach(([k, id]) => $(id).classList.toggle('on', k === tab));
   if(tab === 'ov') admLoadOverview();
   else if(tab === 'users' && (force || !Adm.users.length)) admLoadUsers(true);
@@ -6996,6 +7061,7 @@ function admShow(tab, force){
   else if(tab === 'pay') admLoadPayments();
   else if(tab === 'keys') admLoadKeys();
   else if(tab === 'nt') admLoadNotifs();
+  else if(tab === 'mt') mtAdmLoad();
 }
 function admStamp(){ Adm.loadedAt = new Date(); $('admUpdated').textContent = 'Updated ' + new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(Adm.loadedAt) + ' ICT'; }
 
@@ -7677,6 +7743,79 @@ setTimeout(function aiMoreWire(){
     nset(non); nb.onclick = () => nset(!np.classList.contains('more'));
   }
 }, 0);
+
+/* ---------- Maintenance mode, per page ----------
+   public.site_maintenance holds one row per page (journal / desk / pricing). Everyone can read it; only admins change it
+   through admin_set_maintenance(). Visitors on a page under maintenance get a full-screen notice; admins keep the page
+   and see a small bar instead (with Preview / Turn off). */
+const MT = {rows:{}, preview:false, timer:null, tick:null};
+const MT_PAGES = ['journal', 'desk', 'pricing'], MT_URL = {journal:'/', desk:'/analysis', pricing:'/pricing'};
+const mtPageKey = () => ({main:'journal', analysis:'desk', pricing:'pricing'})[document.body.dataset.page] || 'journal';
+const mtActive = r => !!(r && r.is_on && (!r.until || Date.parse(r.until) > Date.now()));
+async function mtFetch(){
+  try{
+    const r = await fetch(SUPABASE_URL + '/rest/v1/site_maintenance?select=*', {headers:{apikey:SUPABASE_ANON_KEY, Authorization:'Bearer ' + SUPABASE_ANON_KEY}, cache:'no-store'});
+    if(!r.ok) throw 0;
+    const j = await r.json(); MT.rows = {}; (j || []).forEach(x => MT.rows[x.page] = x);
+  }catch(e){ /* table missing or offline: never block the site because of this check */ }
+  mtApply();
+}
+function mtFmtLeft(ms){ const m = Math.max(0, Math.round(ms / 60000)); if(m < 1) return t('mtSoon'); const h = Math.floor(m / 60); return t('mtIn').replace('{t}', (h ? h + 'h ' : '') + (h ? String(m % 60).padStart(2, '0') : m % 60) + 'm'); }
+function mtApply(){
+  const key = mtPageKey(), r = MT.rows[key], on = mtActive(r), admin = typeof Prem !== 'undefined' && Prem.admin;
+  const show = (on && !admin) || MT.preview, scr = $('mtScreen'); if(!scr) return;
+  if(show){
+    $('mtPage').textContent = t('mtPg' + key);
+    const msg = r && (S.lang === 'km' ? (r.msg_km || r.msg_en) : (r.msg_en || r.msg_km));
+    $('mtMsg').textContent = msg || t('mtDefMsg');
+    const until = r && r.until ? Date.parse(r.until) : null;
+    $('mtEta').hidden = !until;
+    if(until){ $('mtEtaT').textContent = fmtTime.format(new Date(until)) + ' ICT'; $('mtEtaIn').textContent = mtFmtLeft(until - Date.now()); }
+    $('mtGo').innerHTML = MT_PAGES.filter(p => p !== key && !mtActive(MT.rows[p])).map(p => `<a href="${MT_URL[p]}">${esc(t('mtGoTo').replace('{p}', t('mtPg' + p)))} →</a>`).join('');
+    $('mtLang').textContent = S.lang === 'km' ? 'English' : 'ខ្មែរ';
+    $('mtExit').hidden = !MT.preview;
+    if(scr.hidden){ scr.hidden = false; document.body.classList.add('mt-lock'); setTimeout(() => { try{ (scr.querySelector('.mt-go a') || $('mtLang')).focus({preventScroll:true}); }catch(e){} }, 50); }
+  } else if(!scr.hidden){ scr.hidden = true; document.body.classList.remove('mt-lock'); }
+  const bar = $('mtAdm');
+  if(bar){ bar.hidden = !(on && admin && !MT.preview); if(!bar.hidden) $('mtAdmTxt').textContent = t('mtAdmTxt').replace('{p}', t('mtPg' + key)) + (r.until ? ' · ' + fmtTime.format(new Date(Date.parse(r.until))) + ' ICT' : ''); }
+  clearInterval(MT.tick); if(on || MT.preview) MT.tick = setInterval(mtApply, 30000);   // countdown + auto-reopen when the end time passes
+}
+(function mtWire(){
+  if(!$('mtScreen')) return;
+  $('mtLang').onclick = () => { try{ $('langBtn').click(); }catch(e){} setTimeout(mtApply, 0); };
+  $('mtExit').onclick = () => { MT.preview = false; mtApply(); };
+  $('mtAdmPrev').onclick = () => { MT.preview = true; mtApply(); };
+  $('mtAdmOff').onclick = async () => { try{ await admRpc('admin_set_maintenance', {p_page:mtPageKey(), p_on:false}); toast('Maintenance off'); mtFetch(); }catch(e){ toast(String(e.message || e), true); } };
+  mtFetch();
+  MT.timer = setInterval(() => { if(document.visibilityState === 'visible') mtFetch(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') mtFetch(); });
+})();
+/* Admin dashboard → Maintenance tab */
+const MT_DUR = [['', 'No end time'], ['15', '15 minutes'], ['30', '30 minutes'], ['60', '1 hour'], ['120', '2 hours'], ['240', '4 hours'], ['480', '8 hours'], ['1440', '24 hours']];
+async function mtAdmLoad(){
+  const box = $('mtxList'); if(!box) return;
+  await mtFetch();
+  box.innerHTML = MT_PAGES.map(p => { const r = MT.rows[p] || {page:p}, on = mtActive(r);
+    return `<div class="mtx${on ? ' on' : ''}" data-mtp="${p}">
+      <div class="mtx-top"><h3>${esc(t('mtPg' + p))}</h3><span class="hint">${MT_URL[p]}</span><span class="mtx-st">${on ? 'UNDER MAINTENANCE' + (r.until ? ' · until ' + fmtTime.format(new Date(Date.parse(r.until))) + ' ICT' : '') : 'LIVE'}</span><span class="sp"></span>
+        <label class="mtx-sw"><input type="checkbox" data-mt="on"${on ? ' checked' : ''}> Maintenance</label></div>
+      <div class="mtx-f">
+        <div><label>Message (English)</label><textarea class="field" data-mt="en" maxlength="500" placeholder="${esc(T.en.mtDefMsg)}">${esc(r.msg_en || '')}</textarea></div>
+        <div><label>Message (ខ្មែរ)</label><textarea class="field" data-mt="km" maxlength="500" placeholder="${esc(T.km.mtDefMsg)}">${esc(r.msg_km || '')}</textarea></div>
+        <div class="wide mtx-row"><div class="grow"><label>Back in</label><select class="field" data-mt="dur">${on && r.until ? '<option value="keep">Keep current end time</option>' : ''}${MT_DUR.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
+          <button type="button" class="btn small" data-mt="save">Save</button><a class="btn secondary small" href="${MT_URL[p]}" target="_blank" rel="noopener">Open page</a></div>
+      </div></div>`; }).join('');
+}
+$('mtxList') && $('mtxList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-mt="save"]'); if(!b) return;
+  const card = b.closest('[data-mtp]'), p = card.dataset.mtp, q = k => card.querySelector(`[data-mt="${k}"]`);
+  const on = q('on').checked, dur = q('dur').value, r = MT.rows[p] || {};
+  const until = !on ? null : dur === 'keep' ? r.until : dur ? new Date(Date.now() + (+dur) * 60000).toISOString() : null;
+  if(on && !(await askConfirm(`Put ${t('mtPg' + p)} into maintenance? Visitors will not be able to use it until you turn it off${until ? ' or the end time passes' : ''}.`))) return;
+  b.disabled = true;
+  try{ await admRpc('admin_set_maintenance', {p_page:p, p_on:on, p_msg_en:q('en').value, p_msg_km:q('km').value, p_until:until}); toast(on ? t('mtPg' + p) + ' is now in maintenance' : t('mtPg' + p) + ' is live again'); mtAdmLoad(); }
+  catch(err){ toast(String(err.message || err), true); b.disabled = false; }
+});
 (function deskFlags(){ const b = document.body; Object.entries(DESK).forEach(([k, v]) => b.classList.toggle('dk-' + (k === 'tabs' ? 'tabs-on' : k), v)); b.classList.toggle('dk-any', Object.values(DESK).some(Boolean)); })();
 (function pageSetup(){
   if(PAGE === 'analysis'){

@@ -1,0 +1,3 @@
+-- Per-page maintenance mode (applied as migration site_maintenance_per_page)
+-- Table public.site_maintenance: one row per page (journal / desk / pricing); readable by everyone, written only via
+-- public.admin_set_maintenance(p_page, p_on, p_msg_en, p_msg_km, p_until), which calls admin_guard() and writes audit_log.
