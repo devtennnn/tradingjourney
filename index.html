@@ -590,6 +590,29 @@ button.auth-avatar:hover{border-color:var(--gold)}
 .nt-ico.update{background:#141a2b;border:1px solid #2d3b66;color:#9db4ff}
 .nt-ico.promotion{background:#1d3418;border:1px solid #3e5c25;color:var(--gold2)}
 .nt-ico.signal{background:#10251c;border:1px solid #1f6f4d;color:var(--green)}
+.nt-ico.market{background:#2a2410;border:1px solid #5a4416;color:#ffcf70}
+.nt-ico.news{background:#2a141b;border:1px solid #6e2737;color:#ff9fb0}
+.nt-type.market{color:#ffcf70}.nt-type.news{color:#ff9fb0}
+.al-set{flex:1;overflow-y:auto;padding:4px 14px 12px;display:grid;gap:12px;align-content:start}
+.al-set[hidden]{display:none}
+.al-grp{padding:12px;border-radius:13px;border:1px solid var(--line);background:#10211a;display:grid;gap:8px}
+.al-grp h4{margin:0 0 2px;font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--lime);font-weight:900}
+.al-grp label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;line-height:1.35;cursor:pointer}
+.al-grp input[type=checkbox]{width:18px;height:18px;accent-color:var(--lime);flex:none}
+.nt-tabs[hidden],.nt-list[hidden]{display:none!important}
+.al-num{width:64px!important;flex:none;height:30px;padding:0 8px;font-size:13px}
+.al-note{font-size:11px;color:var(--muted);line-height:1.45}
+.al-pa{display:grid;gap:8px;padding-top:4px}
+.al-pa > b{font-size:12.5px}
+.al-pa-add{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:6px}
+.al-pa-add .field{height:34px;font-size:12.5px;padding:0 8px;min-width:0}
+.al-pa-list{display:grid;gap:6px}
+.al-pa-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:#0c1a14;border:1px solid #1e3a2e;font-size:12.5px}
+.al-pa-item b{font-variant-numeric:tabular-nums}
+.al-pa-item .sp{flex:1}
+.al-pa-item button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px}
+.al-pa-item.hit{opacity:.55}
+#alSetBtn.on{color:var(--lime);border-color:var(--lime)}
 .nt-ico.signal.loss{background:#2a141b;border-color:#6e2737;color:var(--red)}
 .nt-ico .svg-ico{width:18px;height:18px}
 .nt-ttl{font-weight:800;font-size:13px;line-height:1.35;padding-right:16px}
@@ -2908,14 +2931,42 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
 <div class="nt-panel" id="ntPanel" role="dialog" aria-label="Notifications">
   <div class="nt-head"><b data-i18n="ntTitle">Notifications</b><span class="sp"></span>
     <button type="button" class="lnk" id="ntReadAll" data-i18n="ntReadAll">Mark all read</button>
+    <button type="button" class="icon-btn" id="alSetBtn" aria-label="Alert settings" data-i18n-title="alSettings" data-i18n-aria title="Alert settings"><svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
     <button type="button" class="icon-btn" id="ntClose" aria-label="Close"><svg class="svg-ico sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
   <div class="nt-tabs" id="ntTabs">
     <button type="button" data-f="all" class="on"><span data-i18n="ntAll">All</span><i id="ntCntAll" hidden></i></button>
+    <button type="button" data-f="signal"><span data-i18n="ntSignal">Signal Alerts</span><i id="ntCntSignal" hidden></i></button>
+    <button type="button" data-f="market"><span data-i18n="ntMarket">Market</span><i id="ntCntMarket" hidden></i></button>
+    <button type="button" data-f="news"><span data-i18n="ntNews">News</span><i id="ntCntNews" hidden></i></button>
     <button type="button" data-f="update"><span data-i18n="ntUpdate">Updates</span><i id="ntCntUpdate" hidden></i></button>
     <button type="button" data-f="promotion"><span data-i18n="ntPromo">Promotions</span><i id="ntCntPromotion" hidden></i></button>
-    <button type="button" data-f="signal"><span data-i18n="ntSignal">Signal Alerts</span><i id="ntCntSignal" hidden></i></button>
   </div>
   <div class="nt-list" id="ntList"></div>
+  <div class="al-set" id="alSet" hidden>
+    <div class="al-grp"><h4 data-i18n="alGSignal">Signal alerts</h4>
+      <label><input type="checkbox" data-al="sigAi"> <span data-i18n="alSigAi">New AI A+ signal (current strategy)</span></label>
+      <label><input type="checkbox" data-al="sigWf"> <span data-i18n="alSigWf">Trade Finder: A+ on any of the 7 markets</span></label>
+      <label><input type="checkbox" data-al="sigUpd"> <span data-i18n="alSigUpd">Signal updates: TP1 / TP2 / TP3 / stop hit</span></label>
+      <small class="al-note" data-i18n="alEliteNote">Signal alerts need Elite.</small></div>
+    <div class="al-grp"><h4 data-i18n="alGNews">News alerts · USD high impact</h4>
+      <label><input type="checkbox" data-al="news30"> <span data-i18n="alNews30">30 minutes before</span></label>
+      <label><input type="checkbox" data-al="news5"> <span data-i18n="alNews5">5 minutes before</span></label>
+      <label><input type="checkbox" data-al="newsNow"> <span data-i18n="alNewsNow">At release</span></label>
+      <label><input type="checkbox" data-al="newsMed"> <span data-i18n="alNewsMed">Include medium-impact USD news</span></label></div>
+    <div class="al-grp"><h4 data-i18n="alGMarket">Market alerts</h4>
+      <label><input type="checkbox" data-al="moveOn"> <span data-i18n="alMove">Gold moves fast: at least</span> <input type="number" class="field al-num" id="alMoveUsd" min="2" max="100" step="1" inputmode="decimal"> <span data-i18n="alMove2">$ within 15 min</span></label>
+      <div class="al-pa"><b data-i18n="alPrice">Price alerts</b>
+        <div class="al-pa-add"><select class="field" id="alPaSym" aria-label="Market"><option value="XAU">Gold (XAU)</option><option value="XAG">Silver (XAG)</option><option value="NQ">Nasdaq (NQ)</option><option value="OIL">WTI Oil</option><option value="DXY">US Dollar (DXY)</option></select>
+          <select class="field" id="alPaDir" aria-label="Direction"><option value="above" data-i18n="alAbove">Above</option><option value="below" data-i18n="alBelow">Below</option></select>
+          <input type="number" class="field" id="alPaPx" step="any" inputmode="decimal" aria-label="Price" placeholder="Price">
+          <button type="button" class="btn small" id="alPaAdd" data-i18n="alAdd">Add</button></div>
+        <div class="al-pa-list" id="alPaList"></div></div></div>
+    <div class="al-grp"><h4 data-i18n="alGDeliver">How to alert me</h4>
+      <label><input type="checkbox" data-al="sound"> <span data-i18n="alSound">Play a sound</span></label>
+      <label><input type="checkbox" id="ntDesk2"> <span data-i18n="alDevice">Phone / desktop notifications</span></label>
+      <small class="al-note" data-i18n="alOpenNote">Works while AROM TRADE is open or in a background tab (install the app for the best experience). For alerts when it is closed, use the Telegram channel.</small>
+      <button type="button" class="btn secondary small" id="alTest" data-i18n="alTest">Send a test alert</button></div>
+  </div>
   <div class="nt-foot"><label><input type="checkbox" id="ntDesk"> <span data-i18n="ntDesktop">Desktop alerts</span></label><span id="ntFootNote"></span></div>
 </div>
 
@@ -3077,7 +3128,14 @@ const T = {
     naR_srUp:"Room to resistance {v} ({a}× ATR)",naR_srTight:"Resistance close at {v}: limited room",naR_srDnRoom:"Room to support {v} ({a}× ATR)",naR_srDnTight:"Support close at {v}: limited room",
     naUsdUpW:"stronger",naUsdDnW:"weaker",
     naLockNews:"{ev} in {m} min: wait for the release before entering",naLockAfter:"{ev} just released: let the spike settle until {hm} ICT",
-    nlTitle:"NEWS LOCK",pwaInstall:"Install app",pwaTitle:"Install AROM TRADE",pwaSub:"Open it from your home screen like a real app: full screen, faster start, works on phone, iPad and desktop.",pwaInstallNow:"Install now",pwaUpdate:"A new version of AROM TRADE is ready.",pwaReload:"Update",
+    nlTitle:"NEWS LOCK",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
+    alSettings:"Alert settings",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
+    alGNews:"News alerts · USD high impact",alNews30:"30 minutes before",alNews5:"5 minutes before",alNewsNow:"At release",alNewsMed:"Include medium-impact USD news",
+    alGMarket:"Market alerts",alMove:"Gold moves fast: at least",alMove2:"$ within 15 min",alPrice:"Price alerts",alAbove:"Above",alBelow:"Below",alAdd:"Add",alPaNone:"No price alerts yet.",alPaBad:"Enter a price.",
+    alGDeliver:"How to alert me",alSound:"Play a sound",alDevice:"Phone / desktop notifications",alOpenNote:"Works while AROM TRADE is open or in a background tab (install the app for the best experience). For alerts when it is closed, use the Telegram channel.",alTest:"Send a test alert",
+    alTestT:"Test alert",alTestB:"Alerts are working.",alN30:"In 30 min · {ev}",alN5:"In 5 min · {ev}",alNNow:"Releasing now · {ev}",alNB:"{imp} USD news at {t} ICT · forecast {f} · previous {p}. Expect volatility: wait for the spike to settle.",
+    alPaT:"{sym} {dir} {px}",alPaB:"{name} is now {now}.",alMvT:"Gold {dir} {usd} in 15 min",alMvB:"XAU {from} → {now}. Fast move: check the news and stick to your plan.",alMvUp:"up",alMvDn:"down",
+    alSigT:"A+ {side} · {sym} · {mode}",alSigB:"Entry {e} · SL {sl} · TP1 {tp1}",alWfT:"Trade Finder A+ · {sym} {side}",alWfB:"Entry near {e} · SL {sl} · {mode}",alUpdT:"{sym} {side}: {res}",alUpdB:"Entry {e} · {mode}",pwaInstall:"Install app",pwaTitle:"Install AROM TRADE",pwaSub:"Open it from your home screen like a real app: full screen, faster start, works on phone, iPad and desktop.",pwaInstallNow:"Install now",pwaUpdate:"A new version of AROM TRADE is ready.",pwaReload:"Update",
     pwaIos1:"Tap the Share button {i} in Safari's toolbar.",pwaIos2:"Scroll down and tap \"Add to Home Screen\".",pwaIos3:"Tap \"Add\". AROM TRADE appears on your home screen.",pwaIosOther:"On iPhone and iPad, open this page in Safari first, then follow these steps.",
     pwaDesk1:"Click the install icon {i} at the right of the address bar (Chrome, Edge).",pwaDesk2:"Or open the browser menu and choose \"Install AROM TRADE\" / \"Apps → Install\".",pwaDesk3:"On Mac Safari: File → Add to Dock.",
     pwaAnd1:"Tap \"Install now\" below.",pwaAnd2:"Or open the browser menu ⋮ and tap \"Install app\" / \"Add to Home screen\".",pwaDone:"AROM TRADE is installed.",modeLbl:"STRATEGY",mode_scalp:"Scalping",mode_intraday:"Intraday",mode_swing:"Swing",
@@ -3132,7 +3190,14 @@ const T = {
     naR_srUp:"មានចន្លោះដល់ resistance {v} ({a}× ATR)",naR_srTight:"Resistance នៅជិត {v}៖ ចន្លោះតិច",naR_srDnRoom:"មានចន្លោះដល់ support {v} ({a}× ATR)",naR_srDnTight:"Support នៅជិត {v}៖ ចន្លោះតិច",
     naUsdUpW:"ខ្លាំងឡើង",naUsdDnW:"ខ្សោយចុះ",
     naLockNews:"{ev} ក្នុង {m} នាទីទៀត៖ រង់ចាំការចេញផ្សាយសិន",naLockAfter:"{ev} ទើបចេញ៖ រង់ចាំឱ្យស្ងប់រហូតដល់ {hm} ICT",
-    nlTitle:"ចាក់សោព័ត៌មាន",pwaInstall:"ដំឡើងកម្មវិធី",pwaTitle:"ដំឡើង AROM TRADE",pwaSub:"បើកពីអេក្រង់ដើមដូចកម្មវិធីពិត៖ ពេញអេក្រង់ ចាប់ផ្តើមលឿន ប្រើបានលើទូរស័ព្ទ iPad និងកុំព្យូទ័រ។",pwaInstallNow:"ដំឡើងឥឡូវ",pwaUpdate:"មានកំណែថ្មីរបស់ AROM TRADE ហើយ។",pwaReload:"ធ្វើបច្ចុប្បន្នភាព",
+    nlTitle:"ចាក់សោព័ត៌មាន",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
+    alSettings:"ការកំណត់ការជូនដំណឹង",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
+    alGNews:"ការជូនដំណឹងព័ត៌មាន · USD សំខាន់",alNews30:"៣០ នាទីមុន",alNews5:"៥ នាទីមុន",alNewsNow:"ពេលចេញផ្សាយ",alNewsMed:"រួមទាំងព័ត៌មាន USD កម្រិតមធ្យម",
+    alGMarket:"ការជូនដំណឹងទីផ្សារ",alMove:"មាសប្រែប្រួលលឿន៖ យ៉ាងតិច",alMove2:"$ ក្នុង ១៥ នាទី",alPrice:"ការជូនដំណឹងតម្លៃ",alAbove:"លើ",alBelow:"ក្រោម",alAdd:"បន្ថែម",alPaNone:"មិនទាន់មានការជូនដំណឹងតម្លៃ។",alPaBad:"សូមបញ្ចូលតម្លៃ។",
+    alGDeliver:"របៀបជូនដំណឹង",alSound:"បន្លឺសំឡេង",alDevice:"ការជូនដំណឹងលើទូរស័ព្ទ / កុំព្យូទ័រ",alOpenNote:"ដំណើរការពេល AROM TRADE បើក ឬនៅ Tab ខាងក្រោយ (ដំឡើងកម្មវិធីដើម្បីល្អបំផុត)។ សម្រាប់ការជូនដំណឹងពេលបិទ សូមប្រើឆានែល Telegram។",alTest:"ផ្ញើការជូនដំណឹងសាកល្បង",
+    alTestT:"ការជូនដំណឹងសាកល្បង",alTestB:"ការជូនដំណឹងដំណើរការ។",alN30:"ក្នុង ៣០ នាទី · {ev}",alN5:"ក្នុង ៥ នាទី · {ev}",alNNow:"កំពុងចេញផ្សាយ · {ev}",alNB:"ព័ត៌មាន USD {imp} ម៉ោង {t} ICT · ព្យាករណ៍ {f} · មុន {p}។ រំពឹងការប្រែប្រួល៖ រង់ចាំឱ្យស្ងប់។",
+    alPaT:"{sym} {dir} {px}",alPaB:"{name} ឥឡូវ {now}។",alMvT:"មាស {dir} {usd} ក្នុង ១៥ នាទី",alMvB:"XAU {from} → {now}។ ប្រែប្រួលលឿន៖ ពិនិត្យព័ត៌មាន និងគោរពផែនការ។",alMvUp:"ឡើង",alMvDn:"ចុះ",
+    alSigT:"A+ {side} · {sym} · {mode}",alSigB:"Entry {e} · SL {sl} · TP1 {tp1}",alWfT:"Trade Finder A+ · {sym} {side}",alWfB:"Entry ប្រហែល {e} · SL {sl} · {mode}",alUpdT:"{sym} {side}៖ {res}",alUpdB:"Entry {e} · {mode}",pwaInstall:"ដំឡើងកម្មវិធី",pwaTitle:"ដំឡើង AROM TRADE",pwaSub:"បើកពីអេក្រង់ដើមដូចកម្មវិធីពិត៖ ពេញអេក្រង់ ចាប់ផ្តើមលឿន ប្រើបានលើទូរស័ព្ទ iPad និងកុំព្យូទ័រ។",pwaInstallNow:"ដំឡើងឥឡូវ",pwaUpdate:"មានកំណែថ្មីរបស់ AROM TRADE ហើយ។",pwaReload:"ធ្វើបច្ចុប្បន្នភាព",
     pwaIos1:"ចុចប៊ូតុង Share {i} នៅរបារ Safari។",pwaIos2:"រំកិលចុះ ហើយចុច \"Add to Home Screen\"។",pwaIos3:"ចុច \"Add\"។ AROM TRADE នឹងបង្ហាញលើអេក្រង់ដើម។",pwaIosOther:"លើ iPhone និង iPad សូមបើកទំព័រនេះក្នុង Safari ជាមុនសិន។",
     pwaDesk1:"ចុចរូបដំឡើង {i} នៅខាងស្តាំរបារអាសយដ្ឋាន (Chrome, Edge)។",pwaDesk2:"ឬបើកម៉ឺនុយកម្មវិធីរុករក ហើយជ្រើស \"Install AROM TRADE\"។",pwaDesk3:"លើ Mac Safari៖ File → Add to Dock។",
     pwaAnd1:"ចុច \"ដំឡើងឥឡូវ\" ខាងក្រោម។",pwaAnd2:"ឬបើកម៉ឺនុយ ⋮ ហើយចុច \"Install app\" / \"Add to Home screen\"។",pwaDone:"បានដំឡើង AROM TRADE ហើយ។",modeLbl:"យុទ្ធសាស្ត្រ",mode_scalp:"Scalping",mode_intraday:"Intraday",mode_swing:"Swing",
@@ -6083,6 +6148,7 @@ function aiNotify(){
   const key = AI.sym + ':' + c.t; if(AI.seen[key]) return;
   AI.seen[key] = 1; try{ localStorage.setItem('aiSeen_v1', JSON.stringify(AI.seen)); }catch(e){}
   const msg = `${t('aiSigNew')}: ${AI.sym} ${c.side} @ ${aiFmt(c.entry)} · SL ${aiFmt(c.sl)} · TP1 ${aiFmt(c.tp1)}`;
+  if(typeof AL !== 'undefined' && AL.cfg.sigAi){ try{ alSignals(); }catch(e){} return; }
   toast(msg);
   try{ if(typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('AROM TRADE · A+', {body:msg, icon: document.querySelector('link[rel=icon]') ? document.querySelector('link[rel=icon]').href : undefined}); }catch(e){}
 }
@@ -7174,10 +7240,113 @@ $('admCsv').onclick = admCsv;
 /* ---------- 17h. Notifications: Update · Promotion · Signal Alert ----------
    The database decides who sees what (signal alerts = Elite only); new ones arrive live through Supabase Realtime. */
 const Nt = {rows:[], filter:'all', channel:null, missing:false, timer:null, firstLoad:true};
+/* ---------- Alert center: signal · market · news alerts generated in the browser ----------
+   Stored on this device (localStorage). Fired while the site / installed app is open or in a background tab. */
+const AL_DEF = {sigAi:true, sigWf:true, sigUpd:true, news30:true, news5:true, newsNow:true, newsMed:false, moveOn:true, moveUsd:10, sound:true};
+const AL = {cfg:{...AL_DEF}, list:[], seen:{}, pa:[], ticks:[], lastMove:0};
+try{ const j = JSON.parse(localStorage.getItem('aromAlerts_v1') || 'null'); if(j){ Object.assign(AL.cfg, j.cfg || {}); AL.list = j.list || []; AL.seen = j.seen || {}; AL.pa = j.pa || []; } }catch(e){}
+function alSave(){ try{
+  const cut = Date.now() - 3 * 86400000; Object.keys(AL.seen).forEach(k => { if(AL.seen[k] < cut) delete AL.seen[k]; });
+  AL.list = AL.list.slice(0, 80);
+  localStorage.setItem('aromAlerts_v1', JSON.stringify({cfg:AL.cfg, list:AL.list, seen:AL.seen, pa:AL.pa})); }catch(e){} }
+function alBeep(kind){
+  if(!AL.cfg.sound) return;
+  try{ const C = window.AudioContext || window.webkitAudioContext; if(!C) return; AL.ac = AL.ac || new C(); const ac = AL.ac, n = ac.currentTime;
+    const tones = kind === 'news' ? [880, 660] : kind === 'market' ? [740, 988] : [660, 880, 1175];
+    tones.forEach((f, i) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, n + i * .13); g.gain.exponentialRampToValueAtTime(0.18, n + i * .13 + .02); g.gain.exponentialRampToValueAtTime(0.0001, n + i * .13 + .24);
+      o.connect(g).connect(ac.destination); o.start(n + i * .13); o.stop(n + i * .13 + .26); }); }catch(e){}
+}
+function alPush(type, key, title, body, go){
+  if(key){ if(AL.seen[key]) return; AL.seen[key] = Date.now(); }
+  const r = {id:'L:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type, title, body, created_at:new Date().toISOString(), read:false, go};
+  AL.list.unshift(r); alSave();
+  const b = $('bellBtn'); if(b){ b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); }
+  try{ toast('🔔 ' + title); }catch(e){}
+  alBeep(type);
+  if(ntDeskOn() && (document.hidden || pwaStandalone())){
+    const opt = {body:(body || '').slice(0, 200), tag:key || r.id, icon:'/icons/icon-192.png', badge:'/icons/icon-192.png', renotify:true};
+    try{ if(PWA.reg && PWA.reg.showNotification) PWA.reg.showNotification(title, opt); else new Notification(title, opt); }catch(e){ try{ new Notification(title, opt); }catch(_){} }
+  }
+  try{ ntPaint(); }catch(e){}
+}
+// News: 30 min / 5 min / release for USD high (and optionally medium) events
+function alNews(){
+  if(typeof News === 'undefined' || News.state !== 'ok' || !Array.isArray(News.events)) return;
+  const now = Date.now();
+  News.events.filter(e => e.impact === 'High' || (AL.cfg.newsMed && e.impact === 'Medium')).forEach(e => {
+    const d = e.ms - now, b = naTx('alNB', {imp:t(e.impact === 'High' ? 'impHigh' : 'impMed'), t:fmtTime.format(new Date(e.ms)), f:e.forecast || '—', p:e.previous || '—'}), k = e.title + '|' + e.ms;
+    if(AL.cfg.news30 && d <= 30 * 60000 && d > 25 * 60000) alPush('news', 'n30|' + k, naTx('alN30', {ev:e.title}), b, 'naPanel');
+    if(AL.cfg.news5 && d <= 5 * 60000 && d > 60000) alPush('news', 'n5|' + k, naTx('alN5', {ev:e.title}), b, 'naPanel');
+    if(AL.cfg.newsNow && d <= 0 && d > -5 * 60000) alPush('news', 'n0|' + k, naTx('alNNow', {ev:e.title}), b, 'naPanel');
+  });
+}
+// Market: price alerts (cross of a level) + fast gold moves
+function alMarket(){
+  if(typeof MQ === 'undefined' || !MQ.data || !Array.isArray(MQ.data.quotes)) return;
+  const q = k => MQ.data.quotes.find(x => x.key === k && !x.error), now = Date.now();
+  let changed = false;
+  AL.pa.forEach(a => { if(a.hit) return; const x = q(a.sym); if(!x) return;
+    const hit = a.dir === 'above' ? x.price >= a.px : x.price <= a.px;
+    if(hit){ a.hit = now; changed = true; alPush('market', 'pa|' + a.id, naTx('alPaT', {sym:a.sym, dir:t(a.dir === 'above' ? 'alAbove' : 'alBelow').toLowerCase(), px:a.px}), naTx('alPaB', {name:x.name, now:mqFmt(x.price, x.dp)}), null); } });
+  if(changed){ alSave(); alPaPaint(); }
+  const g = q('XAU'); if(!g) return;
+  AL.ticks.push([now, g.price]); AL.ticks = AL.ticks.filter(([tm]) => now - tm <= 16 * 60000);
+  if(!AL.cfg.moveOn || now - AL.lastMove < 30 * 60000) return;
+  const old = AL.ticks.find(([tm]) => now - tm >= 13 * 60000); if(!old) return;
+  const mv = g.price - old[1];
+  if(Math.abs(mv) >= (+AL.cfg.moveUsd || 10)){ AL.lastMove = now;
+    alPush('market', 'mv|' + Math.floor(now / 1800000), naTx('alMvT', {dir:t(mv > 0 ? 'alMvUp' : 'alMvDn'), usd:'$' + Math.abs(mv).toFixed(2)}), naTx('alMvB', {from:old[1].toFixed(2), now:g.price.toFixed(2)}), null); }
+}
+// Signals: AI desk (current strategy), Trade Finder (7 markets), TP / SL updates
+function alSignals(){
+  if(typeof Prem === 'undefined' || !Prem.elite) return;
+  const mode = t('mode_' + AI.mode);
+  try{
+    if(AI.data && AI.hist && AI.hist.length){
+      const h = AI.hist[AI.hist.length - 1], st = aiStKey(h.out.res), key = AI.sym + '|' + AI.mode + '|' + h.t;
+      const fresh = Date.now() / 1000 - h.t < (aiM().valid || 900);
+      if(AL.cfg.sigAi && st === 'open' && fresh) alPush('signal', 'ai|' + key, naTx('alSigT', {side:h.side, sym:AI.sym, mode}), naTx('alSigB', {e:aiFmt(h.entry), sl:aiFmt(h.sl), tp1:aiFmt(h.tp1)}), 'aiPanel');
+      if(AL.cfg.sigUpd && st !== 'open' && AL.seen['ai|' + key]) alPush('signal', 'up|' + key + '|' + st, naTx('alUpdT', {sym:AI.sym, side:h.side, res:t('aiSt_' + st)}), naTx('alUpdB', {e:aiFmt(h.entry), mode}), 'aiPanel');
+    }
+  }catch(e){}
+  try{
+    if(AL.cfg.sigWf && typeof WF !== 'undefined' && WF.res) Object.values(WF.res).forEach(r => {
+      if(!r || !r.ev || !r.ev.signal || Date.now() / 1000 > r.ev.signal.validUntil) return; const s = r.ev.signal;
+      alPush('signal', 'wf|' + r.mk.s + '|' + AI.mode + '|' + s.t, naTx('alWfT', {sym:r.mk.s, side:s.side}), naTx('alWfB', {e:wfFx(r.mk.s, s.entry), sl:wfFx(r.mk.s, s.sl), mode}), 'wfPanel'); });
+  }catch(e){}
+}
+function alPaPaint(){
+  const box = $('alPaList'); if(!box) return;
+  box.innerHTML = AL.pa.length ? AL.pa.map(a => `<div class="al-pa-item${a.hit ? ' hit' : ''}"><b>${esc(a.sym)}</b><span>${esc(t(a.dir === 'above' ? 'alAbove' : 'alBelow'))}</span><b>${esc(String(a.px))}</b><span class="sp"></span>${a.hit ? '✓' : ''}<button type="button" data-pa="${esc(a.id)}" aria-label="Remove">✕</button></div>`).join('') : `<small class="al-note">${esc(t('alPaNone'))}</small>`;
+}
+function alSetPaint(){
+  document.querySelectorAll('#alSet [data-al]').forEach(c => c.checked = !!AL.cfg[c.dataset.al]);
+  $('alMoveUsd').value = AL.cfg.moveUsd; alPaPaint();
+}
+function alToggleSettings(show){
+  const on = show != null ? show : $('alSet').hidden;
+  $('alSet').hidden = !on; $('ntList').hidden = on; $('ntTabs').hidden = on; $('alSetBtn').classList.toggle('on', on);
+  if(on) alSetPaint();
+}
+function alTick(){ try{ alNews(); }catch(e){} try{ alMarket(); }catch(e){} try{ alSignals(); }catch(e){} }
+setTimeout(() => {
+  if(!$('alSet')) return;
+  $('alSetBtn').onclick = () => alToggleSettings();
+  $('alSet').addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.al; if(k){ AL.cfg[k] = e.target.checked; alSave(); }
+    if(e.target.id === 'alMoveUsd'){ AL.cfg.moveUsd = Math.max(2, Math.min(100, +e.target.value || 10)); alSave(); } });
+  $('alPaAdd').onclick = () => { const px = parseFloat($('alPaPx').value); if(!isFinite(px)){ toast(t('alPaBad'), true); return; }
+    AL.pa.push({id:Date.now().toString(36), sym:$('alPaSym').value, dir:$('alPaDir').value, px}); $('alPaPx').value = ''; alSave(); alPaPaint(); };
+  $('alPaList').addEventListener('click', e => { const b = e.target.closest('[data-pa]'); if(!b) return; AL.pa = AL.pa.filter(a => a.id !== b.dataset.pa); alSave(); alPaPaint(); });
+  $('alTest').onclick = () => alPush('market', null, t('alTestT'), t('alTestB'), null);
+  ntPaint(); alTick(); setInterval(alTick, 20000);
+}, 0);
 const NT_ICON = {
   update:'<svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
   promotion:'<svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>',
-  signal:'<svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'
+  signal:'<svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+  market:'<svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  news:'<svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/></svg>'
 };
 function ntAgo(iso){
   const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -7207,25 +7376,26 @@ function ntArrived(list){
     list.slice(0, 3).forEach(x => { try{ new Notification(x.title, {body:(x.body || '').slice(0, 180), tag:x.id, icon:document.querySelector('.mark img') ? document.querySelector('.mark img').src : undefined}); }catch(e){} });
   }
 }
+function ntAll(){ return Nt.rows.concat(AL.list).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); }
 function ntPaint(){
-  const unread = r => !r.read;
-  const all = Nt.rows.filter(unread).length;
+  const unread = r => !r.read, ALL = ntAll();
+  const all = ALL.filter(unread).length;
   const dot = $('bellDot'); dot.textContent = all > 99 ? '99+' : all; dot.classList.toggle('show', all > 0);
   $('bellBtn').setAttribute('aria-label', t('ntTitle') + (all ? ' (' + all + ')' : ''));
-  [['All', null], ['Update', 'update'], ['Promotion', 'promotion'], ['Signal', 'signal']].forEach(([k, ty]) => {
-    const n = Nt.rows.filter(r => unread(r) && (!ty || r.type === ty)).length, el = $('ntCnt' + k);
+  [['All', null], ['Update', 'update'], ['Promotion', 'promotion'], ['Signal', 'signal'], ['Market', 'market'], ['News', 'news']].forEach(([k, ty]) => {
+    const n = ALL.filter(r => unread(r) && (!ty || r.type === ty)).length, el = $('ntCnt' + k);
     el.textContent = n; el.hidden = !n;
   });
   document.querySelectorAll('#ntTabs button').forEach(b => b.classList.toggle('on', b.dataset.f === Nt.filter));
-  $('ntDesk').checked = ntDeskOn();
+  $('ntDesk').checked = ntDeskOn(); if($('ntDesk2')) $('ntDesk2').checked = ntDeskOn();
   $('ntFootNote').textContent = ('Notification' in window) && Notification.permission === 'denied' ? t('ntDeskBlocked') : '';
   const list = $('ntList');
-  if(Nt.missing){ list.innerHTML = `<div class="nt-empty">${esc(t('ntNeedSql'))}</div>`; return; }
-  const rows = Nt.rows.filter(r => Nt.filter === 'all' || r.type === Nt.filter);
+  if(Nt.missing && !AL.list.length){ list.innerHTML = `<div class="nt-empty">${esc(t('ntNeedSql'))}</div>`; return; }
+  const rows = ALL.filter(r => Nt.filter === 'all' || r.type === Nt.filter);
   let h = '';
   if(Nt.filter === 'signal' && !Prem.elite) h += `<div class="nt-upsell">⭐ <span>${esc(t('ntEliteOnly'))}</span><button type="button" class="btn small" id="ntUpsell">${esc(t('eliteCta'))}</button></div>`;
   if(!rows.length){
-    const k = {all:'ntEmpty', update:'ntEmptyUpdate', promotion:'ntEmptyPromo', signal:'ntEmptySignal'}[Nt.filter];
+    const k = {all:'ntEmpty', update:'ntEmptyUpdate', promotion:'ntEmptyPromo', signal:'ntEmptySignal', market:'ntEmptyMarket', news:'ntEmptyNews'}[Nt.filter];
     list.innerHTML = h + `<div class="nt-empty"><div class="big">🔔</div>${esc(t(k))}</div>`; return;
   }
   list.innerHTML = h + rows.map(r => {
@@ -7234,14 +7404,17 @@ function ntPaint(){
       <div class="nt-ico ${r.type}${loss ? ' loss' : ''}">${NT_ICON[r.type] || NT_ICON.update}</div>
       <div><div class="nt-ttl">${esc(r.title)}</div>${r.body ? `<div class="nt-body">${esc(r.body)}</div>` : ''}
         ${r.link ? `<a class="nt-link" href="${esc(r.link)}" target="_blank" rel="noopener noreferrer">${esc(t('ntOpen'))} →</a>` : ''}
-        <div class="nt-meta"><span class="nt-type ${r.type}">${esc(t({update:'ntTypeUpdate', promotion:'ntTypePromotion', signal:'ntTypeSignal'}[r.type] || 'ntTypeUpdate'))}</span><span>${esc(ntAgo(r.created_at))}</span></div></div>
+        <div class="nt-meta"><span class="nt-type ${r.type}">${esc(t({update:'ntTypeUpdate', promotion:'ntTypePromotion', signal:'ntTypeSignal', market:'ntTypeMarket', news:'ntTypeNews'}[r.type] || 'ntTypeUpdate'))}</span><span>${esc(ntAgo(r.created_at))}</span></div></div>
     </div>`;
   }).join('');
 }
 async function ntMarkRead(ids){
   const set = ids ? new Set(ids) : null;
   Nt.rows.forEach(r => { if(!set || set.has(r.id)) r.read = true; });
+  AL.list.forEach(r => { if(!set || set.has(r.id)) r.read = true; }); alSave();
   ntPaint();
+  if(ids && ids.every(x => String(x).startsWith('L:'))) return;
+  ids = ids && ids.filter(x => !String(x).startsWith('L:'));
   try{ await supabaseClient.rpc('mark_notifications_read', {p_ids: ids || null}); }catch(e){}
 }
 function ntOpen(){
@@ -7272,12 +7445,13 @@ $('ntTabs').addEventListener('click', e => { const b = e.target.closest('button'
 $('ntList').addEventListener('click', e => {
   if(e.target.closest('#ntUpsell')){ ntClose(); openPremium('elite'); return; }
   const it = e.target.closest('[data-nt]'); if(!it) return;
-  const r = Nt.rows.find(x => x.id === it.dataset.nt);
+  const r = ntAll().find(x => x.id === it.dataset.nt);
   if(r && !r.read) ntMarkRead([r.id]);
-  if(r && r.type === 'signal' && !e.target.closest('a')){ ntClose(); goSection('aiPanel'); }
+  if(r && r.go && !e.target.closest('a')){ ntClose(); goSection(r.go); }
+  else if(r && r.type === 'signal' && !e.target.closest('a')){ ntClose(); goSection('aiPanel'); }
 });
 $('ntList').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.matches('[data-nt]')) e.target.click(); });
-$('ntDesk').onchange = async e => {
+$('ntDesk').onchange = $('ntDesk2').onchange = async e => {
   if(!('Notification' in window)){ e.target.checked = false; return; }
   if(e.target.checked){
     const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
