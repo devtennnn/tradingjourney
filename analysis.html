@@ -1566,6 +1566,11 @@ body.privacy .priv-btn .eye-on{display:none}body.privacy .priv-btn .eye-off{disp
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.4);cursor:pointer}
 body.privacy .priv-flag{display:inline-flex;gap:6px;align-items:center}
 @media(max-width:480px){.priv-btn{width:36px;height:36px;border-radius:10px}}
+
+/* blur amounts in confidential mode (no layout change; numbers can't be read) */
+body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#avgWL,#dd,#grossSplit b,#best,#worst,#tradesBody td.positive b,#tradesBody td.negative b,#tradesBody td b,#cal .day span,#mNet,.bars .bar-top > div:last-child,#moodAnalyticsBars .bar-top > div:last-child,#moodInsightText,#tip,#prevBox b){filter:blur(7px);-webkit-user-select:none;user-select:none}
+.cc-priv{width:34px;height:34px;border-radius:10px;margin-left:8px}
+.cc-priv .svg-ico{width:17px;height:17px}
 </style>
 </head>
 <body data-page="analysis">
@@ -1647,10 +1652,6 @@ body.privacy .priv-flag{display:inline-flex;gap:6px;align-items:center}
         <svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
     </div>
-    <button type="button" class="priv-btn" id="privBtn" aria-pressed="false" data-i18n-title="tipPriv" data-i18n-aria="1">
-      <svg class="svg-ico eye-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      <svg class="svg-ico eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    </button>
     <button type="button" class="btn small" id="addTop" data-i18n-title="tipAdd">
       <svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span data-i18n="addTrade">Add Trade</span>
@@ -1685,7 +1686,9 @@ body.privacy .priv-flag{display:inline-flex;gap:6px;align-items:center}
     <div class="scene-tilt" id="sceneTilt">
       <!-- centre: today's terminal -->
       <div class="cc-main">
-        <div class="cc-top"><span class="cc-live"><i></i><span data-i18n="ccToday">TODAY</span></span><span class="cc-date" id="ccDate"></span><span class="cc-acct" id="ccAcct"></span></div>
+        <div class="cc-top"><span class="cc-live"><i></i><span data-i18n="ccToday">TODAY</span></span><span class="cc-date" id="ccDate"></span><span class="cc-acct" id="ccAcct"></span><button type="button" class="priv-btn cc-priv" id="privBtn" aria-pressed="false" data-i18n-title="tipPriv" data-i18n-aria="1">
+  <svg class="svg-ico eye-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  <svg class="svg-ico eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div>
         <div class="cc-big" id="ccToday">$0.00</div>
         <div class="cc-row"><span><small data-i18n="ccWeek">This week</small><b id="ccWeek">$0.00</b></span><span><small data-i18n="ccMonth">This month</small><b id="ccMonth">$0.00</b></span><span><small data-i18n="ccTradesT">Trades today</small><b id="ccTradesToday">0</b></span></div>
         <div class="cc-bars-lbl"><span data-i18n="ccDaily">Daily P/L · last 14 days</span><span class="cc-bars-tip" id="ccTip"></span></div>
@@ -2703,10 +2706,11 @@ const t = k => (T[S.lang] && T[S.lang][k]) || T.en[k] || k;
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 const today = () => ymd(new Date());
 const preMarketKey = () => '__premarket_' + today();
-/* Confidential mode: every amount formatted through money() is masked (screen, charts, summary card export). */
+/* Confidential mode: amounts are blurred on screen (CSS), blurred in canvases (ctx.filter) and masked in copied text. */
 let PRIV = false; try{ PRIV = localStorage.getItem('aromPrivacy_v1') === '1'; }catch(e){}
 const MASK = '$•••••';
-const money = n => PRIV ? MASK : (n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const money = n => (n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const moneyT = n => PRIV ? MASK : money(n);   // for copied text, where blur is impossible
 const sgn = n => n>0?'positive':n<0?'negative':'';
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const loc = () => S.lang==='km'?'km-KH':'en-US';
@@ -3306,7 +3310,7 @@ function drawChart(h = -1){
     ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(w-R,y); ctx.stroke();
     ctx.fillStyle = '#93ab9c';
     ctx.textAlign = 'right';
-    ctx.fillText(PRIV ? '•••' : '$'+Math.round(v).toLocaleString('en-US'), L-8, y);
+    ctx.filter = PRIV ? 'blur(4px)' : 'none'; ctx.fillText('$'+Math.round(v).toLocaleString('en-US'), L-8, y); ctx.filter = 'none';
   }
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
@@ -3738,21 +3742,21 @@ function drawSummaryCanvas(){
 
   ctx.fillStyle = c.net > 0 ? '#2dce89' : c.net < 0 ? '#f05b78' : '#eef6f0';
   ctx.font = '900 74px Inter, sans-serif';
-  ctx.fillText(money(c.net), 64, 252);
+  ctx.filter = PRIV ? 'blur(10px)' : 'none'; ctx.fillText(money(c.net), 64, 252); ctx.filter = 'none';
   // Live gross split: Gross Profit − Gross Loss = Net
   ctx.font = '700 15px Inter, sans-serif';
   ctx.fillStyle = '#2dce89';
-  const gpTxt = 'Gross Profit ' + money(c.gp);
+  const gpTxt = 'Gross Profit ' + moneyT(c.gp);
   ctx.fillText(gpTxt, 64, 282);
   const gx = 64 + ctx.measureText(gpTxt).width + 22;
   ctx.fillStyle = '#f05b78';
-  ctx.fillText('Gross Loss ' + money(-c.gl), gx, 282);
+  ctx.fillText('Gross Loss ' + moneyT(-c.gl), gx, 282);
 
   // 4 Stat Boxes
   const boxes = [
     {label:'WIN RATE', val: c.wr.toFixed(1)+'%', sub:`${c.winsN}W / ${c.lossN}L`},
     {label:'PROFIT FACTOR', val: c.pf==null?'—':c.pf===Infinity?'∞':c.pf.toFixed(2), sub:`${c.n} Total Trades`},
-    {label:'AVG R-MULTIPLE', val: c.avgR==null?'—':c.avgR.toFixed(2)+'R', sub:`Best: ${money(Math.max(0,c.best))}`},
+    {label:'AVG R-MULTIPLE', val: c.avgR==null?'—':c.avgR.toFixed(2)+'R', sub:`Best: ${moneyT(Math.max(0,c.best))}`},
     {label:'DISCIPLINE SCORE', val: c.disc==null?'—':Math.round(c.disc)+'%', sub:'Plan Execution'}
   ];
   const bxW = (W - 128 - 45) / 4;
@@ -3819,7 +3823,7 @@ $('downloadSummaryPngBtn').onclick = () => {
 
 $('copySummaryBtn').onclick = () => {
   const l = getSummaryTrades(), c = calc(l);
-  const txt = `AROM TRADE TRADING JOURNEY — EXECUTIVE SNAPSHOT\nNet P/L: ${money(c.net)}  (Gross Profit ${money(c.gp)} − Gross Loss ${money(c.gl)})\nWin Rate: ${c.wr.toFixed(1)}% (${c.winsN}W / ${c.lossN}L)\nProfit Factor: ${c.pf==null?'—':c.pf===Infinity?'∞':c.pf.toFixed(2)}\nDiscipline Score: ${c.disc==null?'—':Math.round(c.disc)+'%'}\n“Discipline over emotion.”`;
+  const txt = `AROM TRADE TRADING JOURNEY — EXECUTIVE SNAPSHOT\nNet P/L: ${moneyT(c.net)}  (Gross Profit ${moneyT(c.gp)} − Gross Loss ${moneyT(c.gl)})\nWin Rate: ${c.wr.toFixed(1)}% (${c.winsN}W / ${c.lossN}L)\nProfit Factor: ${c.pf==null?'—':c.pf===Infinity?'∞':c.pf.toFixed(2)}\nDiscipline Score: ${c.disc==null?'—':Math.round(c.disc)+'%'}\n“Discipline over emotion.”`;
   const ta = document.createElement('textarea');
   ta.value = txt;
   ta.style.position = 'fixed';
@@ -5742,7 +5746,7 @@ $('heroMore').onclick = () => { const el = $('secPerf'); if(el) window.scrollTo(
    Every call below is an admin-only database function (see devten-admin-setup.sql). Non-admins get "forbidden"
    from the database even if they open this panel by editing the page. */
 const Adm = {tab:'ov', users:[], uOff:0, audit:[], loadedAt:null, qTimer:null};
-const admMoney = n => PRIV ? MASK : '$' + Number(n || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const admMoney = n => '$' + Number(n || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 const admWhen = iso => iso ? new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false}).format(new Date(iso)) : '—';
 const admDay = iso => iso ? new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short', year:'numeric'}).format(new Date(iso)) : '—';
 function admErr(el, e){
