@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "AROM TRADE — Trading Journey",
+  "short_name": "AROM TRADE",
+  "description": "Trading journal, AI A+ signals and market news analysis. Feel the market. Master yourself.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0b1813",
+  "theme_color": "#0b1813",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["finance", "productivity", "education"],
+  "icons": [
+    {"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Add trade", "short_name": "Add trade", "url": "/?action=add", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]},
+    {"name": "AI Desk", "short_name": "AI Desk", "url": "/analysis", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]},
+    {"name": "Pricing", "short_name": "Pricing", "url": "/pricing", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]}
+  ]
+}
