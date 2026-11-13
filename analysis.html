@@ -1596,6 +1596,23 @@ header.nav2.nav-burger-mode:not(.nav-open){row-gap:0}
 .term-zoom{position:absolute;right:76px;top:8px;display:flex;gap:4px}
 .term-zoom button{width:28px;height:28px;border-radius:8px;border:1px solid #23402f;background:rgba(11,25,19,.85);color:#cfe0d5;font-size:15px;line-height:1;cursor:pointer}
 .term-zoom button:hover{border-color:var(--lime);color:var(--lime)}
+.term-ohlc .lv{color:#5fe0a6}
+.term-theme{flex:none}
+.term-theme button{padding:6px 10px;font-size:11.5px}
+.term.tv{background:#131722;border-color:#2a2e39}
+.term.tv .term-top,.term.tv .term-ind{background:#131722;border-color:#2a2e39}
+.term.tv .term-tape,.term.tv .term-legend{border-color:#2a2e39;color:#b2b5be;font-family:-apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif}
+.term.tv .term-state{color:#d1d4dc}
+.term.tv .term-sym,.term.tv .term-live{border-color:#2a2e39;background:#1e222d}
+.term.tv .term-ind button{border-color:#2a2e39;color:#787b86}
+.term.tv .term-ind button.on{background:#2a2e39;color:#d1d4dc;border-color:#363a45}
+.term.tv .term-ohlc{background:transparent;color:#787b86;font:500 12px/1.3 -apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif;top:6px}
+.term.tv .term-ohlc.u b{color:#26a69a}.term.tv .term-ohlc.d b{color:#ef5350}
+.term.tv .term-ohlc .lv{color:#26a69a}
+.term.tv .term-zoom button{border-color:#2a2e39;background:rgba(30,34,45,.9);color:#d1d4dc}
+.term.tv .term-zoom button:hover{border-color:#2962ff;color:#fff}
+.term.tv .term-cv{cursor:crosshair}
+@media(max-width:680px){.term-theme{order:4}.term-ohlc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 80px)}}
 @media(max-width:680px){.term-cv{height:440px}.term-top{flex-wrap:wrap}.term-state{order:5;flex-basis:100%}.term-zoom{top:auto;bottom:122px;right:auto;left:8px}.term-ohlc{font-size:10px;right:70px}}
 
 /* ================= Pages: main journal vs AI Desk ================= */
@@ -2297,6 +2314,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
           <span class="term-state" id="termState">—</span>
           <span class="term-live" id="termLive" title="Live price · the forming candle updates every few seconds"><i></i><small>LIVE</small><b id="termLivePx">—</b><span class="chg" id="termLiveChg"></span></span>
           <span class="term-sym" id="termSym">XAUUSD</span>
+          <div class="seg term-theme" id="termTheme" role="group" aria-label="Chart style"><button type="button" data-th="tv">TradingView</button><button type="button" data-th="arom">AROM</button></div>
           <div class="seg term-tf" id="termTf"><button type="button" data-tf="5" class="on">5m</button><button type="button" data-tf="15">15m</button></div>
         </div>
         <div class="term-tape" id="termTape"></div>
@@ -6281,7 +6299,16 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && Prem.elite && AI.nextAt && Date.now() / 1000 > AI.nextAt) aiFetch(); });
 
 /* ---------- AI terminal chart (canvas; draws only the real candles loaded for the engine) ---------- */
-const TERM = {tf:'5', bars:0, user:false, off:0, hover:null, drag:null, scores:null, key:'', ind:null, indKey:'', sub:'q',
+const TERM_THEMES = {
+  arom:{bg:'#07110c', fg:'#07110c', grid:'rgba(214,255,134,.05)', vgrid:'rgba(214,255,134,.04)', axis:'#8fa699', time:'#5f7a6b', up:'#2fd28a', dn:'#f05b78', upRgb:'47,210,138', dnRgb:'240,91,120',
+    wm1:'rgba(185,242,90,.055)', wm2:'rgba(214,255,134,.06)', sess:'rgba(185,242,90,.025)', sep:'#15291f', border:null, cross:'rgba(238,246,240,.35)', crossBg:'#23402f', crossFg:'#eef6f0',
+    entry:'#eef6f0', last:'#eef6f0', sub:'#7f968a', cdBg:'#16281e', cdFg:'#cfe0d5', e20:'rgba(92,200,255,.8)', e50:'rgba(255,207,112,.75)', ap:'#d6ff86', qa:.75, font:'Inter,sans-serif'},
+  // TradingView-style dark chart: #131722 canvas, #2a2e39 grid & scales, teal / red candles, grey crosshair with axis labels
+  tv:{bg:'#131722', fg:'#ffffff', grid:'rgba(42,46,57,.75)', vgrid:'rgba(42,46,57,.75)', axis:'#b2b5be', time:'#b2b5be', up:'#26a69a', dn:'#ef5350', upRgb:'38,166,154', dnRgb:'239,83,80',
+    wm1:'rgba(255,255,255,.035)', wm2:'rgba(255,255,255,.045)', sess:null, sep:'#2a2e39', border:'#2a2e39', cross:'#9598a1', crossBg:'#363a45', crossFg:'#ffffff',
+    entry:'#787b86', last:'#d1d4dc', sub:'#787b86', cdBg:'#2a2e39', cdFg:'#d1d4dc', e20:'#2962ff', e50:'#ff9800', ap:'#f7c948', qa:.5, font:'-apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif'}
+};
+const TERM = {theme:(() => { try{ return localStorage.getItem('aromTermTheme') || 'tv'; }catch(e){ return 'tv'; } })(), tf:'5', bars:0, user:false, off:0, hover:null, drag:null, scores:null, key:'', ind:null, indKey:'', sub:'q',
   on:{ema:true, ribbon:true, vwap:true, sr:true, piv:false, keys:true, pulse:false}};
 try{ const sv = JSON.parse(localStorage.getItem('aromTermInd_v1') || 'null'); if(sv && sv.on){ Object.assign(TERM.on, sv.on); if(['q','rsi','macd'].includes(sv.sub)) TERM.sub = sv.sub; } }catch(e){}
 function termSave(){ try{ localStorage.setItem('aromTermInd_v1', JSON.stringify({on:TERM.on, sub:TERM.sub})); }catch(e){} }
@@ -6440,9 +6467,10 @@ function termDraw(){
   const box = $('termCv'), W = box.clientWidth, H = box.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
   if(!W || !H) return;
   if(cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)){ cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const K = TERM_THEMES[TERM.theme] || TERM_THEMES.tv; $('term').classList.toggle('tv', TERM.theme === 'tv');
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-  g.fillStyle = '#07110c'; g.fillRect(0, 0, W, H);
-  if(!AI.data || !AI.P){ $('termOhlc').innerHTML = ''; g.fillStyle = '#7f968a'; g.font = '600 12px Inter,sans-serif'; g.textAlign = 'center'; g.fillText(AI.state === 'error' ? t('termNoData') : t('aiLoading'), W / 2, H / 2); return; }
+  g.fillStyle = K.bg; g.fillRect(0, 0, W, H);
+  if(!AI.data || !AI.P){ $('termOhlc').innerHTML = ''; g.fillStyle = K.sub; g.font = '600 12px ' + K.font; g.textAlign = 'center'; g.fillText(AI.state === 'error' ? t('termNoData') : t('aiLoading'), W / 2, H / 2); return; }
   const S5 = termSeries(), C = S5.c, N = C.length, axisW = 66, qH = 96, gap = 18, mainH = H - qH - gap, plotW = W - axisW;
   const dp = AI.sym === 'XAGUSD' ? 3 : AI.sym === 'USDJPY' ? 3 : /^(EUR|GBP)USD$/.test(AI.sym) ? 5 : 2, fx = v => v.toFixed(dp);
   if(!TERM.user) TERM.bars = Math.round(Math.max(36, Math.min(110, plotW / 9)));
@@ -6459,23 +6487,24 @@ function termDraw(){
   // background watermark: AROM + symbol · timeframe (drawn first, under the grid and candles)
   { const cx = plotW / 2, cy = mainH / 2, fs = Math.max(48, Math.min(170, plotW * 0.17));
     g.save(); g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `900 ${fs}px Inter,sans-serif`; if('letterSpacing' in g) g.letterSpacing = Math.round(fs * 0.08) + 'px';
-    g.fillStyle = 'rgba(185,242,90,.055)'; g.fillText('AROM', cx, cy - fs * 0.12);
+    g.font = `900 ${fs}px ${K.font}`; if('letterSpacing' in g) g.letterSpacing = Math.round(fs * 0.08) + 'px';
+    g.fillStyle = K.wm1; g.fillText('AROM', cx, cy - fs * 0.12);
     if('letterSpacing' in g) g.letterSpacing = Math.round(fs * 0.06) + 'px';
-    g.font = `800 ${Math.round(fs * 0.17)}px Inter,sans-serif`; g.fillStyle = 'rgba(214,255,134,.06)';
+    g.font = `800 ${Math.round(fs * 0.17)}px ${K.font}`; g.fillStyle = K.wm2;
     g.fillText(AI.sym + ' · ' + (TERM.tf === '5' ? aiM().eName : aiM().hName) + ' · ' + t('mode_' + AI.mode).toUpperCase(), cx, cy + fs * 0.52);
     if('letterSpacing' in g) g.letterSpacing = '0px'; g.restore(); }
   // grid + axis labels
-  g.font = '600 11px Inter,sans-serif'; g.textBaseline = 'middle';
+  g.font = '600 11px ' + K.font; g.textBaseline = 'middle';
   const stepP = (() => { const raw = (hi - lo) / 7, pw = Math.pow(10, Math.floor(Math.log10(raw))); return [1, 2, 2.5, 5, 10].map(m => m * pw).find(v => v >= raw); })();
-  g.strokeStyle = 'rgba(214,255,134,.05)'; g.lineWidth = 1;
-  for(let p = Math.ceil(lo / stepP) * stepP; p <= hi; p += stepP){ const y = Math.round(Y(p)) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.fillStyle = '#8fa699'; g.textAlign = 'left'; g.fillText(fx(p), plotW + 8, y); }
+  g.strokeStyle = K.grid; g.lineWidth = 1;
+  for(let p = Math.ceil(lo / stepP) * stepP; p <= hi; p += stepP){ const y = Math.round(Y(p)) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.fillStyle = K.axis; g.textAlign = 'left'; g.fillText(fx(p), plotW + 8, y); }
+  if(K.border){ g.strokeStyle = K.border; g.beginPath(); g.moveTo(Math.round(plotW) + .5, 0); g.lineTo(Math.round(plotW) + .5, H); g.moveTo(0, mainH + .5); g.lineTo(plotW, mainH + .5); g.stroke(); }
   // time grid every ~hour
   const LM = S5.step <= 300 ? 60 : S5.step <= 900 ? 240 : S5.step <= 3600 ? 1440 : 4320, dayL = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short'});
-  g.fillStyle = '#5f7a6b'; g.textAlign = 'center';
-  for(let i = start; i < end; i++){ const tt = C[i].t; if(Math.floor(tt / 60) % LM === 0){ const x = Math.round(X(i)) + .5; g.strokeStyle = 'rgba(214,255,134,.04)'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, mainH); g.stroke(); g.fillText((LM >= 1440 ? dayL : aiHM).format(new Date(tt * 1000)), x, mainH + gap / 2); } }
+  g.fillStyle = K.time; g.textAlign = 'center';
+  for(let i = start; i < end; i++){ const tt = C[i].t; if(Math.floor(tt / 60) % LM === 0){ const x = Math.round(X(i)) + .5; g.strokeStyle = K.vgrid; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, mainH); g.stroke(); g.fillText((LM >= 1440 ? dayL : aiHM).format(new Date(tt * 1000)), x, mainH + gap / 2); } }
   // session shading (London/NY) for context
-  for(let i = start; i < end; i++){ const hh = new Date(C[i].t * 1000).getUTCHours(); if(hh >= 7 && hh < 17){ g.fillStyle = 'rgba(185,242,90,.025)'; g.fillRect(X(i) - cw / 2, 0, cw + .5, mainH); } }
+  if(K.sess) for(let i = start; i < end; i++){ const hh = new Date(C[i].t * 1000).getUTCHours(); if(hh >= 7 && hh < 17){ g.fillStyle = K.sess; g.fillRect(X(i) - cw / 2, 0, cw + .5, mainH); } }
   // key levels
   const tags = [];
   const used = [];
@@ -6483,19 +6512,19 @@ function termDraw(){
   g.save(); g.beginPath(); g.rect(0, 0, plotW, mainH); g.clip();
   // S/R zones (drawn first, under everything)
   if(O.sr) I.zones.forEach(z => { if(z.hi < lo || z.lo > hi) return;
-    const col = z.kind === 'R' ? '240,91,120' : z.kind === 'S' ? '47,210,138' : '255,207,112', x0 = Math.max(0, X(Math.max(start, z.i0)) - cw / 2), y1 = Y(z.hi), y2 = Y(z.lo);
+    const col = z.kind === 'R' ? K.dnRgb : z.kind === 'S' ? K.upRgb : '255,207,112', x0 = Math.max(0, X(Math.max(start, z.i0)) - cw / 2), y1 = Y(z.hi), y2 = Y(z.lo);
     g.fillStyle = `rgba(${col},${.07 + Math.min(z.n, 5) * .025})`; g.fillRect(x0, y1, plotW - x0, Math.max(2, y2 - y1));
     g.strokeStyle = `rgba(${col},.55)`; g.setLineDash([]); g.beginPath(); g.moveTo(x0, Math.round(y1) + .5); g.lineTo(plotW, Math.round(y1) + .5); g.moveTo(x0, Math.round(y2) + .5); g.lineTo(plotW, Math.round(y2) + .5); g.stroke();
-    const lbl = (z.kind === 'R' ? 'RES' : z.kind === 'S' ? 'SUP' : 'FLIP') + ' ×' + z.n; g.font = '800 9.5px Inter,sans-serif'; const tw = g.measureText(lbl).width + 10, lx = Math.min(plotW - tw - 90, Math.max(4, x0 + 4)), ly = Math.max(10, Math.min(mainH - 10, (y1 + y2) / 2));
-    g.fillStyle = `rgba(${col},.9)`; g.fillRect(lx, ly - 7, tw, 14); g.fillStyle = '#07110c'; g.textAlign = 'left'; g.fillText(lbl, lx + 5, ly + .5); });
+    const lbl = (z.kind === 'R' ? 'RES' : z.kind === 'S' ? 'SUP' : 'FLIP') + ' ×' + z.n; g.font = '800 9.5px ' + K.font; const tw = g.measureText(lbl).width + 10, lx = Math.min(plotW - tw - 90, Math.max(4, x0 + 4)), ly = Math.max(10, Math.min(mainH - 10, (y1 + y2) / 2));
+    g.fillStyle = `rgba(${col},.9)`; g.fillRect(lx, ly - 7, tw, 14); g.fillStyle = K.fg; g.textAlign = 'left'; g.fillText(lbl, lx + 5, ly + .5); });
   // Daily pivots
   if(O.piv && I.piv) I.piv.forEach(([lbl, pv]) => { if(pv < lo || pv > hi) return; const y = Math.round(Y(pv)) + .5;
     g.strokeStyle = lbl === 'PP' ? 'rgba(255,159,110,.85)' : 'rgba(255,159,110,.5)'; g.setLineDash(lbl === 'PP' ? [6, 4] : [2, 4]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]);
-    g.font = '800 10px Inter,sans-serif'; g.fillStyle = '#ff9f6e'; g.textAlign = 'right'; g.fillText(lbl + ' ' + fx(pv), plotW - (live ? 74 : 8), y - 7); });
+    g.font = '800 10px ' + K.font; g.fillStyle = '#ff9f6e'; g.textAlign = 'right'; g.fillText(lbl + ' ' + fx(pv), plotW - (live ? 74 : 8), y - 7); });
   if(O.keys) termLevels(AI.data.candles).forEach(lv => { if(lv.p < lo || lv.p > hi) return; const y = Math.round(Y(lv.p)) + .5;
     g.strokeStyle = lv.col; g.globalAlpha = .55; g.setLineDash(lv.dash); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
-    g.font = '800 10px Inter,sans-serif'; const tw = g.measureText(lv.lbl).width + 10; let lx = 4; used.forEach(u => { if(Math.abs(u.y - y) < 17 && lx < u.x + u.w + 4) lx = u.x + u.w + 4; }); used.push({x:lx, y, w:tw}); g.fillStyle = lv.col; g.globalAlpha = .9; g.fillRect(lx, y - 8, tw, 16); g.globalAlpha = 1; g.fillStyle = '#07110c'; g.textAlign = 'left'; g.fillText(lv.lbl, lx + 5, y);
-    tags.push({p:lv.p, col:lv.col, fg:'#07110c'}); });
+    g.font = '800 10px ' + K.font; const tw = g.measureText(lv.lbl).width + 10; let lx = 4; used.forEach(u => { if(Math.abs(u.y - y) < 17 && lx < u.x + u.w + 4) lx = u.x + u.w + 4; }); used.push({x:lx, y, w:tw}); g.fillStyle = lv.col; g.globalAlpha = .9; g.fillRect(lx, y - 8, tw, 16); g.globalAlpha = 1; g.fillStyle = K.fg; g.textAlign = 'left'; g.fillText(lv.lbl, lx + 5, y);
+    tags.push({p:lv.p, col:lv.col, fg:K.fg}); });
   // EMAs
   const line = (arr, col, w) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); let on = false; for(let i = start; i < end; i++){ const v = arr[i]; if(v == null) continue; const x = X(i), y = Y(v); on ? g.lineTo(x, y) : g.moveTo(x, y); on = true; } g.stroke(); g.lineWidth = 1; };
   // VWAP ±1σ / ±2σ
@@ -6509,79 +6538,82 @@ function termDraw(){
     seg(i => I.vw[i], '#c9a2ff', 1.8, []); }
   // Scalp ribbon EMA 9/21 (filled green when 9 > 21, red when below)
   if(O.ribbon){ for(let i = Math.max(start, 1); i < end; i++){ const a0 = I.e9[i - 1], b0 = I.e21[i - 1], a1 = I.e9[i], b1 = I.e21[i]; if([a0, b0, a1, b1].some(v => v == null)) continue;
-      g.fillStyle = a1 >= b1 ? 'rgba(47,210,138,.16)' : 'rgba(240,91,120,.16)'; g.beginPath(); g.moveTo(X(i - 1), Y(a0)); g.lineTo(X(i), Y(a1)); g.lineTo(X(i), Y(b1)); g.lineTo(X(i - 1), Y(b0)); g.closePath(); g.fill(); }
+      g.fillStyle = a1 >= b1 ? 'rgba(' + K.upRgb + ',.16)' : 'rgba(' + K.dnRgb + ',.16)'; g.beginPath(); g.moveTo(X(i - 1), Y(a0)); g.lineTo(X(i), Y(a1)); g.lineTo(X(i), Y(b1)); g.lineTo(X(i - 1), Y(b0)); g.closePath(); g.fill(); }
     line(I.e21, 'rgba(185,242,90,.55)', 1); line(I.e9, 'rgba(214,255,134,.95)', 1.2); }
-  if(O.ema){ line(S5.e50, 'rgba(255,207,112,.75)', 1.4); line(S5.e20, 'rgba(92,200,255,.8)', 1.4); }
+  if(O.ema){ line(S5.e50, K.e50, 1.4); line(S5.e20, K.e20, 1.4); }
   // candles
-  vis.forEach((b, k) => { const i = start + k, x = X(i), up = b.c >= b.o, col = up ? '#2fd28a' : '#f05b78';
+  vis.forEach((b, k) => { const i = start + k, x = X(i), up = b.c >= b.o, col = up ? K.up : K.dn;
     g.strokeStyle = col; g.beginPath(); g.moveTo(Math.round(x) + .5, Y(b.h)); g.lineTo(Math.round(x) + .5, Y(b.l)); g.stroke();
     const y1 = Y(Math.max(b.o, b.c)), y2 = Y(Math.min(b.o, b.c)); g.fillStyle = col; g.globalAlpha = b.live ? .85 : 1; g.fillRect(Math.round(x - bw / 2), y1, Math.max(1, Math.round(bw)), Math.max(1, y2 - y1)); g.globalAlpha = 1;
     if(b.live){ g.strokeStyle = 'rgba(238,246,240,.55)'; g.setLineDash([2, 2]); g.strokeRect(Math.round(x - bw / 2) - 1.5, y1 - 1.5, Math.max(1, Math.round(bw)) + 3, Math.max(1, y2 - y1) + 3); g.setLineDash([]); } });
   // Scalp Pulse markers (momentum hints, smaller than A+ markers)
   if(O.pulse) I.pulse.forEach(pz => { if(pz.i < start || pz.i >= end) return; const b = C[pz.i], x = X(pz.i), buy = pz.side === 'BUY', y = buy ? Y(b.l) + 11 : Y(b.h) - 11;
-    g.fillStyle = buy ? '#2fd28a' : '#f05b78'; g.strokeStyle = '#07110c'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); g.fill(); g.stroke(); g.lineWidth = 1; });
+    g.fillStyle = buy ? K.up : K.dn; g.strokeStyle = K.bg; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); g.fill(); g.stroke(); g.lineWidth = 1; });
   g.restore();
   // A+ markers (mapped from M5 history)
   AI.hist.forEach(hs => { let i = -1; for(let q = start; q < end; q++){ if(S5.m5idx[q] >= hs.i){ i = q; break; } } if(i < 0) return;
     const b = C[i], x = X(i), buy = hs.side === 'BUY', y = buy ? Y(b.l) + 14 : Y(b.h) - 14;
-    g.fillStyle = buy ? '#2fd28a' : '#f05b78'; g.beginPath(); if(buy){ g.moveTo(x, y - 7); g.lineTo(x - 6, y + 3); g.lineTo(x + 6, y + 3); } else { g.moveTo(x, y + 7); g.lineTo(x - 6, y - 3); g.lineTo(x + 6, y - 3); } g.fill();
-    g.font = '800 9px Inter,sans-serif'; g.textAlign = 'center'; g.fillStyle = '#d6ff86'; g.fillText('A+', x, buy ? y + 12 : y - 12); });
+    g.fillStyle = buy ? K.up : K.dn; g.beginPath(); if(buy){ g.moveTo(x, y - 7); g.lineTo(x - 6, y + 3); g.lineTo(x + 6, y + 3); } else { g.moveTo(x, y + 7); g.lineTo(x - 6, y - 3); g.lineTo(x + 6, y - 3); } g.fill();
+    g.font = '800 9px ' + K.font; g.textAlign = 'center'; g.fillStyle = K.ap; g.fillText('A+', x, buy ? y + 12 : y - 12); });
   // active signal levels
   if(live){
     const ent = Y(cur.entry), sl = Y(cur.sl), t2 = Y(cur.tp2);
-    g.fillStyle = 'rgba(240,91,120,.08)'; g.fillRect(X(Math.max(start, end - 18)), Math.min(ent, sl), plotW, Math.abs(sl - ent));
-    g.fillStyle = 'rgba(47,210,138,.08)'; g.fillRect(X(Math.max(start, end - 18)), Math.min(ent, t2), plotW, Math.abs(t2 - ent));
-    [['ENTRY', cur.entry, '#eef6f0', []], ['SL', cur.sl, '#f05b78', [5, 4]], ['TP1', cur.tp1, '#2fd28a', [5, 4]], ['TP2', cur.tp2, '#2fd28a', [5, 4]], ['TP3', cur.tp3, '#2fd28a', [2, 4]]].forEach(([lbl, p, col, dash]) => {
+    g.fillStyle = 'rgba(' + K.dnRgb + ',.08)'; g.fillRect(X(Math.max(start, end - 18)), Math.min(ent, sl), plotW, Math.abs(sl - ent));
+    g.fillStyle = 'rgba(' + K.upRgb + ',.08)'; g.fillRect(X(Math.max(start, end - 18)), Math.min(ent, t2), plotW, Math.abs(t2 - ent));
+    [['ENTRY', cur.entry, K.entry, []], ['SL', cur.sl, K.dn, [5, 4]], ['TP1', cur.tp1, K.up, [5, 4]], ['TP2', cur.tp2, K.up, [5, 4]], ['TP3', cur.tp3, K.up, [2, 4]]].forEach(([lbl, p, col, dash]) => {
       const y = Math.round(Y(p)) + .5; g.strokeStyle = col; g.setLineDash(dash); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]);
-      g.font = '800 10px Inter,sans-serif'; const txt = lbl, tw = g.measureText(txt).width + 10; g.fillStyle = col; g.fillRect(plotW - tw - 6, y - 8, tw, 16); g.fillStyle = '#07110c'; g.textAlign = 'left'; g.fillText(txt, plotW - tw - 1, y);
-      tags.push({p, col, fg:'#07110c'}); });
+      g.font = '800 10px ' + K.font; const txt = lbl, tw = g.measureText(txt).width + 10; g.fillStyle = col; g.fillRect(plotW - tw - 6, y - 8, tw, 16); g.fillStyle = K.fg; g.textAlign = 'left'; g.fillText(txt, plotW - tw - 1, y);
+      tags.push({p, col, fg:K.fg}); });
   } else if(AI.last && AI.last.side){
-    const lb = C[N - 1], y = Y(lb.c); g.font = '800 10px Inter,sans-serif'; const txt = t('termWait') + ' ' + AI.last.side, tw = g.measureText(txt).width + 12;
+    const lb = C[N - 1], y = Y(lb.c); g.font = '800 10px ' + K.font; const txt = t('termWait') + ' ' + AI.last.side, tw = g.measureText(txt).width + 12;
     g.fillStyle = '#e8b931'; g.fillRect(4, y - 8 > 30 ? y - 26 : y + 10, tw, 16); g.fillStyle = '#1a1405'; g.textAlign = 'left'; g.fillText(txt, 10, y - 8 > 30 ? y - 18 : y + 18);
   }
   // last price line + axis tags
   const lb = C[N - 1], isLive = !!lb.live;
-  if(lb.c >= lo && lb.c <= hi){ const y = Math.round(Y(lb.c)) + .5, lc = isLive ? (lb.c >= lb.o ? '#2fd28a' : '#f05b78') : '#eef6f0';
+  if(lb.c >= lo && lb.c <= hi){ const y = Math.round(Y(lb.c)) + .5, lc = isLive ? (lb.c >= lb.o ? K.up : K.dn) : K.last;
     g.strokeStyle = isLive ? lc : 'rgba(238,246,240,.5)'; g.globalAlpha = isLive ? .8 : 1; g.setLineDash([1, 3]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
-    tags.push({p:lb.c, col:lc, fg:'#07110c', last:true}); }
-  g.font = '700 11px Inter,sans-serif';
+    tags.push({p:lb.c, col:lc, fg:K.fg, last:true}); }
+  g.font = '700 11px ' + K.font;
   let prevY = -99; tags.sort((a, b) => b.p - a.p).forEach(tg => { let y = Y(tg.p); if(y - prevY < 18) y = prevY + 18; prevY = y; g.fillStyle = tg.col; g.fillRect(plotW + 2, y - 9, axisW - 4, 18); g.fillStyle = tg.fg; g.textAlign = 'left'; g.fillText(fx(tg.p), plotW + 7, y);
     if(tg.last && isLive){ const st = S5.step, left = Math.max(0, lb.t + st - Math.floor(Date.now() / 1000)), cd = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
-      g.fillStyle = '#16281e'; g.fillRect(plotW + 2, y + 9, axisW - 4, 15); g.fillStyle = '#cfe0d5'; g.font = '700 10px Inter,sans-serif'; g.fillText(cd, plotW + 7, y + 16.5); g.font = '700 11px Inter,sans-serif'; prevY = y + 15; } });
+      g.fillStyle = K.cdBg; g.fillRect(plotW + 2, y + 9, axisW - 4, 15); g.fillStyle = K.cdFg; g.font = '700 10px ' + K.font; g.fillText(cd, plotW + 7, y + 16.5); g.font = '700 11px ' + K.font; prevY = y + 15; } });
   // separator + quality histogram
-  g.strokeStyle = '#15291f'; g.beginPath(); g.moveTo(0, mainH + gap + .5); g.lineTo(W, mainH + gap + .5); g.stroke();
+  g.strokeStyle = K.sep; g.beginPath(); g.moveTo(0, mainH + gap + .5); g.lineTo(W, mainH + gap + .5); g.stroke();
   const sc = termScores(), qTop = mainH + gap + 4, qh = qH - 10;
-  g.font = '800 9.5px Inter,sans-serif'; g.textAlign = 'left';
+  g.font = '800 9.5px ' + K.font; g.textAlign = 'left';
   if(TERM.sub === 'rsi' && !aiSimple()){
     const yR = v => qTop + 12 + (100 - v) / 100 * (qh - 12);
     g.fillStyle = 'rgba(185,242,90,.05)'; g.fillRect(0, yR(70), plotW, yR(30) - yR(70));
-    [[70, 'rgba(240,91,120,.5)'], [50, 'rgba(143,166,153,.3)'], [30, 'rgba(47,210,138,.5)']].forEach(([v, c]) => { const y = Math.round(yR(v)) + .5; g.strokeStyle = c; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.fillStyle = '#8fa699'; g.fillText(String(v), plotW + 8, y); });
+    [[70, 'rgba(' + K.dnRgb + ',.5)'], [50, 'rgba(143,166,153,.3)'], [30, 'rgba(' + K.upRgb + ',.5)']].forEach(([v, c]) => { const y = Math.round(yR(v)) + .5; g.strokeStyle = c; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.fillStyle = K.axis; g.fillText(String(v), plotW + 8, y); });
     g.strokeStyle = '#c9a2ff'; g.lineWidth = 1.4; g.beginPath(); let on = false; for(let i = start; i < end; i++){ const v = I.rsi[i]; if(v == null) continue; on ? g.lineTo(X(i), yR(v)) : g.moveTo(X(i), yR(v)); on = true; } g.stroke(); g.lineWidth = 1;
-    const rv = I.rsi[end - 1]; g.fillStyle = '#7f968a'; g.fillText('RSI 14' + (rv != null ? ' · ' + rv.toFixed(1) : ''), 6, qTop + 6);
+    const rv = I.rsi[end - 1]; g.fillStyle = K.sub; g.fillText('RSI 14' + (rv != null ? ' · ' + rv.toFixed(1) : ''), 6, qTop + 6);
   } else if(TERM.sub === 'macd' && !aiSimple()){
     let mx = 1e-9; for(let i = start; i < end; i++){ [I.macd[i], I.sigL[i]].forEach(v => { if(v != null) mx = Math.max(mx, Math.abs(v)); }); }
     const mid = qTop + 12 + (qh - 12) / 2, yM = v => mid - v / mx * (qh - 12) / 2;
     g.strokeStyle = 'rgba(143,166,153,.3)'; g.beginPath(); g.moveTo(0, Math.round(mid) + .5); g.lineTo(plotW, Math.round(mid) + .5); g.stroke();
     for(let i = start; i < end; i++){ if(I.macd[i] == null || I.sigL[i] == null) continue; const h = I.macd[i] - I.sigL[i], hp = i > 0 && I.macd[i - 1] != null && I.sigL[i - 1] != null ? I.macd[i - 1] - I.sigL[i - 1] : h;
-      g.fillStyle = h >= 0 ? (h >= hp ? 'rgba(47,210,138,.85)' : 'rgba(47,210,138,.4)') : (h <= hp ? 'rgba(240,91,120,.85)' : 'rgba(240,91,120,.4)'); const y = yM(h); g.fillRect(Math.round(X(i) - bw / 2), Math.min(y, mid), Math.max(1, Math.round(bw)), Math.max(1, Math.abs(mid - y))); }
+      g.fillStyle = h >= 0 ? (h >= hp ? 'rgba(' + K.upRgb + ',.85)' : 'rgba(' + K.upRgb + ',.4)') : (h <= hp ? 'rgba(' + K.dnRgb + ',.85)' : 'rgba(' + K.dnRgb + ',.4)'); const y = yM(h); g.fillRect(Math.round(X(i) - bw / 2), Math.min(y, mid), Math.max(1, Math.round(bw)), Math.max(1, Math.abs(mid - y))); }
     const ln = (arr, col) => { g.strokeStyle = col; g.lineWidth = 1.3; g.beginPath(); let on = false; for(let i = start; i < end; i++){ const v = arr[i]; if(v == null) continue; on ? g.lineTo(X(i), yM(v)) : g.moveTo(X(i), yM(v)); on = true; } g.stroke(); g.lineWidth = 1; };
     ln(I.macd, '#5cc8ff'); ln(I.sigL, '#ffcf70');
-    g.fillStyle = '#7f968a'; g.fillText('MACD 12 26 9', 6, qTop + 6);
+    g.fillStyle = K.sub; g.fillText('MACD 12 26 9', 6, qTop + 6);
   } else {
-    g.fillStyle = '#7f968a'; g.fillText('QUALITY · T A P K S N R', 6, qTop + 6);
-    g.textAlign = 'left'; g.fillStyle = '#8fa699'; g.fillText('11', plotW + 8, qTop + 6); g.fillText('0', plotW + 8, qTop + qh);
+    g.fillStyle = K.sub; g.fillText('QUALITY · T A P K S N R', 6, qTop + 6);
+    g.textAlign = 'left'; g.fillStyle = K.axis; g.fillText('11', plotW + 8, qTop + 6); g.fillText('0', plotW + 8, qTop + qh);
     for(let i = start; i < end; i++){ const r = sc[S5.m5idx[i]]; if(!r) continue; const hgt = Math.max(2, r.n / 11 * (qh - 12));
-      g.fillStyle = r.g === 'A+' ? '#b9f25a' : !r.side ? 'rgba(143,166,153,.35)' : r.side === 'BUY' ? 'rgba(47,210,138,.75)' : 'rgba(240,91,120,.75)';
+      g.fillStyle = r.g === 'A+' ? K.ap : !r.side ? 'rgba(143,166,153,.35)' : r.side === 'BUY' ? 'rgba(' + K.upRgb + ',' + K.qa + ')' : 'rgba(' + K.dnRgb + ',' + K.qa + ')';
       g.fillRect(Math.round(X(i) - bw / 2), qTop + qh - hgt, Math.max(1, Math.round(bw)), hgt); }
   }
   // crosshair + OHLC readout
   const hv = TERM.hover; let hb = C[N - 1], hi_ = N - 1;
   if(hv && hv.x < plotW){ hi_ = Math.max(start, Math.min(end - 1, start + Math.floor(hv.x / cw))); hb = C[hi_];
-    const x = Math.round(X(hi_)) + .5; g.strokeStyle = 'rgba(238,246,240,.35)'; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
-    if(hv.y < mainH){ const y = Math.round(hv.y) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.fillStyle = '#23402f'; g.fillRect(plotW + 2, y - 9, axisW - 4, 18); g.fillStyle = '#eef6f0'; g.fillText(fx(P(hv.y)), plotW + 7, y); }
-    g.setLineDash([]); }
+    const x = Math.round(X(hi_)) + .5; g.strokeStyle = K.cross; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
+    if(hv.y < mainH){ const y = Math.round(hv.y) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.fillStyle = K.crossBg; g.fillRect(plotW + 2, y - 9, axisW - 4, 18); g.fillStyle = K.crossFg; g.fillText(fx(P(hv.y)), plotW + 7, y); }
+    g.setLineDash([]);
+    { const tl = (S5.step >= 3600 ? new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false}) : aiHM).format(new Date(hb.t * 1000)); g.font = '600 11px ' + K.font; const tw = g.measureText(tl).width + 14, tx = Math.max(0, Math.min(plotW - tw, x - tw / 2));
+      g.fillStyle = K.crossBg; g.fillRect(tx, mainH + 1, tw, gap - 1); g.fillStyle = K.crossFg; g.textAlign = 'center'; g.fillText(tl, tx + tw / 2, mainH + gap / 2 + .5); g.textAlign = 'left'; } }
   const r = sc[S5.m5idx[hi_]];
-  $('termOhlc').innerHTML = `${hb.live ? '<b style="color:#5fe0a6">● LIVE</b> · ' : ''}${esc(aiICT.format(new Date(hb.t * 1000)))} · O <b>${fx(hb.o)}</b> H <b>${fx(hb.h)}</b> L <b>${fx(hb.l)}</b> C <b>${fx(hb.c)}</b>` +
+  $('termOhlc').className = 'term-ohlc ' + (hb.c >= hb.o ? 'u' : 'd');
+  $('termOhlc').innerHTML = `${hb.live ? '<b class="lv">● LIVE</b> · ' : ''}${esc(aiICT.format(new Date(hb.t * 1000)))} · O <b>${fx(hb.o)}</b> H <b>${fx(hb.h)}</b> L <b>${fx(hb.l)}</b> C <b>${fx(hb.c)}</b> <b>${hb.c >= hb.o ? '+' : ''}${fx(hb.c - hb.o)} (${hb.c >= hb.o ? '+' : ''}${((hb.c - hb.o) / hb.o * 100).toFixed(2)}%)</b>` +
     `${r ? ` · Q <b>${r.n}/11</b>` : ''}`;
   const lg = [], v = (arr) => arr[hi_] == null ? '—' : fx(arr[hi_]);
   if(O.ema) lg.push(`<span><b style="color:#5cc8ff">EMA20</b> ${v(S5.e20)} · <b style="color:#ffcf70">EMA50</b> ${v(S5.e50)}</span>`);
@@ -6609,6 +6641,8 @@ function termDraw(){
   box.querySelector('.term-zoom').addEventListener('click', e => { const z = e.target.closest('button'); if(!z) return; e.stopPropagation();
     if(z.dataset.z === 'in'){ TERM.user = true; TERM.bars = Math.round(TERM.bars * 0.8); } else if(z.dataset.z === 'out'){ TERM.user = true; TERM.bars = Math.round(TERM.bars * 1.25); } else { TERM.user = false; TERM.off = 0; } termDraw(); });
   box.querySelector('.term-zoom').addEventListener('pointerdown', e => e.stopPropagation());
+  const thSync = () => document.querySelectorAll('#termTheme button').forEach(b => b.classList.toggle('on', b.dataset.th === TERM.theme)); thSync();
+  $('termTheme').onclick = e => { const b = e.target.closest('button[data-th]'); if(!b) return; TERM.theme = b.dataset.th; try{ localStorage.setItem('aromTermTheme', TERM.theme); }catch(_){} thSync(); termDraw(); };
   $('termTf').onclick = e => { const b = e.target.closest('button[data-tf]'); if(!b) return; TERM.tf = b.dataset.tf; TERM.off = 0; TERM.user = false; termDraw(); };
   $('termInd').addEventListener('click', e => { const b = e.target.closest('button[data-ind]'); if(b){ TERM.on[b.dataset.ind] = !TERM.on[b.dataset.ind]; } else { const sb = e.target.closest('button[data-sub]'); if(!sb) return; TERM.sub = sb.dataset.sub; }
     termIndSync(); termSave(); termDraw(); });
