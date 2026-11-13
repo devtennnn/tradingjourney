@@ -12,8 +12,14 @@ const SYMBOLS = {
   OIL:    {td: null,      yahoo: 'CL=F',     yahooName: 'WTI crude futures (CL=F)'},
 };
 
-async function fromTwelveData(sym, key) {
-  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym.td)}&interval=5min&outputsize=1000&timezone=UTC&order=ASC&apikey=${key}`;
+// ?tf=5 (default, scalping) · 15 (intraday) · 60 (swing)
+const TF = {
+  5:  {step: 300,  td: '5min',  yi: '5m',  yr: '5d',  keep: 1000},
+  15: {step: 900,  td: '15min', yi: '15m', yr: '30d', keep: 1500},
+  60: {step: 3600, td: '1h',    yi: '60m', yr: '1y',  keep: 2400},
+};
+async function fromTwelveData(sym, key, tf) {
+  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym.td)}&interval=${tf.td}&outputsize=${tf.keep}&timezone=UTC&order=ASC&apikey=${key}`;
   const r = await fetch(url, {headers: {'User-Agent': 'arom-trade/1.0'}});
   const j = await r.json();
   if (!r.ok || j.status === 'error' || !Array.isArray(j.values)) throw new Error('twelvedata: ' + (j.message || r.status));
@@ -24,8 +30,8 @@ async function fromTwelveData(sym, key) {
   return {source: 'Twelve Data · ' + sym.td + ' spot', delayed: false, candles};
 }
 
-async function fromYahoo(sym) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym.yahoo)}?interval=5m&range=5d&includePrePost=true`;
+async function fromYahoo(sym, tf) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym.yahoo)}?interval=${tf.yi}&range=${tf.yr}&includePrePost=true`;
   const r = await fetch(url, {headers: {'User-Agent': 'Mozilla/5.0 (compatible; arom-trade/1.0)', 'Accept': 'application/json'}});
   if (!r.ok) throw new Error('yahoo: ' + r.status);
   const j = await r.json();
@@ -44,22 +50,25 @@ module.exports = async (req, res) => {
   const sym = SYMBOLS[key];
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (!sym) return res.status(400).json({error: 'unsupported symbol'});
+  const tfKey = String((req.query && req.query.tf) || '5'), tf = TF[tfKey];
+  if (!tf) return res.status(400).json({error: 'unsupported tf (5, 15 or 60)'});
   // cache until just after the next 5-minute candle closes, so every visitor shares one upstream call per candle
-  const now = Math.floor(Date.now() / 1000), next = Math.ceil((now + 1) / 300) * 300 + 20;
+  const now = Math.floor(Date.now() / 1000), next = Math.ceil((now + 1) / tf.step) * tf.step + 20;
   const errors = [];
   const tdKey = process.env.TWELVEDATA_API_KEY;
-  const providers = tdKey && sym.td ? [() => fromTwelveData(sym, tdKey), () => fromYahoo(sym)] : [() => fromYahoo(sym)];
+  const providers = tdKey && sym.td ? [() => fromTwelveData(sym, tdKey, tf), () => fromYahoo(sym, tf)] : [() => fromYahoo(sym, tf)];
   for (const p of providers) {
     try {
       const out = await p();
       // keep only whole 5-minute candles (Yahoo appends a live partial bar stamped with its last tick time)
-      out.candles = out.candles.filter(c => c.t % 300 === 0);
+      out.candles = out.candles.filter(c => c.t % tf.step === 0);
       // drop the candle that is still forming
       const last = out.candles[out.candles.length - 1];
-      if (last && last.t + 300 > now) out.candles.pop();
+      if (last && last.t + tf.step > now) out.candles.pop();
+      out.candles = out.candles.slice(-tf.keep);
       if (out.candles.length < 300) throw new Error('not enough candles (' + out.candles.length + ')');
-      res.setHeader('Cache-Control', `public, s-maxage=${Math.max(30, next - now)}, stale-while-revalidate=60`);
-      return res.status(200).json({symbol: key, ...out, fetchedAt: now});
+      res.setHeader('Cache-Control', `public, s-maxage=${Math.max(30, Math.min(next - now, 900))}, stale-while-revalidate=60`);
+      return res.status(200).json({symbol: key, tf: +tfKey, ...out, fetchedAt: now});
     } catch (e) { errors.push(String(e.message || e)); }
   }
   res.setHeader('Cache-Control', 'no-store');
