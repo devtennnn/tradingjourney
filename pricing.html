@@ -6194,6 +6194,15 @@ function termDraw(){
   if(live){ lo = Math.min(lo, cur.sl, cur.tp3); hi = Math.max(hi, cur.sl, cur.tp3); }
   const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
   const Y = p => 8 + (hi - p) / (hi - lo) * (mainH - 16), P = y => hi - (y - 8) / (mainH - 16) * (hi - lo);
+  // background watermark: AROM + symbol · timeframe (drawn first, under the grid and candles)
+  { const cx = plotW / 2, cy = mainH / 2, fs = Math.max(48, Math.min(170, plotW * 0.17));
+    g.save(); g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `900 ${fs}px Inter,sans-serif`; if('letterSpacing' in g) g.letterSpacing = Math.round(fs * 0.08) + 'px';
+    g.fillStyle = 'rgba(185,242,90,.055)'; g.fillText('AROM', cx, cy - fs * 0.12);
+    if('letterSpacing' in g) g.letterSpacing = Math.round(fs * 0.06) + 'px';
+    g.font = `800 ${Math.round(fs * 0.17)}px Inter,sans-serif`; g.fillStyle = 'rgba(214,255,134,.06)';
+    g.fillText(AI.sym + ' · ' + (TERM.tf === '5' ? 'M5' : 'M15') + ' · TRADE', cx, cy + fs * 0.52);
+    if('letterSpacing' in g) g.letterSpacing = '0px'; g.restore(); }
   // grid + axis labels
   g.font = '600 11px Inter,sans-serif'; g.textBaseline = 'middle';
   const stepP = (() => { const raw = (hi - lo) / 7, pw = Math.pow(10, Math.floor(Math.log10(raw))); return [1, 2, 2.5, 5, 10].map(m => m * pw).find(v => v >= raw); })();
