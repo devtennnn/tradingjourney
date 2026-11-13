@@ -2324,7 +2324,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
           <button type="button" data-ind="ema" style="--c:#5cc8ff" title="EMA 20 / EMA 50 — trend used by the AI engine"><i></i>EMA 20/50</button>
           <button type="button" data-ind="ribbon" style="--c:#b9f25a" title="Scalp ribbon: EMA 9 / EMA 21 — fast momentum, green = up, red = down"><i></i>Scalp ribbon 9/21</button>
           <button type="button" data-ind="vwap" style="--c:#c9a2ff" title="Session VWAP with ±1σ / ±2σ bands (resets 07:00 ICT; weighted by candle range because the feed has no volume)"><i></i>VWAP ±σ</button>
-          <button type="button" data-ind="sr" style="--c:#ffcf70" title="Auto support / resistance zones from swing highs and lows (×N = touches)"><i></i>S/R zones</button>
+          <button type="button" data-ind="sr" style="--c:#ffcf70" title="Auto support / resistance: swing highs and lows on this chart plus the higher timeframe, scored 0–100 by touches, rejection wicks, recency and how often price cut through. FLIP = acted as both support and resistance."><i></i>S/R zones</button>
           <button type="button" data-ind="piv" style="--c:#ff9f6e" title="Classic daily pivots from yesterday's high, low and close"><i></i>Pivots</button>
           <button type="button" data-ind="keys" style="--c:#ff7fbf" title="Day open, Asia high/low, previous day high/low"><i></i>Key levels</button>
           <button type="button" data-ind="pulse" style="--c:#2fd28a" title="Scalp Pulse: EMA 9/21 cross on the right side of VWAP with RSI agreeing — momentum hint, not an A+ signal"><i></i>Scalp Pulse</button>
@@ -6334,17 +6334,45 @@ function termInd(S5){
   const m5 = AI.data.candles, lastDay = Math.floor(m5[m5.length - 1].t / 86400) * 86400, prev = m5.filter(b => b.t >= lastDay - 86400 && b.t < lastDay);
   let piv = null; if(prev.length > 20){ const H = Math.max(...prev.map(b => b.h)), L = Math.min(...prev.map(b => b.l)), Cc = prev[prev.length - 1].c, PP = (H + L + Cc) / 3;
     piv = [['R2', PP + (H - L)], ['R1', 2 * PP - L], ['PP', PP], ['S1', 2 * PP - H], ['S2', PP - (H - L)]]; }
-  // Auto support / resistance: fractal swing points (3 bars each side), clustered within 0.4 ATR
-  const from = Math.max(3, N - 320), A = atr[N - 1] || (C[N - 1].h - C[N - 1].l) || 1, pts = [];
+  // Auto support / resistance v2
+  //  · swing points on this chart (3 bars each side) + swing points on a higher timeframe built from the same candles
+  //  · each touch is weighted by its rejection wick and how recent it is; higher-timeframe swings count double
+  //  · touches within 0.35 ATR merge into one zone; zones price has sliced through many times lose strength
+  //  · strength 0–100, flip = the zone has acted as both support and resistance
+  const from = Math.max(3, N - 400), A = atr[N - 1] || (C[N - 1].h - C[N - 1].l) || 1, pts = [], last = cl[N - 1];
+  const rec = i => .5 + .5 * Math.max(0, (i - from) / Math.max(1, N - from));
   for(let i = from; i < N - 3; i++){ let isH = true, isL = true; for(let k = 1; k <= 3; k++){ if(C[i].h <= C[i - k].h || C[i].h < C[i + k].h) isH = false; if(C[i].l >= C[i - k].l || C[i].l > C[i + k].l) isL = false; }
-    if(isH) pts.push({p:C[i].h, i}); if(isL) pts.push({p:C[i].l, i}); }
+    const b = C[i];
+    if(isH) pts.push({p:b.h, i, side:'H', w:(1 + Math.min(1, (b.h - Math.max(b.o, b.c)) / A) * .5) * rec(i)});
+    if(isL) pts.push({p:b.l, i, side:'L', w:(1 + Math.min(1, (Math.min(b.o, b.c) - b.l) / A) * .5) * rec(i)}); }
+  const step = S5.step || 300, hstep = step <= 300 ? 3600 : step <= 900 ? 14400 : 86400, htfName = hstep === 3600 ? 'H1' : hstep === 14400 ? 'H4' : 'D1', HB = [];
+  C.forEach((b, i) => { const k = Math.floor(b.t / hstep), h = HB[HB.length - 1];
+    if(h && h.k === k){ if(b.h > h.h){ h.h = b.h; h.ih = i; } if(b.l < h.l){ h.l = b.l; h.il = i; } } else HB.push({k, h:b.h, l:b.l, ih:i, il:i}); });
+  for(let j = 2; j < HB.length - 2; j++){ const b = HB[j]; if(b.ih < from - 200) continue;
+    if(b.h > HB[j - 1].h && b.h > HB[j - 2].h && b.h >= HB[j + 1].h && b.h >= HB[j + 2].h) pts.push({p:b.h, i:b.ih, side:'H', w:2 * rec(Math.max(from, b.ih)), htf:1});
+    if(b.l < HB[j - 1].l && b.l < HB[j - 2].l && b.l <= HB[j + 1].l && b.l <= HB[j + 2].l) pts.push({p:b.l, i:b.il, side:'L', w:2 * rec(Math.max(from, b.il)), htf:1}); }
   pts.sort((a, b) => a.p - b.p); const groups = [];
-  pts.forEach(pt => { const gp = groups[groups.length - 1]; if(gp && pt.p - gp.lo <= A * 0.4){ gp.pts.push(pt); gp.hi = pt.p; } else groups.push({lo:pt.p, hi:pt.p, pts:[pt]}); });
-  const last = cl[N - 1]; let zones = groups.filter(gp => gp.pts.length >= 2).map(gp => { const mid = gp.pts.reduce((x, y) => x + y.p, 0) / gp.pts.length;
-    return {lo:gp.lo - A * 0.08, hi:gp.hi + A * 0.08, mid, n:gp.pts.length, i0:Math.min(...gp.pts.map(x => x.i)), i1:Math.max(...gp.pts.map(x => x.i))}; });
+  pts.forEach(pt => { const gp = groups[groups.length - 1]; if(gp && pt.p - gp.lo <= A * .35){ gp.pts.push(pt); gp.hi = pt.p; } else groups.push({lo:pt.p, hi:pt.p, pts:[pt]}); });
+  let zones = groups.map(gp => {
+    const P_ = gp.pts.slice().sort((x, y) => y.w - x.w).filter((x, k, a) => a.findIndex(y => y.i === x.i && y.side === x.side) === k);          // the same swing found on both timeframes counts once (keep the heavier)
+    const n = new Set(P_.map(x => x.i)).size, htf = P_.some(x => x.htf), w = P_.reduce((x, y) => x + y.w, 0), mid = P_.reduce((x, y) => x + y.p * y.w, 0) / w;
+    const i0 = Math.min(...P_.map(x => x.i)), i1 = Math.max(...P_.map(x => x.i)), flip = P_.some(x => x.side === 'H') && P_.some(x => x.side === 'L');
+    let cross = 0; for(let i = Math.max(i0, 1); i < N; i++) if((cl[i] - mid) * (cl[i - 1] - mid) < 0) cross++;
+    const str = Math.max(5, Math.min(100, Math.round(w * 17 + (htf ? 15 : 0) + (flip ? 6 : 0) - Math.max(0, cross - 2) * 4)));
+    let lo = gp.lo - A * .1, hi = gp.hi + A * .1; if(hi - lo > A * .8){ lo = mid - A * .4; hi = mid + A * .4; }
+    return {lo, hi, mid, n, i0, i1, htf, htfName, flip, cross, str, dist:(mid - last) / A};
+  }).filter(z => z.n >= 2 || (z.htf && z.str >= 30));
+  // merge zones that overlap or sit within 0.15 ATR of each other (the stronger one keeps its label)
+  zones.sort((a, b) => a.mid - b.mid);
+  zones = zones.reduce((out, z) => { const p = out[out.length - 1];
+    if(p && z.lo <= p.hi + A * .15){ const s_ = p.str >= z.str ? p : z; out[out.length - 1] = {...s_, lo:Math.min(p.lo, z.lo), hi:Math.max(p.hi, z.hi), mid:(p.mid * p.str + z.mid * z.str) / (p.str + z.str), n:p.n + z.n,
+      i0:Math.min(p.i0, z.i0), i1:Math.max(p.i1, z.i1), htf:p.htf || z.htf, flip:p.flip || z.flip, str:Math.min(100, Math.max(p.str, z.str) + 8)};
+      const m = out[out.length - 1]; if(m.hi - m.lo > A){ m.lo = m.mid - A * .5; m.hi = m.mid + A * .5; } m.dist = (m.mid - last) / A; }
+    else out.push(z); return out; }, []);
   zones.forEach(z => z.kind = z.lo > last ? 'R' : z.hi < last ? 'S' : 'F');
-  const above = zones.filter(z => z.kind !== 'S').sort((a, b) => a.mid - b.mid).slice(0, 3), below = zones.filter(z => z.kind === 'S').sort((a, b) => b.mid - a.mid).slice(0, 3);
-  zones = above.concat(below);
+  const pick = arr => arr.filter(z => Math.abs(z.dist) <= 8).sort((a, b) => b.str - a.str).slice(0, 3).sort((a, b) => Math.abs(a.dist) - Math.abs(b.dist));
+  zones = pick(zones.filter(z => z.kind !== 'S')).concat(pick(zones.filter(z => z.kind === 'S')));
+  zones.forEach(z => z.grade = z.str >= 70 ? 'strong' : z.str >= 45 ? 'medium' : 'weak');
   // Scalp Pulse: EMA 9/21 cross on the right side of VWAP with RSI agreeing
   const pulse = [];
   for(let i = Math.max(1, N - 400); i < N; i++){ if(e9[i] == null || e21[i] == null || e9[i - 1] == null || rsi[i] == null || vw[i] == null) continue;
@@ -6510,13 +6538,14 @@ function termDraw(){
   const used = [];
   const I = termInd(S5), O = aiSimple() ? {ema:true, ribbon:false, vwap:false, sr:true, piv:false, keys:true, pulse:false} : TERM.on;
   g.save(); g.beginPath(); g.rect(0, 0, plotW, mainH); g.clip();
-  // S/R zones (drawn first, under everything)
+  // S/R zones (drawn first, under everything): box opacity follows strength; labels sit at the right end, stacked so they never overlap
+  const zl = [];
   if(O.sr) I.zones.forEach(z => { if(z.hi < lo || z.lo > hi) return;
-    const col = z.kind === 'R' ? K.dnRgb : z.kind === 'S' ? K.upRgb : '255,207,112', x0 = Math.max(0, X(Math.max(start, z.i0)) - cw / 2), y1 = Y(z.hi), y2 = Y(z.lo);
-    g.fillStyle = `rgba(${col},${.07 + Math.min(z.n, 5) * .025})`; g.fillRect(x0, y1, plotW - x0, Math.max(2, y2 - y1));
-    g.strokeStyle = `rgba(${col},.55)`; g.setLineDash([]); g.beginPath(); g.moveTo(x0, Math.round(y1) + .5); g.lineTo(plotW, Math.round(y1) + .5); g.moveTo(x0, Math.round(y2) + .5); g.lineTo(plotW, Math.round(y2) + .5); g.stroke();
-    const lbl = (z.kind === 'R' ? 'RES' : z.kind === 'S' ? 'SUP' : 'FLIP') + ' ×' + z.n; g.font = '800 9.5px ' + K.font; const tw = g.measureText(lbl).width + 10, lx = Math.min(plotW - tw - 90, Math.max(4, x0 + 4)), ly = Math.max(10, Math.min(mainH - 10, (y1 + y2) / 2));
-    g.fillStyle = `rgba(${col},.9)`; g.fillRect(lx, ly - 7, tw, 14); g.fillStyle = K.fg; g.textAlign = 'left'; g.fillText(lbl, lx + 5, ly + .5); });
+    const col = z.kind === 'R' ? K.dnRgb : z.kind === 'S' ? K.upRgb : '255,183,77', a = .05 + z.str / 100 * .13, x0 = Math.max(0, X(Math.max(start, z.i0)) - cw / 2), y1 = Y(z.hi), y2 = Y(z.lo);
+    g.fillStyle = `rgba(${col},${a})`; g.fillRect(x0, y1, plotW - x0, Math.max(2, y2 - y1));
+    g.strokeStyle = `rgba(${col},${.35 + z.str / 100 * .45})`; g.lineWidth = z.grade === 'strong' ? 1.5 : 1; g.setLineDash(z.grade === 'weak' ? [4, 4] : []);
+    g.beginPath(); g.moveTo(x0, Math.round(y1) + .5); g.lineTo(plotW, Math.round(y1) + .5); g.moveTo(x0, Math.round(y2) + .5); g.lineTo(plotW, Math.round(y2) + .5); g.stroke(); g.setLineDash([]); g.lineWidth = 1;
+    zl.push({z, col, y:Math.max(10, Math.min(mainH - 10, (y1 + y2) / 2))}); });
   // Daily pivots
   if(O.piv && I.piv) I.piv.forEach(([lbl, pv]) => { if(pv < lo || pv > hi) return; const y = Math.round(Y(pv)) + .5;
     g.strokeStyle = lbl === 'PP' ? 'rgba(255,159,110,.85)' : 'rgba(255,159,110,.5)'; g.setLineDash(lbl === 'PP' ? [6, 4] : [2, 4]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]);
@@ -6550,6 +6579,12 @@ function termDraw(){
   if(O.pulse) I.pulse.forEach(pz => { if(pz.i < start || pz.i >= end) return; const b = C[pz.i], x = X(pz.i), buy = pz.side === 'BUY', y = buy ? Y(b.l) + 11 : Y(b.h) - 11;
     g.fillStyle = buy ? K.up : K.dn; g.strokeStyle = K.bg; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); g.fill(); g.stroke(); g.lineWidth = 1; });
   g.restore();
+  // S/R labels on top of the candles
+  if(zl.length){ g.font = '800 9.5px ' + K.font; g.textAlign = 'left';
+    const rx = plotW - (live ? 84 : 8); let prevY = -99;
+    zl.sort((p, q) => p.y - q.y).forEach(L => { const z = L.z, txt = (z.kind === 'R' ? 'RES' : z.kind === 'S' ? 'SUP' : 'TESTING') + ' ' + z.str + '% · ' + z.n + '×' + (z.htf ? ' · ' + z.htfName : '') + (z.flip && z.kind !== 'F' ? ' · FLIP' : '');
+      const tw = g.measureText(txt).width + 12; let y = L.y; if(y - prevY < 17) y = prevY + 17; prevY = y;
+      g.fillStyle = `rgba(${L.col},.92)`; g.fillRect(rx - tw, y - 8, tw, 16); g.fillStyle = K.fg; g.fillText(txt, rx - tw + 6, y + .5); }); }
   // A+ markers (mapped from M5 history)
   AI.hist.forEach(hs => { let i = -1; for(let q = start; q < end; q++){ if(S5.m5idx[q] >= hs.i){ i = q; break; } } if(i < 0) return;
     const b = C[i], x = X(i), buy = hs.side === 'BUY', y = buy ? Y(b.l) + 14 : Y(b.h) - 14;
@@ -6620,7 +6655,8 @@ function termDraw(){
   if(O.ribbon) lg.push(`<span><b style="color:#d6ff86">EMA9</b> ${v(I.e9)} · <b style="color:#b9f25a">EMA21</b> ${v(I.e21)} · ${I.e9[hi_] != null && I.e21[hi_] != null ? (I.e9[hi_] >= I.e21[hi_] ? '<b style="color:#2fd28a">▲ up</b>' : '<b style="color:#f05b78">▼ down</b>') : ''}</span>`);
   if(O.vwap && I.vw[hi_] != null) lg.push(`<span><b style="color:#c9a2ff">VWAP</b> ${fx(I.vw[hi_])} · ±1σ ${fx(I.vw[hi_] + I.vs[hi_])} / ${fx(I.vw[hi_] - I.vs[hi_])} · price ${hb.c >= I.vw[hi_] ? 'above' : 'below'}</span>`);
   if(O.sr){ const res = I.zones.filter(z => z.kind !== 'S').sort((a, b) => a.mid - b.mid)[0], sup = I.zones.filter(z => z.kind === 'S').sort((a, b) => b.mid - a.mid)[0];
-    lg.push(`<span><b style="color:#f05b78">RES</b> ${res ? fx(res.lo) + '–' + fx(res.hi) + ' ×' + res.n : '—'} · <b style="color:#2fd28a">SUP</b> ${sup ? fx(sup.lo) + '–' + fx(sup.hi) + ' ×' + sup.n : 'none nearby'}</span>`); }
+    const zt = z => `${fx(z.lo)}–${fx(z.hi)} · ${z.grade} ${z.str}% · ${z.n} touches${z.htf ? ' · ' + z.htfName : ''} · ${z.kind === 'F' ? 'price inside' : Math.abs(z.dist).toFixed(1) + ' ATR away'}`;
+    lg.push(`<span><b style="color:${K.dn}">${res && res.kind === 'F' ? 'TESTING' : 'RES'}</b> ${res ? zt(res) : 'none nearby'} · <b style="color:${K.up}">SUP</b> ${sup ? zt(sup) : 'none nearby'}</span>`); }
   if(O.piv && I.piv) lg.push(`<span><b style="color:#ff9f6e">PP</b> ${fx(I.piv[2][1])} · R1 ${fx(I.piv[1][1])} · S1 ${fx(I.piv[3][1])}</span>`);
   if(!lg.length) lg.push('<span>—</span>');
   $('termLegend').innerHTML = lg.join('');
