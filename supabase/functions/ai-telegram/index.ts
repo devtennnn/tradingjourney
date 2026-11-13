@@ -10,7 +10,9 @@ const SITE = "https://truetradejourney.vercel.app";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const ict = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Phnom_Penh", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Phnom_Penh", hour: "2-digit", minute: "2-digit", hour12: false });
-const fx = (v, sym) => Number(v).toFixed(sym === "XAGUSD" ? 3 : 2);
+const DP = { XAGUSD: 3, EURUSD: 5, GBPUSD: 5, USDJPY: 3, NQ: 2, OIL: 2 };
+const NAME = { XAUUSD: "Gold", XAGUSD: "Silver", EURUSD: "Euro", GBPUSD: "Pound", USDJPY: "Yen", NQ: "Nasdaq 100", OIL: "WTI Oil" };
+const fx = (v, sym) => Number(v).toFixed(DP[sym] ?? 2);
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const TRIG = { engulf: "Engulfing", pin: "Pin bar", momentum: "Momentum close" };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
@@ -46,21 +48,49 @@ async function newsFn() {
     return (tSec) => !ev.some((ms) => Math.abs(ms - tSec * 1000) <= 30 * 60000);
   } catch (_) { return () => null; }
 }
-function signalText(sym, s, ev, src) {
-  const buy = s.side === "BUY";
+// Entry Timer checklist lines (same rules as Trade Finder → Time the trade on the website)
+function timerLines(ev, buy, s) {
+  const c = Object.fromEntries(ev.checks.map((x) => [x.key, x]));
+  const ok = (k) => (c[k] && c[k].pass ? "✅" : "▫️");
   return [
-    `${buy ? "🟢" : "🔴"} <b>A+ ${s.side} · ${sym}</b>  <i>(M5 scalp)</i>`, "",
-    `<b>Entry:</b> <code>${fx(s.entry, sym)}</code>`,
-    `<b>SL:</b> <code>${fx(s.sl, sym)}</code>`,
-    `<b>TP1:</b> <code>${fx(s.tp1, sym)}</code>  (1R)`,
-    `<b>TP2:</b> <code>${fx(s.tp2, sym)}</code>  (2R)`,
-    `<b>TP3:</b> <code>${fx(s.tp3, sym)}</code>  (3R)`, "",
-    `Trigger: ${esc(TRIG[s.trigger] || s.trigger)} · Risk ${fx(s.risk, sym)}`,
-    `M15 trend ${buy ? "up" : "down"} · checks ${ev.checks.filter((c) => c.pass).length}/11 ✅`,
-    `🕒 ${ict.format(new Date(s.t * 1000))} ICT · valid until ${hm.format(new Date(s.validUntil * 1000))}`,
-    `↪ Move SL to entry after TP1`, "",
-    `<a href="${SITE}/analysis#aiPanel">AROM TRADE · AI Desk</a>`,
-    `<i>Data: ${esc(src)}. Algorithmic analysis, not financial advice. Trade at your own risk.</i>`,
+    `${ok("bias")} M15 trend ${buy ? "up" : "down"}`,
+    `${ok("align")} M5 EMA20/50 aligned`,
+    `${ok("pullback")} Pullback into EMA zone`,
+    `${ok("trigger")} Trigger: ${esc(TRIG[s?.trigger] || (c.trigger && c.trigger.val) || "waiting")}`,
+    `${ok("session")} London / NY session`,
+    `${ok("news")} No high-impact news ±30 min`,
+    `${ok("risk")} Stop size ${c.risk && c.risk.val != null ? c.risk.val + "× ATR" : "OK"}`,
+  ];
+}
+function signalText(sym, s, ev, src) {
+  const buy = s.side === "BUY", n = ev.checks.filter((c) => c.pass).length;
+  return [
+    `${buy ? "🟢" : "🔴"} <b>${s.side} · ${sym}</b>  —  A+ · Time the trade`,
+    `<i>${esc(NAME[sym] || sym)} · M5 scalp · ${n}/11 checks</i>`, "",
+    `⏱ <b>ENTRY TIMER — TRIGGERED</b>`,
+    ...timerLines(ev, buy, s),
+    `➡️ Enter now near <code>${fx(s.entry, sym)}</code>`,
+    `⌛ Entry window open until <b>${hm.format(new Date(s.validUntil * 1000))}</b> ICT · skip if price already passed TP1`, "",
+    `🎯 <b>EXIT PLANNER</b>`,
+    `🛑 SL   <code>${fx(s.sl, sym)}</code>  (risk ${fx(s.risk, sym)})`,
+    `1️⃣ TP1 <code>${fx(s.tp1, sym)}</code>  1R → move SL to entry`,
+    `2️⃣ TP2 <code>${fx(s.tp2, sym)}</code>  2R`,
+    `3️⃣ TP3 <code>${fx(s.tp3, sym)}</code>  3R → final target`,
+    `⏳ Time stop: exit if no TP or SL within 4 hours`, "",
+    `🕒 Signal ${ict.format(new Date(s.t * 1000))} ICT`,
+    `<a href="${SITE}/analysis#wfPanel">AROM TRADE · Trade Finder</a>`,
+    `<i>Data: ${esc(src)}. Algorithmic analysis, not financial advice. Risk only what you can afford to lose.</i>`,
+  ].join("\n");
+}
+// "Get ready" heads-up: every core rule passes except the trigger candle
+function readyText(sym, ev, last) {
+  const buy = ev.side === "BUY";
+  return [
+    `⏳ <b>GET READY · ${sym} ${ev.side}</b>  <i>(${esc(NAME[sym] || sym)} · M5)</i>`, "",
+    `⏱ <b>ENTRY TIMER — WAITING FOR TRIGGER</b>`,
+    ...timerLines(ev, buy, null),
+    `Price <code>${fx(last.c, sym)}</code> is in the pullback zone. Wait for a ${buy ? "bullish" : "bearish"} engulfing, pin bar or momentum close on M5, then the A+ signal posts here.`,
+    `<i>Not an entry yet, don't front-run the trigger.</i>`,
   ].join("\n");
 }
 const UPDATE = { 1: "✅ <b>TP1 hit</b> (+1R) — move SL to entry", 2: "✅✅ <b>TP2 hit</b> (+2R)", 3: "🏆 <b>TP3 hit</b> (+3R) — target complete" };
@@ -76,7 +106,7 @@ Deno.serve(async (req) => {
 
   if (url.searchParams.get("test")) {
     try {
-      const id = await tg(`🤖 <b>AROM TRADE AI bot connected</b>\nA+ scalping signals (XAUUSD, M5) will be posted here automatically during London / New York hours.\n<a href="${SITE}/analysis">Open AI Desk</a>\n<i>Algorithmic analysis, not financial advice.</i>`);
+      const id = await tg(`🤖 <b>AROM TRADE AI bot connected</b>\nA+ "Time the trade" signals (entry timer + exit plan) for Gold, Silver, EURUSD, GBPUSD, USDJPY, Nasdaq and Oil are posted here automatically during London / New York hours.\n<a href="${SITE}/analysis">Open AI Desk</a>\n<i>Algorithmic analysis, not financial advice.</i>`);
       return json({ ok: true, message_id: id });
     } catch (e) { return json({ error: String(e.message || e) }, 500); }
   }
@@ -102,6 +132,10 @@ Deno.serve(async (req) => {
         const r = sim.res, hits = r === "open" || r === "sl" || r === "expired" ? 0 : +r.slice(2, 3);
         const closed = !(r === "open" || r.endsWith("+"));
         const msgs = [];
+        if (!row.window_sent && Date.now() / 1000 > Number(row.t) + 15 * 60 && r === "open" && hits === 0) {
+          try { await tg(`⌛ <b>Entry window closed</b> (${hm.format(new Date((Number(row.t) + 900) * 1000))} ICT)\nIn the trade? Keep the plan. Not in? Don't chase, wait for the next setup.\n${sym} ${row.side} @ ${fx(row.entry, sym)}`, row.tg_message_id); } catch (_) { /* keep going */ }
+          await db.from("ai_signals").update({ window_sent: true }).eq("id", row.id);
+        }
         for (let k = (row.hits || 0) + 1; k <= hits; k++) msgs.push(UPDATE[k]);
         if (closed && r === "sl") msgs.push("❌ <b>SL hit</b> (−1R)");
         else if (closed && r === "expired") msgs.push("⏱ <b>Expired</b> — no TP or SL within 4 hours");
@@ -128,6 +162,15 @@ Deno.serve(async (req) => {
         out.posted = { side: s.side, entry: s.entry, t: s.t };
       }
       const last = AiEng.evalAt(P, n, news);
+      // 3) "Get ready" when every core rule passes except the trigger (max once per symbol per 2 hours)
+      if (!last.signal && last.side && !out.posted) {
+        const core = last.checks.filter((c) => c.core), miss = core.filter((c) => !c.pass);
+        if (miss.length === 1 && miss[0].key === "trigger") {
+          const slot = Math.floor(m5[n].t / 7200);
+          const { data: ins } = await db.from("ai_ready").upsert({ symbol: sym, slot, side: last.side }, { onConflict: "symbol,slot", ignoreDuplicates: true }).select();
+          if (ins && ins.length) { await tg(readyText(sym, last, m5[n])); out.ready = true; }
+        }
+      }
       out.grade = last.grade; out.bias = last.side;
       out.checks = last.checks.map((c) => c.key + (c.pass ? "✓" : "✗")).join(" ");
     } catch (e) { out.error = String(e.message || e); }
