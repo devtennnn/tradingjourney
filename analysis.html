@@ -1602,6 +1602,16 @@ header.nav2.nav-burger-mode:not(.nav-open){row-gap:0}
 body[data-page="main"] .pg-an,body:not([data-page="pricing"]) .pg-pr{display:none!important}
 body[data-page="pricing"] :is(.pg-main,.pg-an){display:none!important}
 body[data-page="analysis"] .pg-main{display:none!important}
+/* AI Desk rebuild: blocks come back one by one via DESK flags */
+body[data-page="analysis"]:not(.dk-tiles) .dk-stats,
+body[data-page="analysis"]:not(.dk-tabs-on) #dkTabs,
+body[data-page="analysis"]:not(.dk-signal) #aiPanel,
+body[data-page="analysis"]:not(.dk-finder) #wfPanel,
+body[data-page="analysis"]:not(.dk-news) #naPanel{display:none!important}
+body[data-page="analysis"]:not(.dk-tiles) .dk-top{grid-template-columns:1fr}
+.dk-reset{margin:8px 0 40px;padding:28px 24px;border-radius:20px;border:1px dashed var(--line);text-align:center;color:var(--muted)}
+.dk-reset b{display:block;color:var(--text);font-size:17px;margin-bottom:6px}
+body.dk-any .dk-reset{display:none}
 .dk-top{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;align-items:center;text-align:left}
 .an-desk{padding:26px 26px 24px!important;margin-bottom:12px!important}
 .an-desk .an-h1{margin:12px 0 0;font-size:clamp(28px,3.4vw,44px);letter-spacing:-1.2px;max-width:none}
@@ -2171,6 +2181,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
     </div>
   </div>
 </section>
+<div class="dk-reset pg-an" id="dkReset"><b data-i18n="dkResetT">The AI Desk is being rebuilt</b><span data-i18n="dkResetP">Tools are coming back one at a time, simpler and clearer.</span></div>
 <nav class="dk-tabs pg-an" id="dkTabs" aria-label="AI Desk sections">
   <a href="#aiPanel" data-jump="aiPanel"><b>01</b><span data-i18n="anJ1">AI Signal Analysis</span></a>
   <a href="#wfPanel" data-jump="wfPanel"><b>02</b><span data-i18n="anJ0">Trade Finder</span></a>
@@ -3128,7 +3139,7 @@ const T = {
     naR_srUp:"Room to resistance {v} ({a}× ATR)",naR_srTight:"Resistance close at {v}: limited room",naR_srDnRoom:"Room to support {v} ({a}× ATR)",naR_srDnTight:"Support close at {v}: limited room",
     naUsdUpW:"stronger",naUsdDnW:"weaker",
     naLockNews:"{ev} in {m} min: wait for the release before entering",naLockAfter:"{ev} just released: let the spike settle until {hm} ICT",
-    nlTitle:"NEWS LOCK",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
+    nlTitle:"NEWS LOCK",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
     alSettings:"Alert settings",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
     alGNews:"News alerts · USD high impact",alNews30:"30 minutes before",alNews5:"5 minutes before",alNewsNow:"At release",alNewsMed:"Include medium-impact USD news",
     alGMarket:"Market alerts",alMove:"Gold moves fast: at least",alMove2:"$ within 15 min",alPrice:"Price alerts",alAbove:"Above",alBelow:"Below",alAdd:"Add",alPaNone:"No price alerts yet.",alPaBad:"Enter a price.",
@@ -3190,7 +3201,7 @@ const T = {
     naR_srUp:"មានចន្លោះដល់ resistance {v} ({a}× ATR)",naR_srTight:"Resistance នៅជិត {v}៖ ចន្លោះតិច",naR_srDnRoom:"មានចន្លោះដល់ support {v} ({a}× ATR)",naR_srDnTight:"Support នៅជិត {v}៖ ចន្លោះតិច",
     naUsdUpW:"ខ្លាំងឡើង",naUsdDnW:"ខ្សោយចុះ",
     naLockNews:"{ev} ក្នុង {m} នាទីទៀត៖ រង់ចាំការចេញផ្សាយសិន",naLockAfter:"{ev} ទើបចេញ៖ រង់ចាំឱ្យស្ងប់រហូតដល់ {hm} ICT",
-    nlTitle:"ចាក់សោព័ត៌មាន",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
+    nlTitle:"ចាក់សោព័ត៌មាន",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
     alSettings:"ការកំណត់ការជូនដំណឹង",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
     alGNews:"ការជូនដំណឹងព័ត៌មាន · USD សំខាន់",alNews30:"៣០ នាទីមុន",alNews5:"៥ នាទីមុន",alNewsNow:"ពេលចេញផ្សាយ",alNewsMed:"រួមទាំងព័ត៌មាន USD កម្រិតមធ្យម",
     alGMarket:"ការជូនដំណឹងទីផ្សារ",alMove:"មាសប្រែប្រួលលឿន៖ យ៉ាងតិច",alMove2:"$ ក្នុង ១៥ នាទី",alPrice:"ការជូនដំណឹងតម្លៃ",alAbove:"លើ",alBelow:"ក្រោម",alAdd:"បន្ថែម",alPaNone:"មិនទាន់មានការជូនដំណឹងតម្លៃ។",alPaBad:"សូមបញ្ចូលតម្លៃ។",
@@ -6154,6 +6165,7 @@ function aiNotify(){
   try{ if(typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('AROM TRADE · A+', {body:msg, icon: document.querySelector('link[rel=icon]') ? document.querySelector('link[rel=icon]').href : undefined}); }catch(e){}
 }
 function aiSync(){
+  if(document.body.dataset.page === 'analysis' && window.DESK && !DESK.signal) return;
   const locked = !Prem.elite;
   $('aiWrap').classList.toggle('locked', locked);
   if(locked){ clearTimeout(AI.timer); AI.data = null; AI.last = null; AI.hist = []; return; }
@@ -6698,6 +6710,7 @@ $('wfOpenChart').onclick = () => { AI.sym = WF.sel; AI.data = null; AI.P = null;
 setInterval(() => { if(!$('wfCd') || !Prem.elite || !WF.nextAt) return; const d = Math.max(0, Math.round(WF.nextAt - Date.now() / 1000));
   $('wfCd').textContent = String(Math.floor(d / 60)).padStart(2, '0') + ':' + String(d % 60).padStart(2, '0'); }, 1000);
 function wfSync(){
+  if(document.body.dataset.page === 'analysis' && window.DESK && !DESK.finder) return;
   const locked = !Prem.elite; $('wfWrap').classList.toggle('locked', locked);
   if(locked){ clearTimeout(WF.timer); WF.res = {}; return; }
   if(!$('wfBal').value && currentUser){ try{ const c = calc(view()); $('wfBal').value = Math.round(startBal() + c.net) || ''; }catch(e){} }
@@ -7634,12 +7647,15 @@ function pwaInit(){
   if(document.readyState === 'complete') pwaReg(); else { window.addEventListener('load', pwaReg); setTimeout(pwaReg, 5000); }
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pwaInit); else pwaInit();
+/* AI Desk feature flags: switch blocks back on one at a time */
+var DESK = {tiles:false, tabs:false, signal:false, finder:false, news:false};
+(function deskFlags(){ const b = document.body; Object.entries(DESK).forEach(([k, v]) => b.classList.toggle('dk-' + (k === 'tabs' ? 'tabs-on' : k), v)); b.classList.toggle('dk-any', Object.values(DESK).some(Boolean)); })();
 (function pageSetup(){
   if(PAGE === 'analysis'){
     const nav = $('navLinks'), tools = nav.querySelector('.nl-tools');
     nav.querySelectorAll(':scope > a').forEach(a => a.remove());
     const links = [
-      ['/', 'nlHome', null], ['#anHero', 'nlDesk', 'anHero'], ['#aiPanel', 'nlAi', 'aiPanel'], ['#wfPanel', 'nlScan', 'wfPanel'], ['#naPanel', 'nlMarket', 'naPanel'], ['/pricing', 'nlPricing', null]
+      ['/', 'nlHome', null], ['#anHero', 'nlDesk', 'anHero'], ...(DESK.signal ? [['#aiPanel', 'nlAi', 'aiPanel']] : []), ...(DESK.finder ? [['#wfPanel', 'nlScan', 'wfPanel']] : []), ...(DESK.news ? [['#naPanel', 'nlMarket', 'naPanel']] : []), ['/pricing', 'nlPricing', null]
     ];
     links.forEach(([href, key, sec]) => { const a = document.createElement('a'); a.href = href; a.dataset.i18n = key; a.textContent = t(key); if(sec) a.dataset.sec = sec; else a.className = 'nl-ext'; nav.insertBefore(a, tools); });
     NavSpy.cur = 'anHero';
