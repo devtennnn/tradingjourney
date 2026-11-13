@@ -2963,7 +2963,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
         <div class="al-pa-list" id="alPaList"></div></div></div>
     <div class="al-grp"><h4 data-i18n="alGDeliver">How to alert me</h4>
       <label><input type="checkbox" data-al="sound"> <span data-i18n="alSound">Play a sound</span></label>
-      <label><input type="checkbox" id="ntDesk2"> <span data-i18n="alDevice">Phone / desktop notifications</span></label>
+      <label><input type="checkbox" id="ntDesk2"> <span data-i18n="alDevice">Phone / desktop notifications</span></label><small class="al-note" id="pushState"></small>
       <small class="al-note" data-i18n="alOpenNote">Works while AROM TRADE is open or in a background tab (install the app for the best experience). For alerts when it is closed, use the Telegram channel.</small>
       <button type="button" class="btn secondary small" id="alTest" data-i18n="alTest">Send a test alert</button></div>
   </div>
@@ -3132,10 +3132,10 @@ const T = {
     alSettings:"Alert settings",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
     alGNews:"News alerts · USD high impact",alNews30:"30 minutes before",alNews5:"5 minutes before",alNewsNow:"At release",alNewsMed:"Include medium-impact USD news",
     alGMarket:"Market alerts",alMove:"Gold moves fast: at least",alMove2:"$ within 15 min",alPrice:"Price alerts",alAbove:"Above",alBelow:"Below",alAdd:"Add",alPaNone:"No price alerts yet.",alPaBad:"Enter a price.",
-    alGDeliver:"How to alert me",alSound:"Play a sound",alDevice:"Phone / desktop notifications",alOpenNote:"Works while AROM TRADE is open or in a background tab (install the app for the best experience). For alerts when it is closed, use the Telegram channel.",alTest:"Send a test alert",
+    alGDeliver:"How to alert me",alSound:"Play a sound",alDevice:"Phone / desktop notifications",alOpenNote:"Turn on Phone / desktop notifications to get alerts in your notification bar, even when AROM TRADE is closed. iPhone and iPad: install the app first (Add to Home Screen).",alTest:"Send a test alert",
     alTestT:"Test alert",alTestB:"Alerts are working.",alN30:"In 30 min · {ev}",alN5:"In 5 min · {ev}",alNNow:"Releasing now · {ev}",alNB:"{imp} USD news at {t} ICT · forecast {f} · previous {p}. Expect volatility: wait for the spike to settle.",
     alPaT:"{sym} {dir} {px}",alPaB:"{name} is now {now}.",alMvT:"Gold {dir} {usd} in 15 min",alMvB:"XAU {from} → {now}. Fast move: check the news and stick to your plan.",alMvUp:"up",alMvDn:"down",
-    alSigT:"A+ {side} · {sym} · {mode}",alSigB:"Entry {e} · SL {sl} · TP1 {tp1}",alWfT:"Trade Finder A+ · {sym} {side}",alWfB:"Entry near {e} · SL {sl} · {mode}",alUpdT:"{sym} {side}: {res}",alUpdB:"Entry {e} · {mode}",pwaInstall:"Install app",pwaTitle:"Install AROM TRADE",pwaSub:"Open it from your home screen like a real app: full screen, faster start, works on phone, iPad and desktop.",pwaInstallNow:"Install now",pwaUpdate:"A new version of AROM TRADE is ready.",pwaReload:"Update",
+    alSigT:"A+ {side} · {sym} · {mode}",alSigB:"Entry {e} · SL {sl} · TP1 {tp1}",alWfT:"Trade Finder A+ · {sym} {side}",alWfB:"Entry near {e} · SL {sl} · {mode}",alUpdT:"{sym} {side}: {res}",alUpdB:"Entry {e} · {mode}",pwaInstall:"Install app",pushOn:"Notifications on: alerts will appear in your notification bar, even when the app is closed.",pushOff:"Notifications turned off on this device.",pushIos:"On iPhone and iPad, install the app first (Share → Add to Home Screen), then open it from the home screen and turn this on.",pushNo:"This browser does not support push notifications.",pushDenied:"Notifications are blocked. Allow them in your browser or phone settings.",pushFail:"Could not turn on notifications. Try again.",pushStatusOn:"On · notification bar, even when closed",pushStatusOff:"Off",pwaTitle:"Install AROM TRADE",pwaSub:"Open it from your home screen like a real app: full screen, faster start, works on phone, iPad and desktop.",pwaInstallNow:"Install now",pwaUpdate:"A new version of AROM TRADE is ready.",pwaReload:"Update",
     pwaIos1:"Tap the Share button {i} in Safari's toolbar.",pwaIos2:"Scroll down and tap \"Add to Home Screen\".",pwaIos3:"Tap \"Add\". AROM TRADE appears on your home screen.",pwaIosOther:"On iPhone and iPad, open this page in Safari first, then follow these steps.",
     pwaDesk1:"Click the install icon {i} at the right of the address bar (Chrome, Edge).",pwaDesk2:"Or open the browser menu and choose \"Install AROM TRADE\" / \"Apps → Install\".",pwaDesk3:"On Mac Safari: File → Add to Dock.",
     pwaAnd1:"Tap \"Install now\" below.",pwaAnd2:"Or open the browser menu ⋮ and tap \"Install app\" / \"Add to Home screen\".",pwaDone:"AROM TRADE is installed.",modeLbl:"STRATEGY",mode_scalp:"Scalping",mode_intraday:"Intraday",mode_swing:"Swing",
@@ -3194,10 +3194,10 @@ const T = {
     alSettings:"ការកំណត់ការជូនដំណឹង",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
     alGNews:"ការជូនដំណឹងព័ត៌មាន · USD សំខាន់",alNews30:"៣០ នាទីមុន",alNews5:"៥ នាទីមុន",alNewsNow:"ពេលចេញផ្សាយ",alNewsMed:"រួមទាំងព័ត៌មាន USD កម្រិតមធ្យម",
     alGMarket:"ការជូនដំណឹងទីផ្សារ",alMove:"មាសប្រែប្រួលលឿន៖ យ៉ាងតិច",alMove2:"$ ក្នុង ១៥ នាទី",alPrice:"ការជូនដំណឹងតម្លៃ",alAbove:"លើ",alBelow:"ក្រោម",alAdd:"បន្ថែម",alPaNone:"មិនទាន់មានការជូនដំណឹងតម្លៃ។",alPaBad:"សូមបញ្ចូលតម្លៃ។",
-    alGDeliver:"របៀបជូនដំណឹង",alSound:"បន្លឺសំឡេង",alDevice:"ការជូនដំណឹងលើទូរស័ព្ទ / កុំព្យូទ័រ",alOpenNote:"ដំណើរការពេល AROM TRADE បើក ឬនៅ Tab ខាងក្រោយ (ដំឡើងកម្មវិធីដើម្បីល្អបំផុត)។ សម្រាប់ការជូនដំណឹងពេលបិទ សូមប្រើឆានែល Telegram។",alTest:"ផ្ញើការជូនដំណឹងសាកល្បង",
+    alGDeliver:"របៀបជូនដំណឹង",alSound:"បន្លឺសំឡេង",alDevice:"ការជូនដំណឹងលើទូរស័ព្ទ / កុំព្យូទ័រ",alOpenNote:"បើក ការជូនដំណឹងលើទូរស័ព្ទ / កុំព្យូទ័រ ដើម្បីទទួលការជូនដំណឹងក្នុងរបារជូនដំណឹង ទោះបី AROM TRADE បិទក៏ដោយ។ iPhone និង iPad៖ ដំឡើងកម្មវិធីជាមុន (Add to Home Screen)។",alTest:"ផ្ញើការជូនដំណឹងសាកល្បង",
     alTestT:"ការជូនដំណឹងសាកល្បង",alTestB:"ការជូនដំណឹងដំណើរការ។",alN30:"ក្នុង ៣០ នាទី · {ev}",alN5:"ក្នុង ៥ នាទី · {ev}",alNNow:"កំពុងចេញផ្សាយ · {ev}",alNB:"ព័ត៌មាន USD {imp} ម៉ោង {t} ICT · ព្យាករណ៍ {f} · មុន {p}។ រំពឹងការប្រែប្រួល៖ រង់ចាំឱ្យស្ងប់។",
     alPaT:"{sym} {dir} {px}",alPaB:"{name} ឥឡូវ {now}។",alMvT:"មាស {dir} {usd} ក្នុង ១៥ នាទី",alMvB:"XAU {from} → {now}។ ប្រែប្រួលលឿន៖ ពិនិត្យព័ត៌មាន និងគោរពផែនការ។",alMvUp:"ឡើង",alMvDn:"ចុះ",
-    alSigT:"A+ {side} · {sym} · {mode}",alSigB:"Entry {e} · SL {sl} · TP1 {tp1}",alWfT:"Trade Finder A+ · {sym} {side}",alWfB:"Entry ប្រហែល {e} · SL {sl} · {mode}",alUpdT:"{sym} {side}៖ {res}",alUpdB:"Entry {e} · {mode}",pwaInstall:"ដំឡើងកម្មវិធី",pwaTitle:"ដំឡើង AROM TRADE",pwaSub:"បើកពីអេក្រង់ដើមដូចកម្មវិធីពិត៖ ពេញអេក្រង់ ចាប់ផ្តើមលឿន ប្រើបានលើទូរស័ព្ទ iPad និងកុំព្យូទ័រ។",pwaInstallNow:"ដំឡើងឥឡូវ",pwaUpdate:"មានកំណែថ្មីរបស់ AROM TRADE ហើយ។",pwaReload:"ធ្វើបច្ចុប្បន្នភាព",
+    alSigT:"A+ {side} · {sym} · {mode}",alSigB:"Entry {e} · SL {sl} · TP1 {tp1}",alWfT:"Trade Finder A+ · {sym} {side}",alWfB:"Entry ប្រហែល {e} · SL {sl} · {mode}",alUpdT:"{sym} {side}៖ {res}",alUpdB:"Entry {e} · {mode}",pwaInstall:"ដំឡើងកម្មវិធី",pushOn:"បានបើកការជូនដំណឹង៖ ការជូនដំណឹងនឹងបង្ហាញក្នុងរបារជូនដំណឹង ទោះបីកម្មវិធីបិទក៏ដោយ។",pushOff:"បានបិទការជូនដំណឹងលើឧបករណ៍នេះ។",pushIos:"លើ iPhone និង iPad សូមដំឡើងកម្មវិធីជាមុន (Share → Add to Home Screen) បន្ទាប់មកបើកពីអេក្រង់ដើម ហើយបើកមុខងារនេះ។",pushNo:"កម្មវិធីរុករកនេះមិនគាំទ្រការជូនដំណឹង Push ទេ។",pushDenied:"ការជូនដំណឹងត្រូវបានបិទ។ សូមអនុញ្ញាតក្នុងការកំណត់កម្មវិធីរុករក ឬទូរស័ព្ទ។",pushFail:"មិនអាចបើកការជូនដំណឹងបាន។ សូមព្យាយាមម្តងទៀត។",pushStatusOn:"បើក · របារជូនដំណឹង ទោះបីបិទកម្មវិធី",pushStatusOff:"បិទ",pwaTitle:"ដំឡើង AROM TRADE",pwaSub:"បើកពីអេក្រង់ដើមដូចកម្មវិធីពិត៖ ពេញអេក្រង់ ចាប់ផ្តើមលឿន ប្រើបានលើទូរស័ព្ទ iPad និងកុំព្យូទ័រ។",pwaInstallNow:"ដំឡើងឥឡូវ",pwaUpdate:"មានកំណែថ្មីរបស់ AROM TRADE ហើយ។",pwaReload:"ធ្វើបច្ចុប្បន្នភាព",
     pwaIos1:"ចុចប៊ូតុង Share {i} នៅរបារ Safari។",pwaIos2:"រំកិលចុះ ហើយចុច \"Add to Home Screen\"។",pwaIos3:"ចុច \"Add\"។ AROM TRADE នឹងបង្ហាញលើអេក្រង់ដើម។",pwaIosOther:"លើ iPhone និង iPad សូមបើកទំព័រនេះក្នុង Safari ជាមុនសិន។",
     pwaDesk1:"ចុចរូបដំឡើង {i} នៅខាងស្តាំរបារអាសយដ្ឋាន (Chrome, Edge)។",pwaDesk2:"ឬបើកម៉ឺនុយកម្មវិធីរុករក ហើយជ្រើស \"Install AROM TRADE\"។",pwaDesk3:"លើ Mac Safari៖ File → Add to Dock។",
     pwaAnd1:"ចុច \"ដំឡើងឥឡូវ\" ខាងក្រោម។",pwaAnd2:"ឬបើកម៉ឺនុយ ⋮ ហើយចុច \"Install app\" / \"Add to Home screen\"។",pwaDone:"បានដំឡើង AROM TRADE ហើយ។",modeLbl:"យុទ្ធសាស្ត្រ",mode_scalp:"Scalping",mode_intraday:"Intraday",mode_swing:"Swing",
@@ -6016,6 +6016,7 @@ function modeApplyTexts(){
 function aiSetMode(m){
   if(!AiEng.MODES[m] || m === AI.mode) return;
   AI.mode = m; try{ localStorage.setItem('aromMode_v1', m); }catch(e){}
+  try{ pushSyncSoon(); }catch(e){}
   AI.data = null; AI.P = null; AI.last = null; AI.hist = [];
   if(typeof TERM !== 'undefined'){ TERM.off = 0; TERM.key = ''; TERM.indKey = ''; TERM.user = false; }
   if(typeof LIVE !== 'undefined'){ LIVE.m5 = []; LIVE.sym = ''; }
@@ -7264,7 +7265,7 @@ function alPush(type, key, title, body, go){
   const b = $('bellBtn'); if(b){ b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); }
   try{ toast('🔔 ' + title); }catch(e){}
   alBeep(type);
-  if(ntDeskOn() && (document.hidden || pwaStandalone())){
+  if(ntDeskOn() && !AL.pushOn && (document.hidden || pwaStandalone())){
     const opt = {body:(body || '').slice(0, 200), tag:key || r.id, icon:'/icons/icon-192.png', badge:'/icons/icon-192.png', renotify:true};
     try{ if(PWA.reg && PWA.reg.showNotification) PWA.reg.showNotification(title, opt); else new Notification(title, opt); }catch(e){ try{ new Notification(title, opt); }catch(_){} }
   }
@@ -7333,12 +7334,13 @@ function alTick(){ try{ alNews(); }catch(e){} try{ alMarket(); }catch(e){} try{ 
 setTimeout(() => {
   if(!$('alSet')) return;
   $('alSetBtn').onclick = () => alToggleSettings();
-  $('alSet').addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.al; if(k){ AL.cfg[k] = e.target.checked; alSave(); }
-    if(e.target.id === 'alMoveUsd'){ AL.cfg.moveUsd = Math.max(2, Math.min(100, +e.target.value || 10)); alSave(); } });
+  $('alSet').addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.al; if(k){ AL.cfg[k] = e.target.checked; alSave(); pushSyncSoon(); }
+    if(e.target.id === 'alMoveUsd'){ AL.cfg.moveUsd = Math.max(2, Math.min(100, +e.target.value || 10)); alSave(); pushSyncSoon(); } });
   $('alPaAdd').onclick = () => { const px = parseFloat($('alPaPx').value); if(!isFinite(px)){ toast(t('alPaBad'), true); return; }
-    AL.pa.push({id:Date.now().toString(36), sym:$('alPaSym').value, dir:$('alPaDir').value, px}); $('alPaPx').value = ''; alSave(); alPaPaint(); };
-  $('alPaList').addEventListener('click', e => { const b = e.target.closest('[data-pa]'); if(!b) return; AL.pa = AL.pa.filter(a => a.id !== b.dataset.pa); alSave(); alPaPaint(); });
-  $('alTest').onclick = () => alPush('market', null, t('alTestT'), t('alTestB'), null);
+    AL.pa.push({id:Date.now().toString(36), sym:$('alPaSym').value, dir:$('alPaDir').value, px}); $('alPaPx').value = ''; alSave(); alPaPaint(); pushSyncSoon(); };
+  $('alPaList').addEventListener('click', e => { const b = e.target.closest('[data-pa]'); if(!b) return; AL.pa = AL.pa.filter(a => a.id !== b.dataset.pa); alSave(); alPaPaint(); pushSyncSoon(); });
+  $('alTest').onclick = async () => { alPush('market', null, t('alTestT'), t('alTestB'), null);
+    if(AL.pushOn){ try{ const reg = await pushReg(); reg.showNotification('AROM TRADE · ' + t('alTestT'), {body:t('alTestB'), icon:'/icons/icon-192.png', badge:'/icons/icon-192.png', tag:'test'}); }catch(e){} } };
   ntPaint(); alTick(); setInterval(alTick, 20000);
 }, 0);
 const NT_ICON = {
@@ -7451,14 +7453,50 @@ $('ntList').addEventListener('click', e => {
   else if(r && r.type === 'signal' && !e.target.closest('a')){ ntClose(); goSection('aiPanel'); }
 });
 $('ntList').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.matches('[data-nt]')) e.target.click(); });
+/* ---------- Web Push: real notifications in the phone / iPad / desktop notification bar ---------- */
+const PUSH_FN = 'https://sksvwikfyrdhgjngekqp.supabase.co/functions/v1/push-send';
+const PUSH_KEY = 'BMZygpORbltQLPta3p9YJk88WqX_ATKOYXKLz1nkeeuUi8KWMTbTVlhfvVk_i7rlUXHgiNiIWNI3ZfOPAADP9OI';
+const b64uBytes = s => { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+function pushPrefs(){ return {...AL.cfg, pa:AL.pa.filter(a => !a.hit), mode:AI.mode}; }
+async function pushReg(){ if(PWA.reg) return PWA.reg; return await Promise.race([navigator.serviceWorker.ready, new Promise((_, r) => setTimeout(() => r(new Error('sw')), 8000))]); }
+async function pushSync(){                       // send current alert settings to the server
+  if(!AL.pushOn || !supabaseClient) return;
+  try{ const reg = await pushReg(), sub = await reg.pushManager.getSubscription(); if(!sub) return;
+    await supabaseClient.rpc('push_subscribe', {p_sub:sub.toJSON(), p_prefs:pushPrefs(), p_lang:S.lang || 'en'}); }catch(e){}
+}
+let pushT = null; const pushSyncSoon = () => { clearTimeout(pushT); pushT = setTimeout(pushSync, 800); };
+async function pushEnable(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)){
+    if(pwaIOS() && !pwaStandalone()){ toast(t('pushIos'), true); pwaOpen(); } else toast(t('pushNo'), true);
+    return false; }
+  if(pwaIOS() && !pwaStandalone()){ toast(t('pushIos'), true); pwaOpen(); return false; }
+  const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+  if(perm !== 'granted'){ toast(t('pushDenied'), true); return false; }
+  try{
+    const reg = await pushReg();
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64uBytes(PUSH_KEY)});
+    const {error} = await supabaseClient.rpc('push_subscribe', {p_sub:sub.toJSON(), p_prefs:pushPrefs(), p_lang:S.lang || 'en'});
+    if(error) throw error;
+    AL.pushOn = true; try{ localStorage.setItem('devten_nt_desk', '1'); localStorage.setItem('aromPush_v1', '1'); }catch(_){}
+    toast(t('pushOn')); return true;
+  }catch(e){ console.warn('push', e); toast(t('pushFail'), true); return false; }
+}
+async function pushDisable(){
+  AL.pushOn = false; try{ localStorage.setItem('devten_nt_desk', '0'); localStorage.setItem('aromPush_v1', '0'); }catch(_){}
+  try{ const reg = await pushReg(), sub = await reg.pushManager.getSubscription();
+    if(sub){ await supabaseClient.rpc('push_unsubscribe', {p_endpoint:sub.endpoint}); await sub.unsubscribe(); } }catch(e){}
+  toast(t('pushOff'));
+}
+function pushStatePaint(){ const el = $('pushState'); if(el) el.textContent = AL.pushOn ? t('pushStatusOn') : t('pushStatusOff'); }
+try{ AL.pushOn = localStorage.getItem('aromPush_v1') === '1'; }catch(e){ AL.pushOn = false; }
 $('ntDesk').onchange = $('ntDesk2').onchange = async e => {
-  if(!('Notification' in window)){ e.target.checked = false; return; }
-  if(e.target.checked){
-    const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
-    try{ localStorage.setItem('devten_nt_desk', perm === 'granted' ? '1' : '0'); }catch(_){}
-  } else { try{ localStorage.setItem('devten_nt_desk', '0'); }catch(_){} }
-  ntPaint();
+  const want = e.target.checked;
+  if(want){ const ok = await pushEnable(); if(!ok){ e.target.checked = false; try{ localStorage.setItem('devten_nt_desk', '0'); }catch(_){} } }
+  else await pushDisable();
+  ntPaint(); pushStatePaint();
 };
+setTimeout(() => { pushStatePaint(); if(AL.pushOn) pushSync(); }, 3000);   // refresh the server copy of settings (and a rotated subscription)
 document.addEventListener('keydown', e => { if(e.key === 'Escape') ntClose(); });
 setInterval(() => { if(currentUser && !Nt.missing) ntLoad(); }, 120000);   // safety net if Realtime is off
 

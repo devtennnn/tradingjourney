@@ -2,7 +2,7 @@
    - Pages: network first, cached copy when offline (the app opens without a connection)
    - Static files (icons, manifest, fonts): stale-while-revalidate
    - /api/*, Supabase, Telegram and other live data: never cached, always from the network */
-const VERSION = 'arom-v1';
+const VERSION = 'arom-v2';
 const SHELL = ['/', '/analysis', '/pricing', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -43,5 +43,26 @@ self.addEventListener('fetch', (e) => {
     const c = await caches.open(VERSION), hit = await c.match(req);
     const net = fetch(req).then((res) => { if (res && (res.ok || res.type === 'opaque')) c.put(req, res.clone()); return res; }).catch(() => hit);
     return hit || net;
+  })());
+});
+
+/* ---------- Web Push: show alerts in the phone / iPad / desktop notification bar ---------- */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: 'AROM TRADE', body: e.data ? e.data.text() : '' }; }
+  const title = d.title || 'AROM TRADE';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag,
+    icon: '/icons/icon-192.png', badge: '/icons/icon-192.png',
+    data: { url: d.url || '/' }, vibrate: [120, 60, 120], timestamp: Date.now(),
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin).href;
+  e.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const w of wins) { if (new URL(w.url).origin === self.location.origin) { await w.focus(); try { await w.navigate(target); } catch (_) {} return; } }
+    await self.clients.openWindow(target);
   })());
 });
