@@ -2073,21 +2073,6 @@ body.guest .cc-guest{display:block;margin:-2px 0 14px;padding:12px 14px;border-r
   </div>
 </section>
 
-<!-- Partners & platforms showcase (animated sliding rails) -->
-<section class="panel section partners pt-reveal pg-main" id="partnersPanel" aria-labelledby="ptTitle">
-  <div class="panel-head">
-    <div>
-      <div class="panel-title" id="ptTitle" data-i18n="ptTitle">PARTNERS &amp; PLATFORMS</div>
-      <div class="panel-sub" data-i18n="ptSub">Brokers and tools that power the AROM TRADE trading workflow</div>
-    </div>
-  </div>
-  <div class="pt-stats" id="ptStats"></div>
-  <div class="pt-row"><div class="pt-lbl b"><b data-i18n="ptBrokersL">BROKERS</b><small data-i18n="ptBrokersS">We trade with</small></div>
-    <div class="pt-rail" id="ptRail1"><div class="pt-track" id="ptTrack1"></div></div></div>
-  <div class="pt-row"><div class="pt-lbl i"><b data-i18n="ptPoweredL">POWERED BY</b><small data-i18n="ptPoweredS">Data · infra · alerts</small></div>
-    <div class="pt-rail rev" id="ptRail2"><div class="pt-track" id="ptTrack2"></div></div></div>
-  <div class="na-disc" data-i18n="ptDisc">Brokers shown are the ones we use — not a recommendation or an affiliate offer. Trading carries risk. Names are trademarks of their owners.</div>
-</section>
 
 <footer class="footer">
   <div style="display:flex;align-items:center;gap:8px">
@@ -4668,9 +4653,9 @@ function renderPartners(){
   $('ptTrack2').innerHTML = track(infra);
   $('ptStats').innerHTML = `<span class="pt-stat"><b>${brokers.length}</b>${esc(t('ptStBrokers'))}</span><span class="pt-stat"><b>${infra.length}</b>${esc(t('ptStPlatforms'))}</span><span class="pt-stat"><b>24/5</b>${esc(t('ptStLive'))}</span>`;
 }
-document.addEventListener('pointermove', e => { const tl = e.target.closest && e.target.closest('.pt-tile'); if(!tl) return; const r = tl.getBoundingClientRect(); tl.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%'); }, {passive:true});
+if($('ptTrack1')) document.addEventListener('pointermove', e => { const tl = e.target.closest && e.target.closest('.pt-tile'); if(!tl) return; const r = tl.getBoundingClientRect(); tl.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%'); }, {passive:true});
 (function(){
-  const el = $('partnersPanel');
+  const el = $('partnersPanel'); if(!el) return;
   if('IntersectionObserver' in window){
     new IntersectionObserver((es, o) => es.forEach(e => { if(e.isIntersecting){ el.classList.add('in'); o.disconnect(); } }), {threshold:.15}).observe(el);
   } else el.classList.add('in');
