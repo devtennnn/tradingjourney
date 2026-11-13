@@ -47,6 +47,8 @@ module.exports = async (req, res) => {
   for (const p of providers) {
     try {
       const out = await p();
+      // keep only whole 5-minute candles (Yahoo appends a live partial bar stamped with its last tick time)
+      out.candles = out.candles.filter(c => c.t % 300 === 0);
       // drop the candle that is still forming
       const last = out.candles[out.candles.length - 1];
       if (last && last.t + 300 > now) out.candles.pop();
