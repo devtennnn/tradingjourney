@@ -602,6 +602,15 @@ button.auth-avatar:hover{border-color:var(--gold)}
 .nt-tabs[hidden],.nt-list[hidden]{display:none!important}
 .al-num{width:64px!important;flex:none;height:30px;padding:0 8px;font-size:13px}
 .al-note{font-size:11px;color:var(--muted);line-height:1.45}
+.al-pairs{display:flex;flex-wrap:wrap;gap:6px}
+.al-pairs label{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:#0c1a14;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;flex-wrap:nowrap}
+.al-pairs label:has(input:checked){border-color:var(--lime);color:var(--text);background:#14281d}
+.al-pairs input[type=checkbox]{width:15px;height:15px}
+.al-pairs label small{font-weight:600;color:var(--muted);font-size:11px}
+.al-pairs label:focus-within{outline:2px solid var(--lime);outline-offset:2px}
+.al-pairs-q{display:flex;gap:6px}
+.al-pairs-q button{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;min-height:30px}
+.al-pairs-q button:hover{color:var(--text);border-color:var(--lime)}
 .al-pa{display:grid;gap:8px;padding-top:4px}
 .al-pa > b{font-size:12.5px}
 .al-pa-add{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:6px}
@@ -3054,6 +3063,10 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
       <label><input type="checkbox" data-al="sigWf"> <span data-i18n="alSigWf">Trade Finder: A+ on any of the 7 markets</span></label>
       <label><input type="checkbox" data-al="sigUpd"> <span data-i18n="alSigUpd">Signal updates: TP1 / TP2 / TP3 / stop hit</span></label>
       <small class="al-note" data-i18n="alEliteNote">Signal alerts need Elite.</small></div>
+    <div class="al-grp"><h4 data-i18n="alGPairs">Markets to alert me about</h4>
+      <small class="al-note" data-i18n="alPairsNote">Untick a market to stop its signal alerts, updates and fast-move alerts on this device and on your phone.</small>
+      <div class="al-pairs" id="alPairs"></div>
+      <div class="al-pairs-q"><button type="button" data-pq="all" data-i18n="alPairsAll">All</button><button type="button" data-pq="none" data-i18n="alPairsNone">None</button><button type="button" data-pq="gold" data-i18n="alPairsGold">Gold only</button></div></div>
     <div class="al-grp"><h4 data-i18n="alGNews">News alerts · USD high impact</h4>
       <label><input type="checkbox" data-al="news30"> <span data-i18n="alNews30">30 minutes before</span></label>
       <label><input type="checkbox" data-al="news5"> <span data-i18n="alNews5">5 minutes before</span></label>
@@ -3235,7 +3248,7 @@ const T = {
     naUsdUpW:"stronger",naUsdDnW:"weaker",
     naLockNews:"{ev} in {m} min: wait for the release before entering",naLockAfter:"{ev} just released: let the spike settle until {hm} ICT",
     nlTitle:"NEWS LOCK",aiMoreShow:"Show indicators, checklist and history",aiMoreHide:"Hide details",mtEye:"UNDER MAINTENANCE",mtH1:"We're upgrading",mtBack:"Expected back",mtExit:"Exit preview",mtPrev:"Preview",mtOff:"Turn off",mtDefMsg:"This page is getting an upgrade. Everything else on AROM TRADE is working. Please check back soon.",mtIn:"in {t}",mtSoon:"any minute now",mtGoTo:"Go to {p}",mtPgjournal:"Journal",mtPgdesk:"AI Desk",mtPgpricing:"Pricing",mtAdmTxt:"Maintenance is ON for {p}. Visitors see the maintenance screen; you still see the page.",naMoreShow:"Show what each result means and enter actual numbers",dkResetT:"The AI Desk is being rebuilt",dkResetP:"Tools are coming back one at a time, simpler and clearer.",ntMarket:"Market",ntNews:"News",ntTypeMarket:"MARKET",ntTypeNews:"NEWS",ntEmptyMarket:"No market alerts yet. Set price alerts in ⚙ settings.",ntEmptyNews:"No news alerts yet.",
-    alSettings:"Alert settings",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
+    alSettings:"Alert settings",alGPairs:"Markets to alert me about",alPairsNote:"Untick a market to stop its signal alerts, updates and fast-move alerts on this device and on your phone.",alPairsAll:"All",alPairsNone:"None",alPairsGold:"Gold only",alGSignal:"Signal alerts",alSigAi:"New AI A+ signal (current strategy)",alSigWf:"Trade Finder: A+ on any of the 7 markets",alSigUpd:"Signal updates: TP1 / TP2 / TP3 / stop hit",alEliteNote:"Signal alerts need Elite.",
     alGNews:"News alerts · USD high impact",alNews30:"30 minutes before",alNews5:"5 minutes before",alNewsNow:"At release",alNewsMed:"Include medium-impact USD news",
     alGMarket:"Market alerts",alMove:"Gold moves fast: at least",alMove2:"$ within 15 min",alPrice:"Price alerts",alAbove:"Above",alBelow:"Below",alAdd:"Add",alPaNone:"No price alerts yet.",alPaBad:"Enter a price.",
     alGDeliver:"How to alert me",alSound:"Play a sound",alDevice:"Phone / desktop notifications",alOpenNote:"Turn on Phone / desktop notifications to get alerts in your notification bar, even when AROM TRADE is closed. iPhone and iPad: install the app first (Add to Home Screen).",alTest:"Send a test alert",
@@ -3297,7 +3310,7 @@ const T = {
     naUsdUpW:"ខ្លាំងឡើង",naUsdDnW:"ខ្សោយចុះ",
     naLockNews:"{ev} ក្នុង {m} នាទីទៀត៖ រង់ចាំការចេញផ្សាយសិន",naLockAfter:"{ev} ទើបចេញ៖ រង់ចាំឱ្យស្ងប់រហូតដល់ {hm} ICT",
     nlTitle:"ចាក់សោព័ត៌មាន",aiMoreShow:"បង្ហាញសូចនាករ បញ្ជីពិនិត្យ និងប្រវត្តិ",aiMoreHide:"លាក់ព័ត៌មានលម្អិត",mtEye:"កំពុងថែទាំ",mtH1:"យើងកំពុងធ្វើបច្ចុប្បន្នភាព",mtBack:"រំពឹងថានឹងត្រលប់មកវិញ",mtExit:"ចាកចេញពីការមើលជាមុន",mtPrev:"មើលជាមុន",mtOff:"បិទ",mtDefMsg:"ទំព័រនេះកំពុងត្រូវបានធ្វើឱ្យប្រសើរឡើង។ ផ្នែកផ្សេងទៀតនៃ AROM TRADE នៅតែដំណើរការ។ សូមត្រលប់មកវិញក្នុងពេលឆាប់ៗ។",mtIn:"ក្នុងរយៈពេល {t}",mtSoon:"ក្នុងពេលឆាប់ៗនេះ",mtGoTo:"ទៅកាន់ {p}",mtPgjournal:"កំណត់ហេតុ",mtPgdesk:"AI Desk",mtPgpricing:"តម្លៃ",mtAdmTxt:"ការថែទាំកំពុងបើកសម្រាប់ {p}។ អ្នកទស្សនាឃើញអេក្រង់ថែទាំ ប៉ុន្តែអ្នកនៅតែឃើញទំព័រ។",naMoreShow:"បង្ហាញអត្ថន័យលទ្ធផលនីមួយៗ និងបញ្ចូលលេខពិត",dkResetT:"AI Desk កំពុងរៀបចំឡើងវិញ",dkResetP:"ឧបករណ៍នឹងត្រឡប់មកវិញម្តងមួយៗ ងាយស្រួល និងច្បាស់ជាងមុន។",ntMarket:"ទីផ្សារ",ntNews:"ព័ត៌មាន",ntTypeMarket:"ទីផ្សារ",ntTypeNews:"ព័ត៌មាន",ntEmptyMarket:"មិនទាន់មានការជូនដំណឹងទីផ្សារ។ កំណត់ការជូនដំណឹងតម្លៃក្នុង ⚙។",ntEmptyNews:"មិនទាន់មានការជូនដំណឹងព័ត៌មាន។",
-    alSettings:"ការកំណត់ការជូនដំណឹង",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
+    alSettings:"ការកំណត់ការជូនដំណឹង",alGPairs:"ទីផ្សារដែលត្រូវជូនដំណឹង",alPairsNote:"ដោះធីកទីផ្សារណាមួយ ដើម្បីឈប់ទទួលការជូនដំណឹងសញ្ញា ការធ្វើបច្ចុប្បន្នភាព និងចលនាលឿនរបស់វា នៅលើឧបករណ៍នេះ និងទូរសព្ទរបស់អ្នក។",alPairsAll:"ទាំងអស់",alPairsNone:"គ្មាន",alPairsGold:"មាសតែប៉ុណ្ណោះ",alGSignal:"ការជូនដំណឹងសញ្ញា",alSigAi:"សញ្ញា AI A+ ថ្មី (យុទ្ធសាស្ត្របច្ចុប្បន្ន)",alSigWf:"Trade Finder៖ A+ លើទីផ្សារណាមួយក្នុងចំណោម ៧",alSigUpd:"បច្ចុប្បន្នភាពសញ្ញា៖ ដល់ TP1 / TP2 / TP3 / SL",alEliteNote:"ការជូនដំណឹងសញ្ញាត្រូវការ Elite។",
     alGNews:"ការជូនដំណឹងព័ត៌មាន · USD សំខាន់",alNews30:"៣០ នាទីមុន",alNews5:"៥ នាទីមុន",alNewsNow:"ពេលចេញផ្សាយ",alNewsMed:"រួមទាំងព័ត៌មាន USD កម្រិតមធ្យម",
     alGMarket:"ការជូនដំណឹងទីផ្សារ",alMove:"មាសប្រែប្រួលលឿន៖ យ៉ាងតិច",alMove2:"$ ក្នុង ១៥ នាទី",alPrice:"ការជូនដំណឹងតម្លៃ",alAbove:"លើ",alBelow:"ក្រោម",alAdd:"បន្ថែម",alPaNone:"មិនទាន់មានការជូនដំណឹងតម្លៃ។",alPaBad:"សូមបញ្ចូលតម្លៃ។",
     alGDeliver:"របៀបជូនដំណឹង",alSound:"បន្លឺសំឡេង",alDevice:"ការជូនដំណឹងលើទូរស័ព្ទ / កុំព្យូទ័រ",alOpenNote:"បើក ការជូនដំណឹងលើទូរស័ព្ទ / កុំព្យូទ័រ ដើម្បីទទួលការជូនដំណឹងក្នុងរបារជូនដំណឹង ទោះបី AROM TRADE បិទក៏ដោយ។ iPhone និង iPad៖ ដំឡើងកម្មវិធីជាមុន (Add to Home Screen)។",alTest:"ផ្ញើការជូនដំណឹងសាកល្បង",
@@ -7403,7 +7416,9 @@ $('admCsv').onclick = admCsv;
 const Nt = {rows:[], filter:'all', channel:null, missing:false, timer:null, firstLoad:true};
 /* ---------- Alert center: signal · market · news alerts generated in the browser ----------
    Stored on this device (localStorage). Fired while the site / installed app is open or in a background tab. */
-const AL_DEF = {sigAi:true, sigWf:true, sigUpd:true, news30:true, news5:true, newsNow:true, newsMed:false, moveOn:true, moveUsd:10, sound:true};
+const AL_PAIRS = [['XAUUSD','Gold'], ['XAGUSD','Silver'], ['EURUSD','Euro'], ['GBPUSD','Pound'], ['USDJPY','Yen'], ['NQ','Nasdaq'], ['OIL','WTI Oil']];
+const alMuted = sym => (AL.cfg.mute || []).includes(sym);
+const AL_DEF = {mute:[], sigAi:true, sigWf:true, sigUpd:true, news30:true, news5:true, newsNow:true, newsMed:false, moveOn:true, moveUsd:10, sound:true};
 const AL = {cfg:{...AL_DEF}, list:[], seen:{}, pa:[], ticks:[], lastMove:0};
 try{ const j = JSON.parse(localStorage.getItem('aromAlerts_v1') || 'null'); if(j){ Object.assign(AL.cfg, j.cfg || {}); AL.list = j.list || []; AL.seen = j.seen || {}; AL.pa = j.pa || []; } }catch(e){}
 function alSave(){ try{
@@ -7453,7 +7468,7 @@ function alMarket(){
   if(changed){ alSave(); alPaPaint(); }
   const g = q('XAU'); if(!g) return;
   AL.ticks.push([now, g.price]); AL.ticks = AL.ticks.filter(([tm]) => now - tm <= 16 * 60000);
-  if(!AL.cfg.moveOn || now - AL.lastMove < 30 * 60000) return;
+  if(!AL.cfg.moveOn || alMuted('XAUUSD') || now - AL.lastMove < 30 * 60000) return;
   const old = AL.ticks.find(([tm]) => now - tm >= 13 * 60000); if(!old) return;
   const mv = g.price - old[1];
   if(Math.abs(mv) >= (+AL.cfg.moveUsd || 10)){ AL.lastMove = now;
@@ -7467,13 +7482,14 @@ function alSignals(){
     if(AI.data && AI.hist && AI.hist.length){
       const h = AI.hist[AI.hist.length - 1], st = aiStKey(h.out.res), key = AI.sym + '|' + AI.mode + '|' + h.t;
       const fresh = Date.now() / 1000 - h.t < (aiM().valid || 900);
+      if(alMuted(AI.sym)) throw 0;
       if(AL.cfg.sigAi && st === 'open' && fresh) alPush('signal', 'ai|' + key, naTx('alSigT', {side:h.side, sym:AI.sym, mode}), naTx('alSigB', {e:aiFmt(h.entry), sl:aiFmt(h.sl), tp1:aiFmt(h.tp1)}), 'aiPanel');
       if(AL.cfg.sigUpd && st !== 'open' && AL.seen['ai|' + key]) alPush('signal', 'up|' + key + '|' + st, naTx('alUpdT', {sym:AI.sym, side:h.side, res:t('aiSt_' + st)}), naTx('alUpdB', {e:aiFmt(h.entry), mode}), 'aiPanel');
     }
   }catch(e){}
   try{
     if(AL.cfg.sigWf && typeof WF !== 'undefined' && WF.res) Object.values(WF.res).forEach(r => {
-      if(!r || !r.ev || !r.ev.signal || Date.now() / 1000 > r.ev.signal.validUntil) return; const s = r.ev.signal;
+      if(!r || !r.ev || !r.ev.signal || Date.now() / 1000 > r.ev.signal.validUntil || alMuted(r.mk.s)) return; const s = r.ev.signal;
       alPush('signal', 'wf|' + r.mk.s + '|' + AI.mode + '|' + s.t, naTx('alWfT', {sym:r.mk.s, side:s.side}), naTx('alWfB', {e:wfFx(r.mk.s, s.entry), sl:wfFx(r.mk.s, s.sl), mode}), 'wfPanel'); });
   }catch(e){}
 }
@@ -7484,6 +7500,7 @@ function alPaPaint(){
 function alSetPaint(){
   document.querySelectorAll('#alSet [data-al]').forEach(c => c.checked = !!AL.cfg[c.dataset.al]);
   $('alMoveUsd').value = AL.cfg.moveUsd; alPaPaint();
+  $('alPairs').innerHTML = AL_PAIRS.map(([s_, n]) => `<label><input type="checkbox" data-pair="${s_}"${alMuted(s_) ? '' : ' checked'}> ${s_} <small>${esc(n)}</small></label>`).join('');
 }
 function alToggleSettings(show){
   const on = show != null ? show : $('alSet').hidden;
@@ -7494,6 +7511,11 @@ function alTick(){ try{ alNews(); }catch(e){} try{ alMarket(); }catch(e){} try{ 
 setTimeout(() => {
   if(!$('alSet')) return;
   $('alSetBtn').onclick = () => alToggleSettings();
+  const pairSet = mute => { AL.cfg.mute = mute; alSave(); pushSyncSoon(); alSetPaint(); };
+  $('alSet').addEventListener('click', e => { const q = e.target.closest('[data-pq]'); if(!q) return;
+    pairSet(q.dataset.pq === 'all' ? [] : q.dataset.pq === 'none' ? AL_PAIRS.map(x => x[0]) : AL_PAIRS.map(x => x[0]).filter(x => x !== 'XAUUSD')); });
+  $('alSet').addEventListener('change', e => { const ps = e.target.dataset && e.target.dataset.pair;
+    if(ps){ const m = new Set(AL.cfg.mute || []); e.target.checked ? m.delete(ps) : m.add(ps); AL.cfg.mute = [...m]; alSave(); pushSyncSoon(); return; } });
   $('alSet').addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.al; if(k){ AL.cfg[k] = e.target.checked; alSave(); pushSyncSoon(); }
     if(e.target.id === 'alMoveUsd'){ AL.cfg.moveUsd = Math.max(2, Math.min(100, +e.target.value || 10)); alSave(); pushSyncSoon(); } });
   $('alPaAdd').onclick = () => { const px = parseFloat($('alPaPx').value); if(!isFinite(px)){ toast(t('alPaBad'), true); return; }
