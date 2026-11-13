@@ -6599,9 +6599,6 @@ function termDraw(){
       const y = Math.round(Y(p)) + .5; g.strokeStyle = col; g.setLineDash(dash); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]);
       g.font = '800 10px ' + K.font; const txt = lbl, tw = g.measureText(txt).width + 10; g.fillStyle = col; g.fillRect(plotW - tw - 6, y - 8, tw, 16); g.fillStyle = K.fg; g.textAlign = 'left'; g.fillText(txt, plotW - tw - 1, y);
       tags.push({p, col, fg:K.fg}); });
-  } else if(AI.last && AI.last.side){
-    const lb = C[N - 1], y = Y(lb.c); g.font = '800 10px ' + K.font; const txt = t('termWait') + ' ' + AI.last.side, tw = g.measureText(txt).width + 12;
-    g.fillStyle = '#e8b931'; g.fillRect(4, y - 8 > 30 ? y - 26 : y + 10, tw, 16); g.fillStyle = '#1a1405'; g.textAlign = 'left'; g.fillText(txt, 10, y - 8 > 30 ? y - 18 : y + 18);
   }
   // last price line + axis tags
   const lb = C[N - 1], isLive = !!lb.live;
