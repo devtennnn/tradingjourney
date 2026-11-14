@@ -12,8 +12,9 @@ const SYMBOLS = {
   OIL:    {td: null,      yahoo: 'CL=F',     yahooName: 'WTI crude futures (CL=F)'},
 };
 
-// ?tf=5 (default, scalping) · 15 (intraday) · 60 (swing)
+// ?tf=1 (scalping v3, M1) · 5 (M5) · 15 (intraday) · 60 (swing)
 const TF = {
+  1:  {step: 60,   td: '1min',  yi: '1m',  yr: '5d',  keep: 2000},
   5:  {step: 300,  td: '5min',  yi: '5m',  yr: '5d',  keep: 1000},
   15: {step: 900,  td: '15min', yi: '15m', yr: '30d', keep: 1500},
   60: {step: 3600, td: '1h',    yi: '60m', yr: '1y',  keep: 2400},
@@ -51,7 +52,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (!sym) return res.status(400).json({error: 'unsupported symbol'});
   const tfKey = String((req.query && req.query.tf) || '5'), tf = TF[tfKey];
-  if (!tf) return res.status(400).json({error: 'unsupported tf (5, 15 or 60)'});
+  if (!tf) return res.status(400).json({error: 'unsupported tf (1, 5, 15 or 60)'});
   // cache until just after the next 5-minute candle closes, so every visitor shares one upstream call per candle
   const now = Math.floor(Date.now() / 1000), next = Math.ceil((now + 1) / tf.step) * tf.step + 20;
   const errors = [];
