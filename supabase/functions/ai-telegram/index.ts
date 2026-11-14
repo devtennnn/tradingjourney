@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
   if (url.searchParams.get("test")) {
     try {
-      const id = await tg(`🤖 <b>AROM TRADE AI bot connected</b>\nA+ "Time the trade" signals for Gold, Silver, EURUSD, GBPUSD, USDJPY, Nasdaq and Oil are posted here automatically in 3 strategies: SCALPING (M5→M1), INTRADAY (H1→M15) and SWING (H4+Daily→H1).\n<a href="${SITE}/analysis">Open AI Desk</a>\n<i>Algorithmic analysis, not financial advice.</i>`);
+      const id = await tg(`🤖 <b>AROM TRADE AI bot connected</b>\nA+ "Time the trade" signals for Gold, Bitcoin and Nasdaq 100 are posted here automatically in 3 strategies: SCALPING (M5→M1), INTRADAY (H1→M15) and SWING (H4+Daily→H1).\n<a href="${SITE}/analysis">Open AI Desk</a>\n<i>Algorithmic analysis, not financial advice.</i>`);
       return json({ ok: true, message_id: id });
     } catch (e) { return json({ error: String(e.message || e) }, 500); }
   }
