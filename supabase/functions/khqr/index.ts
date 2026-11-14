@@ -269,8 +269,9 @@ Deno.serve(async (req) => {
         // Outside Cambodia Bakong refuses with an empty / non-JSON 403 BEFORE it looks at the token. A bad token gets a JSON answer.
         let blocked: Blocked = "";
         if (!j && (res.status === 403 || res.status === 451)) blocked = "geo_blocked";
-        else if (!j && res.status >= 500) blocked = "unreachable";
+        else if (res.status >= 500 || (!j && !res.ok)) blocked = "unreachable";          // server error, or a non-JSON error page
         else if (res.status === 401 || res.status === 403 || (j && j.responseCode === 401)) blocked = "rejected";
+        else if (j && j.responseCode === undefined && !res.ok) blocked = "unreachable";   // the relay's own JSON error (wrong path / bad request), not an answer from Bakong
         if (blocked) console.error("Bakong not usable:", blocked, "http", res.status, "body", text.slice(0, 200));
         return { tx: j && j.responseCode === 0 ? j.data : null, blocked, http: res.status, raw: j ?? text.slice(0, 200) };
       } catch (e) {
@@ -352,7 +353,15 @@ Deno.serve(async (req) => {
         const m = Object.fromEntries(t.trim().split("\n").map((l) => l.split("=")));
         egress = { ip: m.ip, country: m.loc, colo: m.colo };
       } catch (_) { /* optional */ }
-      const verdict = probe.blocked === "geo_blocked"
+      const viaRelay = BAKONG_API !== BAKONG_DEFAULT;
+      const relayKeyBad = viaRelay && probe.blocked === "rejected" && !!probe.raw && typeof probe.raw === "object" && (probe.raw as any).error === "bad relay key";
+      const verdict = relayKeyBad
+        ? "The relay refused BAKONG_RELAY_KEY: it must be exactly the RELAY_KEY stored on the relay server (/etc/bakong-relay.env)."
+        : viaRelay && probe.blocked === "geo_blocked"
+        ? "The relay answered, but Bakong still refuses the relay's server. Check that the VPS really has a Cambodian IP address (the installer prints its country)."
+        : viaRelay && probe.blocked === "unreachable"
+        ? "The relay could not be used: check BAKONG_API_URL, that the relay is running (systemctl status bakong-relay) and that ports 80 and 443 are open."
+        : probe.blocked === "geo_blocked"
         ? "Bakong refuses this server's location (empty 403). Put a relay in Cambodia (BAKONG_API_URL + BAKONG_RELAY_KEY) or confirm payments by hand in the Admin panel."
         : probe.blocked === "rejected" ? "Bakong answered but rejected the token: renew BAKONG_TOKEN."
         : probe.blocked === "no_token" ? "BAKONG_TOKEN is not set."
@@ -361,7 +370,7 @@ Deno.serve(async (req) => {
       return json({
         ok: probe.blocked === "", verdict, blocked: probe.blocked || null,
         tokenSet: !!bakongToken(), tokenLength: bakongToken().length, tokenLooksLikeJwt: bakongToken().split(".").length === 3,
-        api: BAKONG_API, viaRelay: BAKONG_API !== BAKONG_DEFAULT, relayKeySet: !!env("BAKONG_RELAY_KEY"),
+        api: BAKONG_API, viaRelay, relayKeySet: !!env("BAKONG_RELAY_KEY"),
         egress, bakongHttpStatus: probe.http, bakongReply: probe.raw, account: cfg("BAKONG_ACCOUNT_ID"),
       });
     }

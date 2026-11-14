@@ -15,7 +15,24 @@ The site already handles this. The buyer taps **I've paid, notify admin** (or **
 activated?*). You see the payment in **Admin → Activations → Unconfirmed QR payments**. Find the bill number (`DT…`) or the
 exact amount in your ABA app, then press **Approve +30 days**. The buyer's window unlocks by itself.
 
-## The real fix: a relay with a Cambodian IP
+## Quick start on a VPS (recommended)
+
+Needs: a VPS with a **Cambodian IP** running Ubuntu 22.04/24.04 or Debian 12, root SSH, ports 80 and 443 open.
+A real domain is best (point an `A` record at the VPS first). Without one the installer uses a free `<ip>.sslip.io` name.
+
+```bash
+scp -r setup/bakong-relay root@YOUR_VPS_IP:/root/
+ssh root@YOUR_VPS_IP
+cd /root/bakong-relay
+sudo bash install.sh --domain relay.yourdomain.com      # or: sudo bash install.sh   (uses sslip.io)
+# optional first: sudo bash install.sh --dry-run        (prints the plan, changes nothing)
+```
+
+The installer checks the server's country and whether Bakong answers it, installs Node, the relay (own user, sandboxed
+systemd service) and Caddy (automatic HTTPS), then prints the two secrets. Put them in Supabase → Edge Functions → Secrets:
+`BAKONG_API_URL` and `BAKONG_RELAY_KEY`. Then Admin → Activations → **Check bank connection**, then one real test payment.
+
+## Manual setup (any server with a Cambodian IP)
 
 `relay.mjs` forwards exactly one call (`check_transaction_by_md5`) from your function to Bakong. It runs on any server that
 has a Cambodian IP address (for example a small VPS in Phnom Penh).
