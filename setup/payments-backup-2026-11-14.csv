@@ -1,0 +1,12 @@
+bill_number,plan,amount,list_price,discount,promo_code,status,claim_note,created_at,paid_at
+DTVEGFZGPVWA,premium,2.50,,0,,expired,,2026-11-11T12:43:24Z,
+DTL7C85WLNQE,premium,2.50,,0,,expired,,2026-11-11T13:00:45Z,
+DT55PKZZ2B8C,premium,2.50,,0,,pending,,2026-11-11T15:57:51Z,
+DTWSC28SBS95,premium,2.50,,0,,expired,,2026-11-14T06:35:03Z,
+DT2FURV7R2NR,elite,0.15,14.99,14.84,TTWEL99,expired,[rejected],2026-11-14T08:56:46Z,
+DTYGNQW2T3MQ,elite,0.15,14.99,14.84,TTWEL999,expired,[rejected],2026-11-14T10:37:43Z,
+DTUCCJDSZEW2,elite,14.99,14.99,0,,pending,,2026-11-14T11:19:09Z,
+DTDUY7PXCKND,elite,0.01,14.99,14.98,SLTEN,paid,,2026-11-14T11:22:17Z,2026-11-14T11:23:29Z
+DTNCJQ4JXMZU,elite,14.99,14.99,0,,expired,[rejected],2026-11-14T12:29:01Z,
+DTQ9TDTURS7U,premium,2.50,2.5,0,,expired,,2026-11-14T12:33:20Z,
+DTH3257RB9R3,elite,0.15,14.99,14.84,TENTENNNN,pending,,2026-11-14T15:07:18Z,
