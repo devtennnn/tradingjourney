@@ -12,6 +12,10 @@
 // Supabase Edge Functions run in Singapore / Seoul / etc., so every payment check is refused ("geo_blocked"). Until the check runs
 // from a Cambodian IP (relay), payments are confirmed by an admin (claim_payment / admin_approve_payment in the database).
 //
+// ANAJAK PAY (hosted checkout, confirms payments from inside Cambodia, so no Bakong geo-block): set secrets
+//   ANAJAK_SECRET (the profile's Payment Secret) and ANAJAK_PROFILE_ID. When both are set, "create" returns a signed checkout URL instead of
+//   our own KHQR, and the payment is confirmed by the gateway's signed webhook (function "khqr-webhook"). Optional: ANAJAK_API_URL.
+//
 // Requests (POST, user JWT required):  { action: "create" }  |  { action: "check", id: "<payment id>" }  |  { action: "recover" }
 //   { action: "diag" }  (admins only)  |  { action: "quote", plan, promo }  (exact price with a promo code)
 //   create also accepts { plan, promo }: the discount is calculated HERE with the database rules (promo_quote_internal), never taken from the browser.
@@ -135,6 +139,23 @@ const CURRENCY = "USD" as const;
 const BAKONG_DEFAULT = "https://api-bakong.nbc.gov.kh";
 const BAKONG_API = env("BAKONG_API_URL", BAKONG_DEFAULT);
 
+// Anajak Pay (KHQRPay) hosted checkout. The request hash is sha1(secret + transaction_id + amount + success_url + remark), exactly as in their PHP sample.
+const ANAJAK_SECRET = env("ANAJAK_SECRET").trim(), ANAJAK_PROFILE = env("ANAJAK_PROFILE_ID").trim();
+const ANAJAK_URL = env("ANAJAK_API_URL", "https://anajakpay.com/api/payment/request").replace(/\/$/, "");
+const ANAJAK_ON = !!(ANAJAK_SECRET && ANAJAK_PROFILE);
+const isHosted = (p: any) => typeof p?.payload === "string" && /^https:\/\//.test(p.payload);   // hosted-checkout rows keep the checkout URL in "payload"
+async function sha1hex(s: string): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function anajakCheckoutUrl(bill: string, amount: number, remark: string): Promise<string> {
+  const amt = String(Number(amount));                                   // same text in the hash and in the URL (PHP prints 2.5, not 2.50)
+  const successUrl = `${env("SUPABASE_URL")}/functions/v1/khqr-webhook`;
+  const hash = await sha1hex(ANAJAK_SECRET + bill + amt + successUrl + remark);
+  const q = new URLSearchParams({ transaction_id: bill, amount: amt, success_url: successUrl, remark, hash });
+  return `${ANAJAK_URL}/${ANAJAK_PROFILE}?${q.toString()}`;
+}
+
 // Pure-JS MD5 (Supabase's WebCrypto does not support "MD5"). Returns lowercase hex of the UTF-8 bytes of s.
 function md5hex(s: string): string {
   const msg = new TextEncoder().encode(s);
@@ -184,7 +205,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
 
     const publicRow = (p: any) => ({
-      id: p.id, plan: p.plan ?? "premium", payload: p.payload, amount: Number(p.amount), currency: p.currency,
+      id: p.id, plan: p.plan ?? "premium", payload: p.payload, bill: p.bill_number, checkout_url: isHosted(p) ? p.payload : null, amount: Number(p.amount), currency: p.currency,
       merchant: cfg("MERCHANT_NAME"), expires_at: p.expires_at,
       list_price: p.list_price != null ? Number(p.list_price) : Number(p.amount), discount: Number(p.discount ?? 0), promo_code: p.promo_code ?? null,
     });
@@ -218,10 +239,10 @@ Deno.serve(async (req) => {
         .eq("user_id", user.id).eq("status", "pending").eq("plan", plan).gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
       // reopen the user's open QR only when it used the same promo (or none): otherwise the amount would be wrong
-      if (open && (open.promo_code ?? null) === (quote ? quote.code : null)) return json(publicRow(open));
+      if (open && (open.promo_code ?? null) === (quote ? quote.code : null) && isHosted(open) === ANAJAK_ON) return json(publicRow(open));
 
       const created = Date.now(), expires = created + TTL_MS, bill = billNumber();
-      const payload = buildKHQR({
+      const payload = ANAJAK_ON ? await anajakCheckoutUrl(bill, price, `DEVTEN ${P.label}`) : buildKHQR({
         accountId: cfg("BAKONG_ACCOUNT_ID"),
         accountType: cfg("BAKONG_ACCOUNT_TYPE") as "individual" | "merchant",
         merchantId: cfg("BAKONG_MERCHANT_ID"),
@@ -269,8 +290,9 @@ Deno.serve(async (req) => {
         // Outside Cambodia Bakong refuses with an empty / non-JSON 403 BEFORE it looks at the token. A bad token gets a JSON answer.
         let blocked: Blocked = "";
         if (!j && (res.status === 403 || res.status === 451)) blocked = "geo_blocked";
-        else if (!j && res.status >= 500) blocked = "unreachable";
+        else if (res.status >= 500 || (!j && !res.ok)) blocked = "unreachable";          // server error, or a non-JSON error page
         else if (res.status === 401 || res.status === 403 || (j && j.responseCode === 401)) blocked = "rejected";
+        else if (j && j.responseCode === undefined && !res.ok) blocked = "unreachable";   // the relay's own JSON error (wrong path / bad request), not an answer from Bakong
         if (blocked) console.error("Bakong not usable:", blocked, "http", res.status, "body", text.slice(0, 200));
         return { tx: j && j.responseCode === 0 ? j.data : null, blocked, http: res.status, raw: j ?? text.slice(0, 200) };
       } catch (e) {
@@ -284,7 +306,8 @@ Deno.serve(async (req) => {
       const plan = planOf(p.plan), col = PLANS[plan].col;
       if (p.status === "paid") { const u = await untilFor(col); return { status: "paid", plan, until: u, premium_until: u }; }
       const waiting = (bk: string) => ({ status: p.status === "claimed" ? "claimed" : "pending", bakong: bk });
-      const { tx, blocked } = await bakongLookup(p.md5);
+      // hosted-checkout rows are confirmed by the gateway's webhook (khqr-webhook), never by asking Bakong from here
+      const { tx, blocked } = isHosted(p) ? { tx: null, blocked: "" as Blocked } : await bakongLookup(p.md5);
       if (!tx) {
         if (p.status === "claimed") return waiting(blocked || "ok");          // user said "I paid": an admin decides
         if (new Date(p.expires_at) < new Date()) {
@@ -345,6 +368,10 @@ Deno.serve(async (req) => {
     if (body.action === "diag") {
       const { data: prof } = await admin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
       if (!(prof as any)?.is_admin) return json({ error: "forbidden" }, 403);
+      if (ANAJAK_ON) {
+        return json({ ok: true, provider: "anajakpay", verdict: "OK: payments use Anajak Pay. They are confirmed by the gateway's signed webhook, so Bakong's location block does not matter. Make one 0.01 test payment to prove it.",
+          blocked: null, webhook: `${env("SUPABASE_URL")}/functions/v1/khqr-webhook`, profileSet: true, secretSet: true, secretLength: ANAJAK_SECRET.length, account: cfg("BAKONG_ACCOUNT_ID") });
+      }
       const probe = await bakongLookup("0".repeat(32));
       let egress: Record<string, string> | null = null;      // where this function reaches the internet from (country decides whether Bakong answers)
       try {
@@ -352,7 +379,15 @@ Deno.serve(async (req) => {
         const m = Object.fromEntries(t.trim().split("\n").map((l) => l.split("=")));
         egress = { ip: m.ip, country: m.loc, colo: m.colo };
       } catch (_) { /* optional */ }
-      const verdict = probe.blocked === "geo_blocked"
+      const viaRelay = BAKONG_API !== BAKONG_DEFAULT;
+      const relayKeyBad = viaRelay && probe.blocked === "rejected" && !!probe.raw && typeof probe.raw === "object" && (probe.raw as any).error === "bad relay key";
+      const verdict = relayKeyBad
+        ? "The relay refused BAKONG_RELAY_KEY: it must be exactly the RELAY_KEY stored on the relay server (/etc/bakong-relay.env)."
+        : viaRelay && probe.blocked === "geo_blocked"
+        ? "The relay answered, but Bakong still refuses the relay's server. Check that the VPS really has a Cambodian IP address (the installer prints its country)."
+        : viaRelay && probe.blocked === "unreachable"
+        ? "The relay could not be used: check BAKONG_API_URL, that the relay is running (systemctl status bakong-relay) and that ports 80 and 443 are open."
+        : probe.blocked === "geo_blocked"
         ? "Bakong refuses this server's location (empty 403). Put a relay in Cambodia (BAKONG_API_URL + BAKONG_RELAY_KEY) or confirm payments by hand in the Admin panel."
         : probe.blocked === "rejected" ? "Bakong answered but rejected the token: renew BAKONG_TOKEN."
         : probe.blocked === "no_token" ? "BAKONG_TOKEN is not set."
@@ -361,7 +396,7 @@ Deno.serve(async (req) => {
       return json({
         ok: probe.blocked === "", verdict, blocked: probe.blocked || null,
         tokenSet: !!bakongToken(), tokenLength: bakongToken().length, tokenLooksLikeJwt: bakongToken().split(".").length === 3,
-        api: BAKONG_API, viaRelay: BAKONG_API !== BAKONG_DEFAULT, relayKeySet: !!env("BAKONG_RELAY_KEY"),
+        api: BAKONG_API, viaRelay, relayKeySet: !!env("BAKONG_RELAY_KEY"),
         egress, bakongHttpStatus: probe.http, bakongReply: probe.raw, account: cfg("BAKONG_ACCOUNT_ID"),
       });
     }

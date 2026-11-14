@@ -14,6 +14,7 @@ import crypto from 'node:crypto';
 const KEY = process.env.RELAY_KEY || '';
 const TARGET = (process.env.BAKONG_API_URL || 'https://api-bakong.nbc.gov.kh').replace(/\/$/, '');
 const PORT = Number(process.env.PORT || 8787);
+export const HOST = process.env.HOST || '127.0.0.1';      // loopback only: the HTTPS reverse proxy (Caddy) is the only thing that talks to it
 if (KEY.length < 24) { console.error('Set RELAY_KEY to at least 24 random characters (e.g. `openssl rand -hex 24`).'); process.exit(1); }
 
 const sameKey = (given) => {
@@ -44,5 +45,5 @@ export const server = http.createServer(async (req, res) => {
 });
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
-  server.listen(PORT, () => console.log(`Bakong relay on :${PORT} -> ${TARGET}`));
+  server.listen(PORT, HOST, () => console.log(`Bakong relay on ${HOST}:${PORT} -> ${TARGET}`));
 }
