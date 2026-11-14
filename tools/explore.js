@@ -21,6 +21,18 @@ function engine(patches) {
   let s = SRC; for (const [x, y] of patches) { if (!s.includes(x)) throw new Error('patch not found: ' + x); s = s.split(x).join(y); }
   return new Function(s + '\nreturn AiEng;')();
 }
+
+function rSplit(m, i, L, entry, sl, maxBars) {
+  const risk = Math.abs(entry - sl), tp1 = entry + (L ? 1 : -1) * risk, tp2 = entry + (L ? 2 : -2) * risk; let be = false;
+  for (let k = i + 1; k <= Math.min(m.length - 1, i + maxBars); k++) {
+    const b = m[k], stop = be ? entry : sl;
+    if (L ? b.l <= stop : b.h >= stop) return be ? 0.5 : -1;
+    if (!be && (L ? b.h >= tp1 : b.l <= tp1)) { be = true; if (L ? b.h >= tp2 : b.l <= tp2) return 1.5; continue; }
+    if (be && (L ? b.h >= tp2 : b.l <= tp2)) return 1.5;
+  }
+  const last = m[Math.min(m.length - 1, i + maxBars)].c, mv = (L ? last - entry : entry - last) / risk;
+  return be ? 0.5 + 0.5 * Math.max(0, Math.min(1, mv)) : Math.max(-1, Math.min(1, mv));
+}
 // path of one trade: first-stop index, and max favourable move (R) before it
 function walk(m, i, s) {
   const L = s.side === 'BUY', risk = Math.abs(s.entry - s.sl); let mfe = 0, stopK = null;
@@ -34,12 +46,13 @@ function walk(m, i, s) {
     if (stopK != null) break;
   }
   const end = Math.min(m.length - 1, i + s.maxBars), last = m[end].c, mv = (L ? last - s.entry : s.entry - last) / risk;
-  return { risk, mfe, stopK, hit, mv };
+  return { risk, mfe, stopK, hit, mv, rs: rSplit(m, i, L, s.entry, s.sl, s.maxBars) };
 }
 const full = (w, T) => { const win = w.hit[T] != null; return win ? T : w.stopK != null ? -1 : Math.max(-1, Math.min(T, w.mv)); };
-const split = w => { const t1 = w.hit[1], t2 = w.hit[2]; if (t1 == null) return w.stopK != null ? -1 : Math.max(-1, Math.min(1, w.mv)); // stopped before TP1
+const splitOld = w => { const t1 = w.hit[1], t2 = w.hit[2]; if (t1 == null) return w.stopK != null ? -1 : Math.max(-1, Math.min(1, w.mv)); // stopped before TP1
   if (t2 != null) return 1.5;   // (stop-to-entry after TP1 assumed; if price hit entry before TP2 it is +0.5, approximated by checking stop bar)
   return w.stopK != null ? 0.5 : 0.5 + 0.5 * Math.max(0, Math.min(1, w.mv)); };
+const split = w => w.rs;
 const med = a => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
 const f = (x, d = 2) => (x >= 0 ? '+' : '') + x.toFixed(d);
 

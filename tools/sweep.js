@@ -16,6 +16,18 @@ const m5 = []; for (const b of m) { const k = b.t - b.t % 300, c = m5[m5.length 
 const e20 = ema(m5.map(x => x.c), 20), e50 = ema(m5.map(x => x.c), 50);
 let q = -1; const trendAt = closeT => { while (q + 1 < m5.length && m5[q + 1].t + 300 <= closeT) q++; if (q < 55 || m5[q].n < 5 || e50[q] == null) return 0; const c = m5[q].c; return c > e50[q] && e20[q] > e50[q] && e20[q] > e20[q - 3] ? 1 : c < e50[q] && e20[q] < e50[q] && e20[q] < e20[q - 3] ? -1 : 0; };
 
+
+function rSplit(m, i, L, entry, sl, maxBars) {
+  const risk = Math.abs(entry - sl), tp1 = entry + (L ? 1 : -1) * risk, tp2 = entry + (L ? 2 : -2) * risk; let be = false;
+  for (let k = i + 1; k <= Math.min(m.length - 1, i + maxBars); k++) {
+    const b = m[k], stop = be ? entry : sl;
+    if (L ? b.l <= stop : b.h >= stop) return be ? 0.5 : -1;
+    if (!be && (L ? b.h >= tp1 : b.l <= tp1)) { be = true; if (L ? b.h >= tp2 : b.l <= tp2) return 1.5; continue; }
+    if (be && (L ? b.h >= tp2 : b.l <= tp2)) return 1.5;
+  }
+  const last = m[Math.min(m.length - 1, i + maxBars)].c, mv = (L ? last - entry : entry - last) / risk;
+  return be ? 0.5 + 0.5 * Math.max(0, Math.min(1, mv)) : Math.max(-1, Math.min(1, mv));
+}
 function walk(i, side, entry, sl, maxBars = 60) {
   const L = side === 'BUY', risk = Math.abs(entry - sl); let stopK = null; const hit = {};
   for (let k = i + 1; k <= Math.min(m.length - 1, i + maxBars); k++) {
@@ -24,10 +36,11 @@ function walk(i, side, entry, sl, maxBars = 60) {
     for (const T of [1, 1.5, 2, 3]) if (hit[T] == null && f >= T) hit[T] = k;
   }
   const end = Math.min(m.length - 1, i + maxBars), mv = (L ? m[end].c - entry : entry - m[end].c) / risk;
-  return { risk, stopK, hit, mv, t: m[i].t };
+  return { risk, stopK, hit, mv, t: m[i].t, rs: rSplit(m, i, L, entry, sl, maxBars) };
 }
 const full = (w, T) => w.hit[T] != null ? T : w.stopK != null ? -1 : Math.max(-1, Math.min(T, w.mv));
-const split = w => w.hit[1] == null ? (w.stopK != null ? -1 : Math.max(-1, Math.min(1, w.mv))) : w.hit[2] != null ? 1.5 : (w.stopK != null ? 0.5 : 0.5 + 0.5 * Math.max(0, Math.min(1, w.mv)));
+const splitOld = w => w.hit[1] == null ? (w.stopK != null ? -1 : Math.max(-1, Math.min(1, w.mv))) : w.hit[2] != null ? 1.5 : (w.stopK != null ? 0.5 : 0.5 + 0.5 * Math.max(0, Math.min(1, w.mv)));
+const split = w => w.rs;   // path-correct (the old shortcut over-credited TP2 after a return to entry)
 const PIV = 3, LOOK = 60, MINRISK = 8;
 
 const trades = []; let last = -99;

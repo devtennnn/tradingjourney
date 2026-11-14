@@ -12,7 +12,7 @@
 const fs = require('fs'), path = require('path');
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
-const SYMBOL = String(arg('symbol', 'XAUUSD')).toUpperCase(), SPREAD = +arg('spread', 0), SPLIT = +arg('split', 0.6);
+const MODE = String(arg('mode', 'scalp')), SYMBOL = String(arg('symbol', 'XAUUSD')).toUpperCase(), SPREAD = +arg('spread', 0), SPLIT = +arg('split', 0.6);
 
 /* ---- load the live engine out of index.html ---- */
 function loadEngine() {
@@ -112,7 +112,7 @@ const blocked = (r, rules) => rules.some(x => FEATURES[x.feature](r) === x.bucke
   if (m1.length < 1500) throw new Error('need at least ~1500 M1 candles, got ' + m1.length);
   console.log(`${SYMBOL}: ${m1.length} M1 candles · ${new Date(m1[0].t * 1000).toISOString().slice(0, 16)} → ${new Date(m1[m1.length - 1].t * 1000).toISOString().slice(0, 16)} · spread ${SPREAD}`);
 
-  const P = AiEng.prep(m1, null, 'scalp', SYMBOL), rows = []; let last = -99;
+  const P = AiEng.prep(m1, null, MODE, SYMBOL), rows = []; let last = -99;
   for (let i = 120; i < m1.length - 1; i++) {
     const ev = AiEng.evalAt(P, i, () => true);               // news history is unknown offline: assume clear
     if (!ev.signal || i - last <= 10) continue; last = i;

@@ -52,11 +52,17 @@ async function newsFn() {
   } catch (_) { return () => null; }
 }
 // Entry Timer checklist lines (same rules as Trade Finder → Time the trade on the website)
-const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING" };
+const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING", sweep: "SWEEP (experimental)" };
 const dur = (sec) => sec >= 86400 ? Math.round(sec / 86400) + " days" : sec >= 3600 ? Math.round(sec / 3600) + " hours" : Math.round(sec / 60) + " min";
 function timerLines(ev, buy, s, M) {
   const c = Object.fromEntries(ev.checks.map((x) => [x.key, x]));
   const ok = (k) => (c[k] && c[k].pass ? "✅" : "▫️");
+  if (M.sweep) return [
+    `${ok("sweep")} Liquidity sweep of a recent M1 swing ${buy ? "low" : "high"}, closed back inside`,
+    `${ok("risk")} Stop beyond the sweep extreme`,
+    `${ok("news")} No high-impact news ±30 min`,
+    `⚠️ Experimental: BTCUSD only, edge not yet proven. Risk small.`,
+  ];
   return [
     `${ok("bias")} ${M.hName}${M.daily ? " + Daily" : ""} trend ${buy ? "up" : "down"}`,
     `${ok("align")} ${M.eName} EMA20/50 aligned`,
@@ -129,6 +135,7 @@ Deno.serve(async (req) => {
   const { data: openAll } = await db.from("ai_signals").select("*").eq("status", "open");
   for (const sym of symbols) for (const mk of modes) {
     const M = AiEng.MODES[mk];
+    if (M.only && !M.only.test(sym)) continue;      // e.g. the sweep mode is BTC only
     const open = (openAll || []).filter((r) => r.symbol === sym && (r.mode || "scalp") === mk);
     if (!due(M) && !open.length) continue;
     const out = { symbol: sym, mode: mk, posted: null, updates: [] };
@@ -164,6 +171,10 @@ Deno.serve(async (req) => {
         }
       }
       if (!due(M)) { report.push(out); continue; }
+      // feed guard: always reported in the run output (feed). Set ai_bot_config feed_guard = on to ALSO stop posting NEW M1 signals when the candles look unreliable
+      const q = M.base <= 60 ? AiEng.feedQuality(m) : null;
+      out.feed = q;
+      if (q && !q.ok && cfg.feed_guard === "on") { out.skipped = "feed quality (candle opens do not match previous closes)"; report.push(out); continue; }
       // 2) new A+ on the last two closed candles; unique (symbol, mode, t) prevents double posts
       for (const i of [n - 1, n]) {
         const ev = AiEng.evalAt(P, i, news);
