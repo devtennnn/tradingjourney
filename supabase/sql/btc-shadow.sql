@@ -1,6 +1,6 @@
 -- BTC shadow mode ("btcx"): logs signals to ai_signals (mode = 'btcx') but never posts to Telegram / push.
 -- 1) Deploy the updated ai-telegram edge function FIRST (unknown modes are ignored, so this is safe in any order).
--- 2) Turn it on (idempotent). Needs BTCUSD in ai_bot_config 'symbols' as well:
+-- 2) Turn it on (idempotent). Shadow modes use ai_bot_config 'shadow_symbols' (default BTCUSD), so the public 'symbols' list is NOT changed:
 insert into public.ai_bot_config (key, value) values ('modes', 'scalp,intraday,swing,btcx')
   on conflict (key) do update set value = case when public.ai_bot_config.value like '%btcx%' then public.ai_bot_config.value else public.ai_bot_config.value || ',btcx' end;
 -- To stop: update public.ai_bot_config set value = replace(value, ',btcx', '') where key = 'modes';
