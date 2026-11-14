@@ -125,6 +125,8 @@ Deno.serve(async (req) => {
   }
 
   const symbols = String(cfg.symbols || "XAUUSD").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
+  // shadow modes (research, never posted) trade their own symbol list so they never widen what the public modes cover
+  const shadowSyms = String(cfg.shadow_symbols || "BTCUSD").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
   const modes = String(cfg.modes || "scalp,intraday,swing").split(",").map((s) => s.trim()).filter((m) => AiEng.MODES[m]);
   const nowS = Math.floor(Date.now() / 1000), force = url.searchParams.get("all") === "1";
   // cron runs every minute: M1 scalping every run; M5+ modes on the old :01, :06, :11 … cadence, just after their entry candle closes
@@ -133,8 +135,9 @@ Deno.serve(async (req) => {
   const news = await newsFn();
   const report = [];
   const { data: openAll } = await db.from("ai_signals").select("*").eq("status", "open");
-  for (const sym of symbols) for (const mk of modes) {
+  for (const sym of new Set([...symbols, ...shadowSyms])) for (const mk of modes) {
     const M = AiEng.MODES[mk];
+    if (!(M.shadow ? shadowSyms : symbols).includes(sym)) continue;   // public modes: cfg.symbols · shadow modes: cfg.shadow_symbols
     if (M.only && !M.only.test(sym)) continue;      // e.g. the sweep mode is BTC only
     const open = (openAll || []).filter((r) => r.symbol === sym && (r.mode || "scalp") === mk);
     if (!due(M) && !open.length) continue;
