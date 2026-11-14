@@ -123,7 +123,10 @@ const AiEng = (() => {
     if(out.grade === 'A+'){
       const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
       out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:null,
-        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:trig, mode:M.key, rr:M.rr, maxBars:M.maxBars};
+        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:trig, mode:M.key, rr:M.rr, maxBars:M.maxBars,
+        feat:{lvl:zone ? 'SR' : onTl ? 'trendline' : 'retest', conf, zn:zone ? zone.n : 0, hr:new Date(closeT * 1000).getUTCHours(),
+          riskA:+(risk / A5).toFixed(2), roomR:room == null ? null : +room.toFixed(1), slope:+(Math.abs(sl20) / A5).toFixed(2), str:+(Math.abs(hc - h50) / A5).toFixed(2),
+          volR:+(A1 / A5).toFixed(3), body:+(body / rng).toFixed(2), dEma:+(Math.abs(b.c - e20) / A1).toFixed(2)}};
     }
     return out;
   }

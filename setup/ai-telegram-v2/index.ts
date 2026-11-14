@@ -157,7 +157,9 @@ Deno.serve(async (req) => {
         for (const x of msgs) { try { await tg(`${x}\n${tag}`, row.tg_message_id); } catch (_) { /* keep going */ }
           await push(cfg, { update: true, key: `upd|${sym}|${mk}|${row.t}|${plain(x).slice(0, 24)}`, symbol: sym, mode: mk, title: `${sym} ${row.side} · ${plain(x).split(" — ")[0]}`, body: tag }); }
         if (msgs.length || closed) {
-          await db.from("ai_signals").update({ hits, status: closed ? "closed" : "open", result: closed ? r : null, updated_at: new Date().toISOString() }).eq("id", row.id);
+          // realized R (spread excluded): SL -1 · TP1 then stop at entry +0.5 · TP2 +1.5 (half off at TP1) · expired 0
+          const rR = !closed ? null : r === "sl" ? -1 : r === "expired" || r === "unknown" ? 0 : hits >= 2 ? 1.5 : hits === 1 ? 0.5 : 0;
+          await db.from("ai_signals").update({ hits, status: closed ? "closed" : "open", result: closed ? r : null, r_result: rR, updated_at: new Date().toISOString() }).eq("id", row.id);
           out.updates.push({ t: row.t, result: r });
         }
       }
@@ -169,7 +171,7 @@ Deno.serve(async (req) => {
         const s = ev.signal;
         if (nowS > s.validUntil) continue;
         const { data: ins, error: e2 } = await db.from("ai_signals").upsert(
-          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source },
+          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source, feat: s.feat || null },
           { onConflict: "symbol,mode,t", ignoreDuplicates: true }).select();
         if (e2) throw new Error(e2.message);
         if (!ins || !ins.length) continue;
