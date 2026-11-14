@@ -10,6 +10,7 @@ const SYMBOLS = {
   USDJPY: {td: 'USD/JPY', yahoo: 'JPY=X',    yahooName: 'USD/JPY spot (Yahoo)'},
   NQ:     {td: null,      yahoo: 'NQ=F',     yahooName: 'Nasdaq 100 E-mini futures (NQ=F)'},
   OIL:    {td: null,      yahoo: 'CL=F',     yahooName: 'WTI crude futures (CL=F)'},
+  BTCUSD: {td: 'BTC/USD', yahoo: 'BTC-USD',  yahooName: 'Bitcoin (Yahoo BTC-USD)'},
 };
 
 // ?tf=1 (scalping v3, M1) · 5 (M5) · 15 (intraday) · 60 (swing)

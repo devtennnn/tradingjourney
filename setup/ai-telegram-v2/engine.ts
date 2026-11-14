@@ -35,10 +35,11 @@ const AiEng = (() => {
     if(cur) out.push(cur); return out.filter(x => x.n >= need); }
   const toM15 = m5 => agg(m5, 900, 300, 1);
 
-  function prep(bars, htf, mode){
+  // sym (optional): crypto (BTC…) trades 7 days a week, so the weekday check is skipped for it
+  function prep(bars, htf, mode, sym){
     const M = MODES[mode] || MODES.m5;
     htf = htf && htf.length ? htf : agg(bars, M.htf, M.base, 1);
-    const P = {M, m:bars, m5:bars, htf, m15:htf};
+    const P = {M, m:bars, m5:bars, htf, m15:htf, allWeek:/^(BTC|ETH)/.test(String(sym || ''))};
     const c = bars.map(x => x.c), h = bars.map(x => x.h), l = bars.map(x => x.l);
     P.e20 = ema(c, 20); P.e50 = ema(c, 50); P.rsi = rsiF(c); P.atr = atrF(h, l, c);
     const hc = htf.map(x => x.c); P.h50 = ema(hc, 50); P.h200 = ema(hc, 200);
@@ -101,7 +102,7 @@ const AiEng = (() => {
     if(!L && b.c < b.o){ if(p.c > p.o && b.c <= p.o && b.o >= p.c) trig = 'engulf'; else if(b.h - Math.max(b.o, b.c) >= 1.5 * body && b.c <= b.h - .6 * rng) trig = 'pin'; else if(body >= .55 * rng && b.c < p.l) trig = 'momentum'; }
     add('trigger', !!trig, trig, true);
     // 5) Session: all sessions, weekdays (market open)
-    const wd = new Date(closeT * 1000).getUTCDay(); add('session', wd >= 1 && wd <= 5, 'any', true);
+    const wd = new Date(closeT * 1000).getUTCDay(); add('session', P.allWeek || (wd >= 1 && wd <= 5), P.allWeek ? '24/7' : 'any', true);
     // 6) News lock
     const nz = news ? news(closeT) : true; add('news', nz === true, nz === null ? 'unknown' : null, true);
     // 7) Stop beyond the zone / swing: SL past the pullback extreme or the level, whichever is further; 0.3–1.5 × M5 ATR
@@ -172,7 +173,7 @@ const AiEng = (() => {
     add('trigger', !!trig, trig, true);
     // 5) Session: London / New York for scalping & intraday; any weekday session for swing
     const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
-    add('session', wd >= 1 && wd <= 5 && (!M.session || (hr >= SESSION.from && hr < SESSION.to)), M.session ? null : 'any', true);
+    add('session', (P.allWeek || (wd >= 1 && wd <= 5)) && (!M.session || (hr >= SESSION.from && hr < SESSION.to)), M.session ? null : 'any', true);
     // 6) No high-impact USD news within ±30 min
     const nz = news ? news(closeT) : true;
     add('news', nz === true, nz === null ? 'unknown' : null, true);

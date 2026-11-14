@@ -2,7 +2,7 @@
 // Real-time feed for the AI terminal: the last ~2 hours of 1-minute candles from Yahoo Finance,
 // used by the page to build the candle that is still forming (5m / 15m) and the live price.
 // Cached 4 s on the CDN so every viewer shares one upstream call. Nothing is generated here.
-const SYMBOLS = {XAUUSD: 'GC=F', XAGUSD: 'SI=F', EURUSD: 'EURUSD=X', GBPUSD: 'GBPUSD=X', USDJPY: 'JPY=X', NQ: 'NQ=F', OIL: 'CL=F'};
+const SYMBOLS = {XAUUSD: 'GC=F', XAGUSD: 'SI=F', EURUSD: 'EURUSD=X', GBPUSD: 'GBPUSD=X', USDJPY: 'JPY=X', NQ: 'NQ=F', OIL: 'CL=F', BTCUSD: 'BTC-USD'};
 
 module.exports = async (req, res) => {
   const key = String((req.query && req.query.symbol) || 'XAUUSD').toUpperCase();

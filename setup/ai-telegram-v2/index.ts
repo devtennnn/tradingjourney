@@ -11,7 +11,7 @@ const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
 const ict = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Phnom_Penh", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Phnom_Penh", hour: "2-digit", minute: "2-digit", hour12: false });
 const DP = { XAGUSD: 3, EURUSD: 5, GBPUSD: 5, USDJPY: 3, NQ: 2, OIL: 2 };
-const NAME = { XAUUSD: "Gold", XAGUSD: "Silver", EURUSD: "Euro", GBPUSD: "Pound", USDJPY: "Yen", NQ: "Nasdaq 100", OIL: "WTI Oil" };
+const NAME = { BTCUSD: "Bitcoin", XAUUSD: "Gold", XAGUSD: "Silver", EURUSD: "Euro", GBPUSD: "Pound", USDJPY: "Yen", NQ: "Nasdaq 100", OIL: "WTI Oil" };
 const fx = (v, sym) => Number(v).toFixed(DP[sym] ?? 2);
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const TRIG = { engulf: "Engulfing", pin: "Pin bar", momentum: "Momentum close" };
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     if (!due(M) && !open.length) continue;
     const out = { symbol: sym, mode: mk, posted: null, updates: [] };
     try {
-      const data = await candles(sym, M), m = data.candles, P = AiEng.prep(m, null, mk), n = m.length - 1;
+      const data = await candles(sym, M), m = data.candles, P = AiEng.prep(m, null, mk, sym), n = m.length - 1;
       out.lastCandle = ict.format(new Date((m[n].t + M.base) * 1000));
       // 1) follow-ups on running signals
       for (const row of open) {
