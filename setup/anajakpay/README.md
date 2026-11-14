@@ -23,6 +23,14 @@ Without the two secrets the site keeps using its own KHQR, so nothing breaks.
 Then: sign in as admin → Admin → Activations → **Check bank connection** (it should say payments use Anajak Pay) and pay a real 0.01 test
 (use promo code with a 99% discount on Premium, or a fixed discount that leaves $0.01).
 
+## Optional safety net: Account API token
+If a webhook is ever missed (their server down, wrong webhook URL), `khqr` can ask Anajak directly:
+`GET https://anajakpay.com/api/v1/transactions?search=<bill>` with `Authorization: Bearer kacc_...`. A `SUCCESS` row whose amount covers
+our price is settled the same way as a webhook (once only). Create the token in the Anajak dashboard → Account Tokens with **only the scope
+`transactions.read`**, merchant-limited to your profile, and store it as the Supabase secret `ANAJAK_TOKEN`. Never in the site or in chat.
+Calls are cached 8 s per bill (their limit is 120/minute per token). Admin → Check bank connection reports if the token is rejected.
+Not needed: `transactions.write` (resync / callback retry), `settings.*`, `merchants.*`.
+
 ## Not proven yet (needs your account)
 - A real payment end to end. The request signing follows their PHP sample and the webhook check follows their callback docs; both are tested
   against our own implementation of those formulas, not against their server.

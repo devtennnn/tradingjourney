@@ -15,6 +15,8 @@
 // ANAJAK PAY (hosted checkout, confirms payments from inside Cambodia, so no Bakong geo-block): set secrets
 //   ANAJAK_SECRET (the profile's Payment Secret) and ANAJAK_PROFILE_ID. When both are set, "create" returns a signed checkout URL instead of
 //   our own KHQR, and the payment is confirmed by the gateway's signed webhook (function "khqr-webhook"). Optional: ANAJAK_API_URL.
+//   Safety net (optional): ANAJAK_TOKEN = an Account API token (kacc_...) with ONLY the scope transactions.read. If the webhook is missed, "check"
+//   asks Anajak's Account API whether this bill is SUCCESS and settles it. Optional: ANAJAK_ACCOUNT_API (default https://anajakpay.com/api/v1).
 //
 // Requests (POST, user JWT required):  { action: "create" }  |  { action: "check", id: "<payment id>" }  |  { action: "recover" }
 //   { action: "diag" }  (admins only)  |  { action: "quote", plan, promo }  (exact price with a promo code)
@@ -144,6 +146,30 @@ const ANAJAK_SECRET = env("ANAJAK_SECRET").trim(), ANAJAK_PROFILE = env("ANAJAK_
 const ANAJAK_URL = env("ANAJAK_API_URL", "https://anajakpay.com/api/payment/request").replace(/\/$/, "");
 const ANAJAK_ON = !!(ANAJAK_SECRET && ANAJAK_PROFILE);
 const isHosted = (p: any) => typeof p?.payload === "string" && /^https:\/\//.test(p.payload);   // hosted-checkout rows keep the checkout URL in "payload"
+const ANAJAK_TOKEN = env("ANAJAK_TOKEN").trim();
+const ANAJAK_ACCOUNT_API = env("ANAJAK_ACCOUNT_API", "https://anajakpay.com/api/v1").replace(/\/$/, "");
+const lookups = new Map<string, { t: number; v: { tx: any; blocked: string } }>();   // short per-instance cache: the account API allows 120 calls/minute per token
+/** Ask Anajak's Account API (read only) whether OUR bill number is a successful transaction. Never throws. */
+async function anajakLookup(bill: string, fresh = false): Promise<{ tx: any; blocked: string }> {
+  if (!ANAJAK_TOKEN) return { tx: null, blocked: "" };
+  const hit = lookups.get(bill);
+  if (!fresh && hit && Date.now() - hit.t < 8000) return hit.v;
+  let v: { tx: any; blocked: string };
+  try {
+    const res = await fetch(`${ANAJAK_ACCOUNT_API}/transactions?search=${encodeURIComponent(bill)}&limit=5`, { headers: { Authorization: `Bearer ${ANAJAK_TOKEN}`, Accept: "application/json" } });
+    const j: any = await res.json().catch(() => null);
+    if (res.status === 401 || res.status === 403) v = { tx: null, blocked: "rejected" };           // bad / revoked / wrong-scope token
+    else if (res.status === 429) v = { tx: null, blocked: "" };                                   // rate limited: just look again next time
+    else if (!res.ok || !j || j.responseCode !== 0) v = { tx: null, blocked: "unreachable" };
+    else {
+      const it = (j.data?.items ?? []).find((x: any) => String(x.transaction_id) === bill && /^(success|completed)$/i.test(String(x.status)));
+      v = { tx: it ? { amount: Number(it.amount), currency: String(it.currency || "USD"), hash: null, toAccountId: null } : null, blocked: "" };
+    }
+  } catch (e) { console.error("Anajak lookup failed", String(e)); v = { tx: null, blocked: "unreachable" }; }
+  if (lookups.size > 500) lookups.clear();
+  lookups.set(bill, { t: Date.now(), v });
+  return v;
+}
 async function sha1hex(s: string): Promise<string> {
   const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s));
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -306,8 +332,8 @@ Deno.serve(async (req) => {
       const plan = planOf(p.plan), col = PLANS[plan].col;
       if (p.status === "paid") { const u = await untilFor(col); return { status: "paid", plan, until: u, premium_until: u }; }
       const waiting = (bk: string) => ({ status: p.status === "claimed" ? "claimed" : "pending", bakong: bk });
-      // hosted-checkout rows are confirmed by the gateway's webhook (khqr-webhook), never by asking Bakong from here
-      const { tx, blocked } = isHosted(p) ? { tx: null, blocked: "" as Blocked } : await bakongLookup(p.md5);
+      // hosted-checkout rows are confirmed by the gateway's webhook (khqr-webhook), with the Account API as a safety net; never by asking Bakong from here
+      const { tx, blocked } = (isHosted(p) ? await anajakLookup(p.bill_number) : await bakongLookup(p.md5)) as { tx: any; blocked: Blocked };
       if (!tx) {
         if (p.status === "claimed") return waiting(blocked || "ok");          // user said "I paid": an admin decides
         if (new Date(p.expires_at) < new Date()) {
@@ -369,8 +395,12 @@ Deno.serve(async (req) => {
       const { data: prof } = await admin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
       if (!(prof as any)?.is_admin) return json({ error: "forbidden" }, 403);
       if (ANAJAK_ON) {
-        return json({ ok: true, provider: "anajakpay", verdict: "OK: payments use Anajak Pay. They are confirmed by the gateway's signed webhook, so Bakong's location block does not matter. Make one 0.01 test payment to prove it.",
-          blocked: null, webhook: `${env("SUPABASE_URL")}/functions/v1/khqr-webhook`, profileSet: true, secretSet: true, secretLength: ANAJAK_SECRET.length, account: cfg("BAKONG_ACCOUNT_ID") });
+        const net = ANAJAK_TOKEN ? (await anajakLookup("DIAGPROBE", true)).blocked : null;
+        const netMsg = !ANAJAK_TOKEN ? " Safety net off (optional): add ANAJAK_TOKEN with the transactions.read scope to confirm a payment even if a webhook is missed."
+          : net === "rejected" ? " WARNING: Anajak rejected ANAJAK_TOKEN (revoked, expired, or missing the transactions.read scope)."
+          : net === "unreachable" ? " WARNING: the Anajak Account API could not be reached." : " Safety net on: the Account API answered.";
+        return json({ ok: net !== "rejected", provider: "anajakpay", verdict: "OK: payments use Anajak Pay. They are confirmed by the gateway's signed webhook, so Bakong's location block does not matter. Make one 0.01 test payment to prove it." + netMsg,
+          accountApi: ANAJAK_TOKEN ? (net || "ok") : "not set", blocked: null, webhook: `${env("SUPABASE_URL")}/functions/v1/khqr-webhook`, profileSet: true, secretSet: true, secretLength: ANAJAK_SECRET.length, account: cfg("BAKONG_ACCOUNT_ID") });
       }
       const probe = await bakongLookup("0".repeat(32));
       let egress: Record<string, string> | null = null;      // where this function reaches the internet from (country decides whether Bakong answers)
