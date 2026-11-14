@@ -13,7 +13,8 @@
 // from a Cambodian IP (relay), payments are confirmed by an admin (claim_payment / admin_approve_payment in the database).
 //
 // Requests (POST, user JWT required):  { action: "create" }  |  { action: "check", id: "<payment id>" }  |  { action: "recover" }
-//   { action: "diag" }  (admins only)
+//   { action: "diag" }  (admins only)  |  { action: "quote", plan, promo }  (exact price with a promo code)
+//   create also accepts { plan, promo }: the discount is calculated HERE with the database rules (promo_quote_internal), never taken from the browser.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
@@ -185,15 +186,39 @@ Deno.serve(async (req) => {
     const publicRow = (p: any) => ({
       id: p.id, plan: p.plan ?? "premium", payload: p.payload, amount: Number(p.amount), currency: p.currency,
       merchant: cfg("MERCHANT_NAME"), expires_at: p.expires_at,
+      list_price: p.list_price != null ? Number(p.list_price) : Number(p.amount), discount: Number(p.discount ?? 0), promo_code: p.promo_code ?? null,
     });
+
+    /** Promo check with the database rules. Fails CLOSED: if the check cannot run, no discount is given. */
+    const promoQuote = async (plan: string, code: string) => {
+      const { data, error } = await admin.rpc("promo_quote_internal", { p_user: user.id, p_code: code, p_plan: plan, p_price: PLANS[plan].price });
+      if (error || !data) { console.error("promo quote failed", error && error.message); return { ok: false, error: "unavailable" } as any; }
+      return data as any;
+    };
+
+    /* ---------- quote: exact price for a plan, with an optional promo code ---------- */
+    if (body.action === "quote") {
+      const plan = planOf(body.plan), P = PLANS[plan], code = String(body.promo ?? "").trim();
+      if (!code) return json({ ok: true, plan, list_price: P.price, discount: 0, final: P.price, promo: null });
+      const q = await promoQuote(plan, code);
+      if (!q.ok) return json({ ok: false, error: q.error, plan: q.plan ?? null, list_price: P.price });
+      return json({ ok: true, plan, list_price: P.price, discount: Number(q.discount), final: Number(q.final), promo: { code: q.code, kind: q.kind, value: Number(q.value) } });
+    }
 
     /* ---------- create ---------- */
     if (body.action === "create") {
-      const plan = planOf(body.plan), P = PLANS[plan];
+      const plan = planOf(body.plan), P = PLANS[plan], promo = String(body.promo ?? "").trim();
+      let quote: any = null;
+      if (promo) {
+        quote = await promoQuote(plan, promo);
+        if (!quote.ok) return json({ error: "promo_" + quote.error, plan: quote.plan ?? null });
+      }
+      const price = quote ? Number(quote.final) : P.price;
       const { data: open } = await admin.from("payments").select("*")
         .eq("user_id", user.id).eq("status", "pending").eq("plan", plan).gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (open) return json(publicRow(open));
+      // reopen the user's open QR only when it used the same promo (or none): otherwise the amount would be wrong
+      if (open && (open.promo_code ?? null) === (quote ? quote.code : null)) return json(publicRow(open));
 
       const created = Date.now(), expires = created + TTL_MS, bill = billNumber();
       const payload = buildKHQR({
@@ -203,12 +228,22 @@ Deno.serve(async (req) => {
         acquiringBank: cfg("BAKONG_ACQUIRING_BANK"),
         merchantName: cfg("MERCHANT_NAME"),
         merchantCity: cfg("MERCHANT_CITY"),
-        amount: P.price, currency: CURRENCY, billNumber: bill, storeLabel: P.label,
+        amount: price, currency: CURRENCY, billNumber: bill, storeLabel: P.label,
         createdMs: created, expiresMs: expires,
       });
+      const md5 = await md5hex(payload);
+      if (quote) {
+        // the database re-checks the limits under a lock and refuses if the price changed, so two buyers cannot both take the last use
+        const { data, error } = await admin.rpc("create_payment_row", {
+          p_user: user.id, p_bill: bill, p_md5: md5, p_payload: payload, p_plan: plan, p_list_price: P.price, p_amount: price,
+          p_currency: CURRENCY, p_expires: new Date(expires).toISOString(), p_code: quote.code,
+        });
+        if (error) { const m = String(error.message || ""); return json({ error: /^promo_[a-z_]+$/.test(m) ? m : "promo_unavailable" }); }
+        return json(publicRow(data));
+      }
       const row = {
-        user_id: user.id, bill_number: bill, md5: await md5hex(payload), payload,
-        plan, amount: P.price, currency: CURRENCY, status: "pending", expires_at: new Date(expires).toISOString(),
+        user_id: user.id, bill_number: bill, md5, payload, list_price: P.price, discount: 0,
+        plan, amount: price, currency: CURRENCY, status: "pending", expires_at: new Date(expires).toISOString(),
       };
       const { data, error } = await admin.from("payments").insert(row).select().single();
       if (error) return json({ error: error.message }, 500);
