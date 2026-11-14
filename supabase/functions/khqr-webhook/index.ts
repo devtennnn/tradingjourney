@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
 
     // claim atomically: only one delivery can flip the row, so the plan is extended once
     const { data: claimed } = await admin.from("payments")
-      .update({ status: "paid", paid_at: new Date().toISOString(), bakong_hash: String(body.payment_details?.hash ?? body.hash ?? "").slice(0, 120) || null })
+      .update({ status: "paid", paid_at: new Date().toISOString(), bakong_hash: String(body.payment_details?.bakonghash ?? body.payment_details?.externalRef ?? "").slice(0, 120) || null })
       .eq("id", p.id).in("status", ["pending", "expired", "claimed"]).select().maybeSingle();
     if (claimed) {
       const plan = p.plan === "elite" ? "elite" : "premium", col = COL[plan];
