@@ -38,7 +38,7 @@ async function fetchTwelve(symbol, days) {
   let end = new Date().toISOString().slice(0, 19).replace('T', ' '), all = [];
   const stop = Date.now() / 1000 - days * 86400;
   while (true) {
-    const u = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1min&outputsize=5000&timezone=UTC&order=DESC&end_date=${encodeURIComponent(end)}&apikey=${key}`;
+    const u = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1min&outputsize=5000&timezone=UTC&order=DESC&end_date=${encodeURIComponent(end)}${key === 'proxy-injected' ? '' : '&apikey=' + key}`;   // proxy-injected: the sandbox proxy adds the key as a header
     const j = await (await fetch(u)).json();
     if (j.status === 'error' || !Array.isArray(j.values) || !j.values.length) { if (all.length) break; throw new Error('twelvedata: ' + (j.message || 'no data')); }
     const rows = j.values.map(v => ({ t: Math.floor(Date.parse(v.datetime.replace(' ', 'T') + 'Z') / 1000), o: +v.open, h: +v.high, l: +v.low, c: +v.close }));
@@ -130,8 +130,8 @@ const blocked = (r, rules) => rules.some(x => FEATURES[x.feature](r) === x.bucke
   console.log(`\nWALK-FORWARD on unseen TEST data (n=${test.length}):`);
   console.log(`  without rules: avg ${f(a.avgR)}R  total ${f(a.totR, 1)}R`);
   console.log(`  with rules:    avg ${f(b.avgR)}R  total ${f(b.totR, 1)}R  (kept ${b.n}, skipped ${c.n} that averaged ${f(c.avgR)}R)`);
-  const holds = rules.length && b.avgR > a.avgR && c.avgR < 0;
-  console.log(holds ? '  ✓ rules improved unseen data' : '  ✗ rules did NOT clearly help unseen data — do not deploy them (probably noise / too few trades)');
+  const holds = rules.length && b.n >= 15 && b.avgR > a.avgR && b.avgR > 0 && c.avgR < 0;   // must keep a real sample AND be profitable, not just block everything
+  console.log(holds ? '  ✓ rules improved unseen data' : '  ✗ rules did NOT clearly help unseen data (blocked almost everything, or still not profitable) — do not deploy them');
   if (arg('out') && holds) { fs.writeFileSync(arg('out'), JSON.stringify({ symbol: SYMBOL, learned: new Date().toISOString(), trades: rows.length, rules }, null, 2)); console.log('  wrote ' + arg('out')); }
   console.log('\nExpectancy (avg R after spread) is what matters, not win-rate. Fewer than ~100 trades is mostly noise: re-run as the tracker fills up.');
 })().catch(e => { console.error('error:', e.message); process.exit(1); });
