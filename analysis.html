@@ -256,6 +256,50 @@ header.top-nav.scrolled{border-color:#34512a;box-shadow:0 18px 44px rgba(0,0,0,.
 .qr-bill b{font:800 12.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.8px;color:var(--text)}
 .qr-bill:hover b{color:var(--lime)}
 @media(max-width:380px){.qr-amt b{font-size:25px}}
+#qrClaimBtn[hidden]{display:none}
+.pay-unpaid{display:grid;gap:8px;margin:10px 0 0;text-align:left}.pay-unpaid[hidden]{display:none}
+.pu-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#0f1d17}
+.pu-info{min-width:0}.pu-info b{display:block;font-size:13px}.pu-info small{display:block;color:var(--muted);font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.pu-row .btn{min-height:44px;flex:none;white-space:normal;max-width:48%}
+.adm-badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:99px;background:#ff5d73;color:#fff;font:800 11px/1 sans-serif;font-family:inherit;vertical-align:middle}
+.adm-badge[hidden]{display:none}
+.adm-bank{margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-size:12.5px;line-height:1.5;display:grid;gap:3px;color:var(--muted)}
+.adm-bank:empty{display:none}
+.adm-bank.ok{border-color:#1f6f4d;background:#0d2219}.adm-bank.ok b{color:var(--green)}
+.adm-bank.bad{border-color:#6b2a35;background:#2a1217}.adm-bank.bad b{color:#ff8fa3}
+.adm-claims-h{margin:4px 0 8px;font-size:13px}.adm-claims-h span{color:#ffcf70;font-weight:700}
+.adm-bill{font:800 12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.6px;padding:7px 9px;border-radius:8px;border:1px dashed #3a5a49;background:transparent;color:var(--text);cursor:pointer}
+.adm-bill:hover{border-color:var(--lime);color:var(--lime)}
+.adm-row-actions{white-space:nowrap}.adm-row-actions .btn{margin-right:6px}
+/* promo codes: buyer */
+.promo-box{margin-top:12px;border-top:1px solid var(--line);padding-top:4px}
+#promoBlock[hidden]{display:none}
+.promo-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-height:22px;margin-top:8px;text-align:left}
+.promo-msg{font-size:12.5px;font-weight:700;line-height:1.45;color:var(--muted)}
+.promo-msg.ok{color:var(--green)}.promo-msg.err{color:#ff8fa3}
+.promo-remove{flex:none;min-height:44px;margin:-10px 0 -10px;padding:0 4px;background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font:600 12px/1 sans-serif;font-family:inherit;cursor:pointer}
+.promo-remove[hidden]{display:none}
+.promo-remove:hover{color:var(--text)}.promo-remove:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:8px}
+.pay-old{font-size:12px;font-weight:700;opacity:.65;text-decoration:line-through}
+.pay-old[hidden]{display:none}
+.qr-promo{display:block;margin-top:4px;color:#0a7a3e!important;font-weight:800!important}
+.qr-promo[hidden]{display:none}
+/* promo codes: admin */
+.pm-form{margin-bottom:14px}
+.pm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pm-grid label{display:grid;gap:5px;font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;min-width:0}
+.pm-grid label small{text-transform:none;letter-spacing:0;font-weight:600;opacity:.8}
+.pm-grid .field{height:40px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--text);min-width:0}
+.pm-actions{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.pm-msg{font-size:12.5px;font-weight:700}.pm-msg.ok{color:var(--green)}.pm-msg.err{color:#ff8fa3}
+.pm-st{font-size:10px;font-weight:900;letter-spacing:.6px;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block;border:1px solid var(--line)}
+.pm-st.active{color:var(--green);background:#10251c;border-color:#1f6f4d}.pm-st.paused{color:var(--muted);background:#1b352b}
+.pm-st.expired{color:#ff8fa3;background:#2a1217;border-color:#6b2a35}.pm-st.full{color:#ffcf70;background:#2a2410;border-color:#5a4a14}.pm-st.sched{color:#9db4ff;background:#141a2b;border-color:#2d3b66}
+.pm-bar{height:5px;border-radius:99px;background:#1b2b22;margin-top:6px;overflow:hidden;min-width:70px}.pm-bar i{display:block;height:100%;background:var(--lime)}
+.pm-detail-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 8px;font-size:13px}.pm-detail-h .sp{flex:1}
+.pm-link{font:600 11.5px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);overflow-wrap:anywhere}
+@media(max-width:900px){.pm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.pm-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.qr-spin{animation-duration:2.4s}.qr-bar i{transition:none}.key-toggle .svg-ico{transition:none}}
 .prem-price{font-size:38px;font-weight:900;color:var(--gold2);letter-spacing:-1px;margin:6px 0 0}
 .prem-price small{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0}
@@ -2955,10 +2999,21 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
           </ul>
         </button>
       </div>
-            <div class="pay-cta">
+            <div class="promo-box" id="promoBox">
+        <button type="button" class="key-toggle" id="promoToggle" aria-expanded="false" aria-controls="promoBlock"><span data-i18n="promoHave">Have a promo code?</span><svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div id="promoBlock" hidden>
+          <label class="key-lbl" for="promoIn" data-i18n="promoLabel">Promo code</label>
+          <div class="key-box">
+            <input class="field" id="promoIn" placeholder="SAVE20" maxlength="24" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false">
+            <button type="button" class="btn" id="promoBtn" data-i18n="promoApply">Apply</button>
+          </div>
+          <div class="promo-row"><div class="promo-msg" id="promoMsg" role="status" aria-live="polite"></div><button type="button" class="promo-remove" id="promoRemove" hidden data-i18n="promoRemove">Remove</button></div>
+        </div>
+      </div>
+      <div class="pay-cta">
         <button type="button" class="btn pay-btn" id="payQrBtn">
           <svg class="svg-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/></svg>
-          <span data-i18n="payQrBtn">Pay with KHQR</span><b id="payQrAmt">$2.50</b>
+          <span data-i18n="payQrBtn">Pay with KHQR</span><s class="pay-old" id="payQrOld" hidden></s><b id="payQrAmt">$2.50</b>
         </button>
         <p class="pay-note" data-i18n="payQrNote">Scan with ABA, ACLEDA, Wing or any Bakong banking app. Your plan activates automatically, no screenshot needed.</p>
         <div class="prem-err" id="payErr" role="alert"></div>
@@ -2977,6 +3032,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
         </div>
       </div>
       <button type="button" class="pay-recover" id="payRecover" data-i18n="payRecover">Paid but not activated? Check my payment</button>
+      <div class="pay-unpaid" id="payUnpaid" hidden></div>
     </div>
     <div class="pv" id="pvQr">
       <button type="button" class="qr-back" id="qrBack"><svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg><span data-i18n="qrBack">Change plan</span></button>
@@ -2986,13 +3042,14 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
           <canvas id="qrCanvas" width="260" height="260" role="img" aria-label="KHQR payment code"></canvas>
           <div class="qr-ovl" id="qrOvl" hidden><span class="qr-spin" id="qrSpin" aria-hidden="true"></span><span id="qrOvlTxt"></span><button type="button" class="btn small" id="qrRegen" hidden data-i18n="qrRegen">Generate new QR</button></div>
         </div>
-        <div class="qr-amt"><b id="qrAmt">—</b><small id="qrMerchant"></small></div>
+        <div class="qr-amt"><b id="qrAmt">—</b><small id="qrMerchant"></small><small class="qr-promo" id="qrPromo" hidden></small></div>
       </div>
       <div class="qr-timer"><div class="qr-bar" aria-hidden="true"><i id="qrBar"></i></div><span class="qr-left" id="qrLeft" aria-hidden="true">--:--</span></div>
       <div class="qr-status" id="qrStatus" data-mode="wait" role="status" aria-live="polite"><span class="qr-spin sm" aria-hidden="true"></span><span id="qrStatusTxt"></span></div>
       <ol class="qr-steps"><li data-i18n="qrS1">Open your banking app and tap Scan</li><li data-i18n="qrS2">Scan this QR and confirm the amount</li><li data-i18n="qrS3">Keep this window open. It unlocks by itself</li></ol>
       <div class="qr-actions">
         <button type="button" class="btn" id="qrCheckBtn" data-i18n="qrCheck">I've paid, check now</button>
+        <button type="button" class="btn secondary" id="qrClaimBtn" hidden data-i18n="qrClaim">I've paid, notify admin</button>
         <button type="button" class="btn secondary" id="qrSaveBtn" data-i18n="qrSave">Save QR image</button>
       </div>
       <button type="button" class="qr-bill" id="qrBillBtn" aria-label="Copy bill number"><span data-i18n="qrBill">Bill</span><b id="qrBillNo">—</b><svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>
@@ -3079,7 +3136,8 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
       <button type="button" data-t="users">Users</button>
       <button type="button" data-t="keys">Activation keys</button>
       <button type="button" data-t="audit">Audit log</button>
-      <button type="button" data-t="pay">Activations</button>
+      <button type="button" data-t="pay">Activations<span class="adm-badge" id="admPayBadge" hidden></span></button>
+      <button type="button" data-t="promo">Promo codes</button>
       <button type="button" data-t="nt">Notifications</button>
       <button type="button" data-t="mt">Maintenance</button>
     </div>
@@ -3153,8 +3211,29 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
         <div class="adm-tools" style="margin-top:14px"><span class="hint" id="ncCount"></span></div>
         <div id="ncList"></div>
       </div>
+      <div class="adm-pane" id="admPromo">
+        <div class="adm-kpis" id="admPromoKpi"></div>
+        <form class="pm-form adm-card" id="pmForm" autocomplete="off">
+          <h3>Create promo code</h3>
+          <div class="pm-grid">
+            <label>Code <small>blank = auto-generate</small><input class="field" id="pmCode" maxlength="24" placeholder="e.g. LAUNCH20" autocapitalize="characters" spellcheck="false"></label>
+            <label>Discount type<select class="field" id="pmKind"><option value="percent">Percent off (%)</option><option value="fixed">Fixed amount off ($)</option></select></label>
+            <label>Amount<input class="field" id="pmValue" type="number" min="0.01" step="0.01" required placeholder="20"></label>
+            <label>Applies to<select class="field" id="pmPlan"><option value="any">Any plan</option><option value="premium">Premium only</option><option value="elite">Elite only</option></select></label>
+            <label>Max total uses <small>blank = unlimited</small><input class="field" id="pmMax" type="number" min="1" step="1" placeholder="100"></label>
+            <label>Uses per person<input class="field" id="pmPer" type="number" min="1" step="1" value="1"></label>
+            <label>Expires <small>optional, end of day ICT</small><input class="field" id="pmExp" type="date"></label>
+            <label>Campaign / note <small>for your tracking</small><input class="field" id="pmCamp" maxlength="60" placeholder="e.g. Facebook ad, Nov"></label>
+          </div>
+          <div class="pm-actions"><button type="submit" class="btn" id="pmSubmit">Create code</button><span class="pm-msg" id="pmMsg" role="status" aria-live="polite"></span></div>
+        </form>
+        <div id="admPromoList"></div>
+        <div id="admPromoDetail"></div>
+      </div>
       <div class="adm-pane" id="admPay">
-        <div class="adm-tools"><span class="hint" id="admPaySum">Plan activations: keys redeemed, admin grants and any earlier KHQR payments.</span></div>
+        <div class="adm-tools"><span class="hint" id="admPaySum">Plan activations: keys redeemed, admin grants and KHQR payments.</span><span class="grow"></span><button type="button" class="btn secondary small" id="admBankChk">Check bank connection</button></div>
+        <div class="adm-bank" id="admBank"></div>
+        <div id="admClaims"></div>
         <div id="admPayList"></div>
       </div>
     </div>
@@ -3380,7 +3459,7 @@ const T = {
     pwaAnd1:"Tap \"Install now\" below.",pwaAnd2:"Or open the browser menu ⋮ and tap \"Install app\" / \"Add to Home screen\".",pwaDone:"AROM TRADE is installed.",modeLbl:"STRATEGY",mode_scalp:"Scalping",mode_intraday:"Intraday",mode_swing:"Swing",
     mode_scalp_d:"M5 trend → M1 entry · trendline, breakout-retest, S/R, pullback · TP 1R/2R · 10-min window · all sessions",mode_intraday_d:"H1 trend → M15 entry · 1.5R/3R/4.5R · 1-hour window · London/NY",mode_swing_d:"H4 + Daily trend → H1 entry · 2R/4R/6R · 4-hour window · holds days",
     aiSub_scalp:"Scalping · M5 trend + M1 entry · A+ needs 2 of: S/R zone, trendline, breakout-retest",aiSub_intraday:"Intraday · H1 trend + M15 entry · signals drop only on A+ setups",aiSub_swing:"Swing · H4 + Daily trend + H1 entry · signals drop only on A+ setups",
-    dkSess:"Session",dkGold:"Gold · XAUUSD",dkNews:"Next USD news",dkSig:"AI signal · gold",dkNoNews:"None today",dkSigWait:"Waiting for A+",dkGrade:"Grade {g} · {s}",dkScan:"Next scan {t}",dkChg:"{c} today",naNext:"Next USD release",naNoNext:"No more USD High/Medium news today",naInT:"in {t}",naAgoT:"{t} ago",naNow:"releasing now",naUpcoming:"UPCOMING",naReleased:"RELEASED",naAbove:"Above forecast",naBelow:"Below forecast",naRxGold:"Gold since release: {mv} ({a}× ATR)",naRxUp:"market reads USD stronger",naRxDn:"market reads USD weaker",naRxFlat:"no clear reaction yet",naActLbl:"Actual result",naNoComp:"Speech / statement: no number to compare, expect volatility both ways",nlManage:"Open trade? Move SL to entry or reduce size before the release",naLockShort:"News lock",naLeanOnly:"Forecast lean {d}, not confirmed",naLeanPin:"Current lean: {d}. Re-check after the release",termNoAp:"no A+ yet",termApLive:"A+ LIVE",termNoData:"No candle data",termHint:"Drag to move · scroll to zoom · drag the price axis to scale · double-click to reset",termHintTouch:"Drag to move · pinch to zoom",termTipIn:"Zoom in",termTipOut:"Zoom out",termTipAuto:"Auto-fit price scale",termTipReset:"Reset view",termTipLatest:"Jump to latest candle",termTipFull:"Full screen (Esc to exit)",termTrend:"trend",nlAi:"AI Signal",aiTitle:"AI SIGNAL ANALYSIS",aiSub:"Trend-pullback scalping engine · M15 bias + M5 entry · signals drop only on A+ setups",aiNow:"Analyze now",aiAlertOn:"Enable alerts",aiAlertOff:"Alerts on ✓",aiLockSub:"The A+ scalping engine scans XAUUSD every 5 minutes and drops entry, stop loss and take-profit only when all 11 rules confirm. Elite: $14.99 / 30 days.",aiGrade:"Setup grade",aiBias:"M15 bias",aiPrice:"Last close",aiCandle:"Candle (ICT)",aiNext:"Next scan",aiChecklist:"A+ confirmation checklist",aiHow:"How the engine decides",aiHow1:"Trend: on M15 the close is above EMA50, EMA50 is above EMA200 and rising → only BUY (mirror for SELL). Ranging = no trade.",aiHow2:"Pullback: on M5, price dips back into the EMA20–EMA50 zone within the last 6 candles without breaking deep through EMA50.",aiHow3:"Trigger: the signal candle closes back with the trend as a bullish/bearish engulfing, a pin bar, or a strong momentum candle.",aiHow4:"Filters: RSI 14 in the momentum zone and turning, higher-low structure, normal ATR volatility, room to the next swing, London/New York session, no high-impact USD news within 30 minutes.",aiHow5:"Risk: stop 0.25 ATR beyond the pullback extreme (must be 0.8–3 ATR). TP1 = 1R, TP2 = 2R, TP3 = 3R. Move stop to entry after TP1.",aiHow6:"Only when all 11 checks pass is the setup graded A+ and a signal released. An \"A\" grade is shown for watching only.",aiHist:"A+ setups in recent data",aiDisc:"Algorithmic analysis of real market candles, not financial advice. Scalping is high risk; signals can and do lose. Past setups do not guarantee future results. Always confirm on your own chart, use your broker's prices and risk only what you can afford to lose.",aiC_bias:"M15 trend bias (EMA50 / EMA200)",aiC_align:"M5 EMA20 / EMA50 aligned with M15",aiC_pullback:"Pullback into EMA20–50 zone",aiC_trigger:"Price-action trigger candle",aiC_session:"London / New York session (14:00–24:00 ICT)",aiC_news:"No high-impact USD news ±30 min",aiC_risk:"Stop size 0.8–3 × ATR",aiC_rsi:"RSI 14 in momentum zone & turning",aiC_structure:"Higher low / lower high structure",aiC_vol:"Normal volatility (ATR)",aiC_room:"Room to target ≥ 1.5R",aiCore:"MUST",aiG_Ap:"A+ confirmed — signal released",aiG_A:"A setup — watch only, not every rule confirms",aiG_B:"B — conditions forming, no entry",aiG_C:"C — no edge right now",aiG_N:"M15 is ranging — no trend, no trade",aiG_na:"Not enough data yet",aiWaitT:"Waiting for an A+ setup",aiWaitP:"The engine checks every closed 5-minute candle. A signal drops here only when all 11 rules confirm.",aiLive:"LIVE",aiSigNew:"New A+ signal",aiValid:"Valid until",aiTrig:"Trigger",aiRiskT:"Risk",aiMoveBE:"Move SL to entry after TP1",aiCopy:"Copy levels",aiCopied:"Levels copied",aiAddTrade:"Log as trade",aiSt_open:"ACTIVE",aiSt_tp1:"TP1 HIT",aiSt_tp2:"TP2 HIT",aiSt_tp3:"TP3 HIT",aiSt_sl:"STOP HIT",aiSt_expired:"EXPIRED",aiNoHist:"No A+ setups in the loaded candles yet — the engine is strict on purpose.",aiHSetups:"setups",aiHWin:"reached TP1",aiHAvg:"avg",aiLoading:"Loading real candles…",aiNoData:"Live candle feed unavailable — no analysis, no signal. Try again in a minute.",aiSrcDelay:"Futures price — may differ from your broker's spot by a few dollars. Add a Twelve Data key for spot XAU/USD.",aiNewsUnknown:"news feed unavailable",aiTrig_engulf:"Engulfing",aiTrig_pin:"Pin bar",aiTrig_momentum:"Momentum close",aiNotifyDenied:"Browser notifications are blocked for this site.",mktLive:"LIVE",mktLoading:"Loading live prices…",mktSrc:"Prices by TradingView",mktFail:"Prices unavailable right now",nlAnalysis:"Analysis",pfAcct:"Trading account",pfAcctHint:"Trades and balance are tracked in this account.",pfAcctMulti:"Switch between your accounts. Older trades keep their original account.",ccAllTime:"All-time performance",ccDiscT:"Discipline score",ccDiscSub:"From your trade grades · plan execution",ccDiscNone:"Grade your trades to build your score",nlOverview:"Overview",nlPerf:"Performance",nlJournal:"Journal",nlSignals:"Signals",nlNews:"News",nlTools:"Tools",ntTitle:"Notifications",ntReadAll:"Mark all read",ntAll:"All",ntUpdate:"Updates",ntPromo:"Promotions",ntSignal:"Signal Alerts",ntDesktop:"Desktop alerts",ntEmpty:"You're all caught up.",ntEmptyUpdate:"No updates yet.",ntEmptyPromo:"No promotions right now.",ntEmptySignal:"No signal alerts yet.",ntEliteOnly:"Signal alerts are for Elite members.",ntOpen:"Open",ntTypeUpdate:"UPDATE",ntTypePromotion:"PROMOTION",ntTypeSignal:"SIGNAL",ntDeskBlocked:"Blocked in browser settings",ntNeedSql:"Notifications need devten-notifications-setup.sql.",ntJustNow:"just now",keyLabel:"Activation key",keyActivate:"Activate",keyHow:"Buy a key from the AROM TRADE admin, then paste it here. The key decides the plan (Premium or Elite) and how many days you get. If you already have that plan, the days are added to it.",keyContact:"Contact admin to buy a key",keyBad:"Enter the full key, e.g. DEVT-7KQ2-M9XP-4HZT.",key_invalid_key:"This key is not valid. Check it and try again.",key_key_revoked:"This key has been cancelled.",key_key_expired:"This key has expired.",key_key_used_up:"This key has already been used.",key_key_already_used_by_you:"You have already used this key.",key_too_many_attempts:"Too many wrong keys. Please wait an hour and try again.",key_not_authenticated:"Please log in first.",keyNoSvc:"Key activation is not set up yet. Please contact the admin.",keyOk:"Activated!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"ALL FEATURES",planCurrent:"CURRENT",premF0:"Everything in Premium",premF5:"AI Signal Analysis: A+ scalping signals with entry, SL & TP",premPayX:"Pay {p} with KHQR",premExtendX:"Extend 30 days · {p}",premPaidSub2:"{plan} is active until {d}.",payQrBtn:"Pay with KHQR",payQrNote:"Scan with ABA, ACLEDA, Wing or any Bakong banking app. Your plan activates automatically, no screenshot needed.",keyHave:"Have an activation key?",payRecover:"Paid but not activated? Check my payment",qrBack:"Change plan",qrPlanLine:"{plan} · {d} days",qrS1:"Open your banking app and tap Scan",qrS2:"Scan this QR and confirm the amount",qrS3:"Keep this window open. It unlocks by itself",qrWait:"Waiting for payment…",qrChecking:"Checking…",qrMaking:"Creating your QR…",qrDelayed:"The bank check is slow right now. If you already paid, keep this window open: your plan unlocks as soon as it is confirmed. If it takes too long, send your bill number to the admin.",qrMismatch:"A payment was found but it is lower than the plan price. Contact the admin with your bill number.",qrWrongAcc:"A payment was found for a different account. Contact the admin with your bill number.",qrExpired:"This QR has expired",qrRegen:"Generate new QR",qrCheck:"I've paid, check now",qrSave:"Save QR image",qrBill:"Bill",qrBillCopied:"Bill number copied",qrNoPay:"No unpaid payment found in the last 3 days.",qrErr:"Could not create the QR. Check your connection and try again.",qrNetwork:"Connection problem. Trying again…",qrAria:"KHQR payment code",qrNotFound:"No payment found for this QR yet. If you paid just now, wait a minute and check again.",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"Elite feature",eliteCta:"Unlock Elite",sgTitle:"SIGNAL PROVIDER",sgSub:"Live trade signals from AROM TRADE · Elite members",sgActive:"Active",sgAll:"All",sgNew:"New signal",sgLockSub:"Unlock live BUY / SELL signals with entry, stop loss and take-profit levels. Elite: $14.99 / 30 days · activation key.",sgStatActive:"Active signals",sgStatClosed:"Closed",sgStatWin:"Win rate",sgEmpty:"No signals yet. New signals appear here instantly.",sgEmptyActive:"No active signals right now.",sgEntry:"Entry",sgSymbol:"Symbol",sgSide:"Side",sgNote:"Note",sgPost:"Post signal",sgBad:"Check levels: for BUY, SL < Entry < TP1; for SELL, SL > Entry > TP1.",sgPosted:"Signal posted",sgNewToast:"New signal: {s}",sgNeedSql:"Signals need the Elite SQL setup (devten-elite-setup.sql).",sgDel:"Delete",sgDelQ:"Delete this signal?",sgUpdated:"Signal updated",sgLoading:"Loading signals…",stActive:"ACTIVE",stTp1:"TP1 HIT",stTp2:"TP2 HIT",stTp3:"TP3 HIT",stSl:"SL HIT",stBe:"BREAKEVEN",stCancelled:"CANCELLED",sgDisc:"Signals are the provider's own trade ideas, not financial advice. Past results do not guarantee future results. Trade at your own risk and size positions sensibly.",
+    dkSess:"Session",dkGold:"Gold · XAUUSD",dkNews:"Next USD news",dkSig:"AI signal · gold",dkNoNews:"None today",dkSigWait:"Waiting for A+",dkGrade:"Grade {g} · {s}",dkScan:"Next scan {t}",dkChg:"{c} today",naNext:"Next USD release",naNoNext:"No more USD High/Medium news today",naInT:"in {t}",naAgoT:"{t} ago",naNow:"releasing now",naUpcoming:"UPCOMING",naReleased:"RELEASED",naAbove:"Above forecast",naBelow:"Below forecast",naRxGold:"Gold since release: {mv} ({a}× ATR)",naRxUp:"market reads USD stronger",naRxDn:"market reads USD weaker",naRxFlat:"no clear reaction yet",naActLbl:"Actual result",naNoComp:"Speech / statement: no number to compare, expect volatility both ways",nlManage:"Open trade? Move SL to entry or reduce size before the release",naLockShort:"News lock",naLeanOnly:"Forecast lean {d}, not confirmed",naLeanPin:"Current lean: {d}. Re-check after the release",termNoAp:"no A+ yet",termApLive:"A+ LIVE",termNoData:"No candle data",termHint:"Drag to move · scroll to zoom · drag the price axis to scale · double-click to reset",termHintTouch:"Drag to move · pinch to zoom",termTipIn:"Zoom in",termTipOut:"Zoom out",termTipAuto:"Auto-fit price scale",termTipReset:"Reset view",termTipLatest:"Jump to latest candle",termTipFull:"Full screen (Esc to exit)",termTrend:"trend",nlAi:"AI Signal",aiTitle:"AI SIGNAL ANALYSIS",aiSub:"Trend-pullback scalping engine · M15 bias + M5 entry · signals drop only on A+ setups",aiNow:"Analyze now",aiAlertOn:"Enable alerts",aiAlertOff:"Alerts on ✓",aiLockSub:"The A+ scalping engine scans XAUUSD every 5 minutes and drops entry, stop loss and take-profit only when all 11 rules confirm. Elite: $14.99 / 30 days.",aiGrade:"Setup grade",aiBias:"M15 bias",aiPrice:"Last close",aiCandle:"Candle (ICT)",aiNext:"Next scan",aiChecklist:"A+ confirmation checklist",aiHow:"How the engine decides",aiHow1:"Trend: on M15 the close is above EMA50, EMA50 is above EMA200 and rising → only BUY (mirror for SELL). Ranging = no trade.",aiHow2:"Pullback: on M5, price dips back into the EMA20–EMA50 zone within the last 6 candles without breaking deep through EMA50.",aiHow3:"Trigger: the signal candle closes back with the trend as a bullish/bearish engulfing, a pin bar, or a strong momentum candle.",aiHow4:"Filters: RSI 14 in the momentum zone and turning, higher-low structure, normal ATR volatility, room to the next swing, London/New York session, no high-impact USD news within 30 minutes.",aiHow5:"Risk: stop 0.25 ATR beyond the pullback extreme (must be 0.8–3 ATR). TP1 = 1R, TP2 = 2R, TP3 = 3R. Move stop to entry after TP1.",aiHow6:"Only when all 11 checks pass is the setup graded A+ and a signal released. An \"A\" grade is shown for watching only.",aiHist:"A+ setups in recent data",aiDisc:"Algorithmic analysis of real market candles, not financial advice. Scalping is high risk; signals can and do lose. Past setups do not guarantee future results. Always confirm on your own chart, use your broker's prices and risk only what you can afford to lose.",aiC_bias:"M15 trend bias (EMA50 / EMA200)",aiC_align:"M5 EMA20 / EMA50 aligned with M15",aiC_pullback:"Pullback into EMA20–50 zone",aiC_trigger:"Price-action trigger candle",aiC_session:"London / New York session (14:00–24:00 ICT)",aiC_news:"No high-impact USD news ±30 min",aiC_risk:"Stop size 0.8–3 × ATR",aiC_rsi:"RSI 14 in momentum zone & turning",aiC_structure:"Higher low / lower high structure",aiC_vol:"Normal volatility (ATR)",aiC_room:"Room to target ≥ 1.5R",aiCore:"MUST",aiG_Ap:"A+ confirmed — signal released",aiG_A:"A setup — watch only, not every rule confirms",aiG_B:"B — conditions forming, no entry",aiG_C:"C — no edge right now",aiG_N:"M15 is ranging — no trend, no trade",aiG_na:"Not enough data yet",aiWaitT:"Waiting for an A+ setup",aiWaitP:"The engine checks every closed 5-minute candle. A signal drops here only when all 11 rules confirm.",aiLive:"LIVE",aiSigNew:"New A+ signal",aiValid:"Valid until",aiTrig:"Trigger",aiRiskT:"Risk",aiMoveBE:"Move SL to entry after TP1",aiCopy:"Copy levels",aiCopied:"Levels copied",aiAddTrade:"Log as trade",aiSt_open:"ACTIVE",aiSt_tp1:"TP1 HIT",aiSt_tp2:"TP2 HIT",aiSt_tp3:"TP3 HIT",aiSt_sl:"STOP HIT",aiSt_expired:"EXPIRED",aiNoHist:"No A+ setups in the loaded candles yet — the engine is strict on purpose.",aiHSetups:"setups",aiHWin:"reached TP1",aiHAvg:"avg",aiLoading:"Loading real candles…",aiNoData:"Live candle feed unavailable — no analysis, no signal. Try again in a minute.",aiSrcDelay:"Futures price — may differ from your broker's spot by a few dollars. Add a Twelve Data key for spot XAU/USD.",aiNewsUnknown:"news feed unavailable",aiTrig_engulf:"Engulfing",aiTrig_pin:"Pin bar",aiTrig_momentum:"Momentum close",aiNotifyDenied:"Browser notifications are blocked for this site.",mktLive:"LIVE",mktLoading:"Loading live prices…",mktSrc:"Prices by TradingView",mktFail:"Prices unavailable right now",nlAnalysis:"Analysis",pfAcct:"Trading account",pfAcctHint:"Trades and balance are tracked in this account.",pfAcctMulti:"Switch between your accounts. Older trades keep their original account.",ccAllTime:"All-time performance",ccDiscT:"Discipline score",ccDiscSub:"From your trade grades · plan execution",ccDiscNone:"Grade your trades to build your score",nlOverview:"Overview",nlPerf:"Performance",nlJournal:"Journal",nlSignals:"Signals",nlNews:"News",nlTools:"Tools",ntTitle:"Notifications",ntReadAll:"Mark all read",ntAll:"All",ntUpdate:"Updates",ntPromo:"Promotions",ntSignal:"Signal Alerts",ntDesktop:"Desktop alerts",ntEmpty:"You're all caught up.",ntEmptyUpdate:"No updates yet.",ntEmptyPromo:"No promotions right now.",ntEmptySignal:"No signal alerts yet.",ntEliteOnly:"Signal alerts are for Elite members.",ntOpen:"Open",ntTypeUpdate:"UPDATE",ntTypePromotion:"PROMOTION",ntTypeSignal:"SIGNAL",ntDeskBlocked:"Blocked in browser settings",ntNeedSql:"Notifications need devten-notifications-setup.sql.",ntJustNow:"just now",keyLabel:"Activation key",keyActivate:"Activate",keyHow:"Buy a key from the AROM TRADE admin, then paste it here. The key decides the plan (Premium or Elite) and how many days you get. If you already have that plan, the days are added to it.",keyContact:"Contact admin to buy a key",keyBad:"Enter the full key, e.g. DEVT-7KQ2-M9XP-4HZT.",key_invalid_key:"This key is not valid. Check it and try again.",key_key_revoked:"This key has been cancelled.",key_key_expired:"This key has expired.",key_key_used_up:"This key has already been used.",key_key_already_used_by_you:"You have already used this key.",key_too_many_attempts:"Too many wrong keys. Please wait an hour and try again.",key_not_authenticated:"Please log in first.",keyNoSvc:"Key activation is not set up yet. Please contact the admin.",keyOk:"Activated!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"ALL FEATURES",planCurrent:"CURRENT",premF0:"Everything in Premium",premF5:"AI Signal Analysis: A+ scalping signals with entry, SL & TP",premPayX:"Pay {p} with KHQR",premExtendX:"Extend 30 days · {p}",premPaidSub2:"{plan} is active until {d}.",payQrBtn:"Pay with KHQR",payQrNote:"Scan with ABA, ACLEDA, Wing or any Bakong banking app. Your plan activates automatically, no screenshot needed.",keyHave:"Have an activation key?",payRecover:"Paid but not activated? Check my payment",qrBack:"Change plan",qrPlanLine:"{plan} · {d} days",qrS1:"Open your banking app and tap Scan",qrS2:"Scan this QR and confirm the amount",qrS3:"Keep this window open. It unlocks by itself",qrWait:"Waiting for payment…",qrChecking:"Checking…",qrMaking:"Creating your QR…",qrDelayed:"The bank check is slow right now. If you already paid, keep this window open: your plan unlocks as soon as it is confirmed. If it takes too long, send your bill number to the admin.",qrMismatch:"A payment was found but it is lower than the plan price. Contact the admin with your bill number.",qrWrongAcc:"A payment was found for a different account. Contact the admin with your bill number.",qrExpired:"This QR has expired",qrRegen:"Generate new QR",qrCheck:"I've paid, check now",qrSave:"Save QR image",qrBill:"Bill",qrBillCopied:"Bill number copied",qrNoPay:"No unpaid payment found in the last 3 days.",qrErr:"Could not create the QR. Check your connection and try again.",qrNetwork:"Connection problem. Trying again…",qrAria:"KHQR payment code",qrNotFound:"No payment found for this QR yet. If you paid just now, wait a minute and check again.",qrNoAuto:"Automatic bank confirmation is not available right now. Pay as normal, then tap \"I've paid, notify admin\". Your plan is activated after a quick manual check.",qrClaim:"I've paid, notify admin",qrClaimed:"Sent to the admin. Your plan activates after they confirm your payment. You can close this window and come back.",qrPickPaid:"Automatic bank confirmation is not available right now. Pick the payment you made and the admin will confirm it:",qrIPaidThis:"I paid this one",promoHave:"Have a promo code?",promoLabel:"Promo code",promoApply:"Apply",promoRemove:"Remove",promoOk:"{code} applied: you save {off}",promoSaved:"Promo code {code} saved. It is applied when you upgrade.",promoEmpty:"Type your promo code first.",promoErr_not_found:"This code does not exist. Check the spelling.",promoErr_inactive:"This code is paused.",promoErr_not_started:"This code is not active yet.",promoErr_expired:"This code has expired.",promoErr_plan_mismatch:"This code works for {plan} only. Pick that plan to use it.",promoErr_limit_reached:"Sorry, this code has been fully used.",promoErr_already_used:"You have already used this code.",promoErr_unavailable:"Could not check the code right now. Try again in a moment.",promoErr_price_changed:"The price just changed. Please apply the code again.",promoQrLine:"Promo {code} · you save {off}",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"Elite feature",eliteCta:"Unlock Elite",sgTitle:"SIGNAL PROVIDER",sgSub:"Live trade signals from AROM TRADE · Elite members",sgActive:"Active",sgAll:"All",sgNew:"New signal",sgLockSub:"Unlock live BUY / SELL signals with entry, stop loss and take-profit levels. Elite: $14.99 / 30 days · activation key.",sgStatActive:"Active signals",sgStatClosed:"Closed",sgStatWin:"Win rate",sgEmpty:"No signals yet. New signals appear here instantly.",sgEmptyActive:"No active signals right now.",sgEntry:"Entry",sgSymbol:"Symbol",sgSide:"Side",sgNote:"Note",sgPost:"Post signal",sgBad:"Check levels: for BUY, SL < Entry < TP1; for SELL, SL > Entry > TP1.",sgPosted:"Signal posted",sgNewToast:"New signal: {s}",sgNeedSql:"Signals need the Elite SQL setup (devten-elite-setup.sql).",sgDel:"Delete",sgDelQ:"Delete this signal?",sgUpdated:"Signal updated",sgLoading:"Loading signals…",stActive:"ACTIVE",stTp1:"TP1 HIT",stTp2:"TP2 HIT",stTp3:"TP3 HIT",stSl:"SL HIT",stBe:"BREAKEVEN",stCancelled:"CANCELLED",sgDisc:"Signals are the provider's own trade ideas, not financial advice. Past results do not guarantee future results. Trade at your own risk and size positions sensibly.",
     naLockTitle:"Premium feature",naLockSub:"Unlock Market News Analysis: BUY / SELL bias for XAUUSD, EURUSD, GBPUSD and USDJPY from today's USD news. Elite: $14.99 / 30 days · activation key.",naLockCta:"Unlock with Premium",premF4:"Market News Analysis: BUY / SELL bias from USD news",naTitle:"MARKET NEWS ANALYSIS",naSub:"USD High & Medium impact news today → expected BUY / SELL bias",naUsdBias:"USD bias",naBull:"USD Bullish",naBear:"USD Bearish",naFlat:"Neutral / Mixed",naFromActual:"Based on {n} released result(s)",naFromFc:"Forecast-based (no results entered yet)",naNone:"No USD High/Medium events today — no news bias.",naBuy:"BUY",naSell:"SELL",naWait:"WAIT",naStrong:"Strong",naModerate:"Moderate",naWeak:"Weak",naNoBias:"No clear bias",naIfHigher:"Actual above forecast",naIfLower:"Actual below forecast",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"Speech / event risk — direction depends on tone. Expect volatility; wait for the reaction.",naActual:"Actual (after release)",naActPh:"e.g. 0.4%",naLean:"Forecast lean",naRes:"Result",naBetter:"Better than expected → USD ↑",naWorse:"Worse than expected → USD ↓",naInline:"In line → little reaction",naDisc:"Educational guide only — not financial advice. Bias is based on the classic reaction (better-than-expected US data → stronger USD). Markets often spike both ways on release, can reverse within minutes, and may already have priced the news in. Always confirm with your own analysis and use a stop loss.",newsTitle:"USD NEWS CALENDAR",newsSub:"US Dollar events only · times in Cambodia",newsThis:"This week",newsNext:"Next week",impHigh:"High",impMed:"Medium",impLow:"Low",impHol:"Holiday",newsRefreshTip:"Refresh calendar",newsLoading:"Loading USD events…",newsEmpty:"No USD events match these impact filters.",newsErr:"Could not load the calendar. Check your connection and try again.",newsUpd:"Updated",newsCached:"offline copy",newsSrc:"Source: Forex Factory weekly feed. Times converted to Asia/Phnom_Penh (UTC+7).",newsAllDay:"All day",newsNextEv:"Next event",newsIn:"in",newsNow:"NOW",newsFc:"Forecast",newsPrev:"Previous",newsToday:"TODAY",
     gp:"Gross profit",gl:"Gross loss",gpTip:"Sum of all winning trades",glTip:"Sum of all losing trades",prevSave:"Will save as",prevBad:"Enter a valid number, e.g. 25.50",prevFix:"sign set by Result",
     expectancy:"Expectancy",expFoot:"Average P/L per trade",avgWL:"Avg win / loss",maxDD:"Max drawdown",ddFoot:"Peak to trough",keep:"Keep showing up",streakW:"win streak",streakL:"loss streak",rr:"Reward : risk",
@@ -3442,7 +3521,7 @@ const T = {
     pwaAnd1:"ចុច \"ដំឡើងឥឡូវ\" ខាងក្រោម។",pwaAnd2:"ឬបើកម៉ឺនុយ ⋮ ហើយចុច \"Install app\" / \"Add to Home screen\"។",pwaDone:"បានដំឡើង AROM TRADE ហើយ។",modeLbl:"យុទ្ធសាស្ត្រ",mode_scalp:"Scalping",mode_intraday:"Intraday",mode_swing:"Swing",
     mode_scalp_d:"និន្នាការ M5 → ចូល M1 · ខ្សែនិន្នាការ បំបែក-សាកល្បង S/R ថយក្រោយ · TP 1R/2R · បង្អួច ១០ នាទី · គ្រប់វគ្គ",mode_intraday_d:"និន្នាការ H1 → ចូល M15 · 1.5R/3R/4.5R · បង្អួច ១ ម៉ោង · London/NY",mode_swing_d:"និន្នាការ H4 + Daily → ចូល H1 · 2R/4R/6R · បង្អួច ៤ ម៉ោង · កាន់ច្រើនថ្ងៃ",
     aiSub_scalp:"Scalping · និន្នាការ M5 + ចូល M1 · A+ ត្រូវការ ២ ក្នុងចំណោម: S/R ខ្សែនិន្នាការ បំបែក-សាកល្បង",aiSub_intraday:"Intraday · និន្នាការ H1 + ចូល M15 · ចេញសញ្ញាតែ Setup A+",aiSub_swing:"Swing · និន្នាការ H4 + Daily + ចូល H1 · ចេញសញ្ញាតែ Setup A+",
-    dkSess:"វគ្គជួញដូរ",dkGold:"មាស · XAUUSD",dkNews:"ព័ត៌មាន USD បន្ទាប់",dkSig:"សញ្ញា AI · មាស",dkNoNews:"គ្មានថ្ងៃនេះ",dkSigWait:"រង់ចាំ A+",dkGrade:"កម្រិត {g} · {s}",dkScan:"ស្កេនបន្ទាប់ {t}",dkChg:"{c} ថ្ងៃនេះ",naNext:"ព័ត៌មាន USD បន្ទាប់",naNoNext:"ថ្ងៃនេះគ្មានព័ត៌មាន USD ខ្ពស់/មធ្យមទៀតទេ",naInT:"ក្នុង {t}",naAgoT:"{t} មុន",naNow:"កំពុងចេញផ្សាយ",naUpcoming:"នឹងមកដល់",naReleased:"បានចេញផ្សាយ",naAbove:"ខ្ពស់ជាងការព្យាករណ៍",naBelow:"ទាបជាងការព្យាករណ៍",naRxGold:"មាសចាប់តាំងពីចេញផ្សាយ៖ {mv} ({a}× ATR)",naRxUp:"ទីផ្សារយល់ថា USD ខ្លាំង",naRxDn:"ទីផ្សារយល់ថា USD ខ្សោយ",naRxFlat:"មិនទាន់មានប្រតិកម្មច្បាស់",naActLbl:"លទ្ធផលពិត",naNoComp:"សុន្ទរកថា / សេចក្តីថ្លែងការណ៍៖ គ្មានលេខប្រៀបធៀប រំពឹងការប្រែប្រួលទាំងសងខាង",nlManage:"មាន Trade បើក? រំកិល SL ទៅចំណុចចូល ឬកាត់បន្ថយទំហំមុនការចេញផ្សាយ",naLockShort:"ចាក់សោព័ត៌មាន",naLeanOnly:"ទំនោរតាមការព្យាករណ៍ {d} មិនទាន់បញ្ជាក់",naLeanPin:"ទំនោរបច្ចុប្បន្ន៖ {d}។ ពិនិត្យម្តងទៀតក្រោយការចេញផ្សាយ",termNoAp:"មិនទាន់មាន A+",termApLive:"A+ ផ្ទាល់",termNoData:"គ្មានទិន្នន័យទៀន",termHint:"អូសដើម្បីផ្លាស់ទី · រមូរដើម្បីពង្រីក · អូសអ័ក្សតម្លៃដើម្បីកែមាត្រដ្ឋាន · ចុចពីរដងដើម្បីកំណត់ឡើងវិញ",termHintTouch:"អូសដើម្បីផ្លាស់ទី · ច្របាច់ម្រាមដៃដើម្បីពង្រីក",termTipIn:"ពង្រីក",termTipOut:"បង្រួម",termTipAuto:"កែតម្លៃស្វ័យប្រវត្តិ",termTipReset:"កំណត់ទិដ្ឋភាពឡើងវិញ",termTipLatest:"ទៅទៀនចុងក្រោយ",termTipFull:"ពេញអេក្រង់ (ចុច Esc ដើម្បីចេញ)",termTrend:"និន្នាការ",nlAi:"សញ្ញា AI",aiTitle:"ការវិភាគសញ្ញា AI",aiSub:"ម៉ាស៊ីន Scalping តាមនិន្នាការ-Pullback · ទិសដៅ M15 + ចូល M5 · ចេញសញ្ញាតែ Setup A+ ប៉ុណ្ណោះ",aiNow:"វិភាគឥឡូវ",aiAlertOn:"បើកការជូនដំណឹង",aiAlertOff:"ការជូនដំណឹងបើក ✓",aiLockSub:"ម៉ាស៊ីន A+ ស្កេន XAUUSD រៀងរាល់ ៥ នាទី ហើយចេញ Entry, SL និង TP តែពេលច្បាប់ទាំង ១១ បញ្ជាក់។ Elite: $14.99 / ៣០ ថ្ងៃ។",aiGrade:"កម្រិត Setup",aiBias:"ទិសដៅ M15",aiPrice:"តម្លៃបិទចុងក្រោយ",aiCandle:"ទៀន (ICT)",aiNext:"ស្កេនបន្ទាប់",aiChecklist:"បញ្ជីបញ្ជាក់ A+",aiHow:"របៀបដែលម៉ាស៊ីនសម្រេច",aiHow1:"និន្នាការ៖ លើ M15 តម្លៃបិទលើ EMA50, EMA50 លើ EMA200 និងកំពុងឡើង → BUY តែប៉ុណ្ណោះ (ផ្ទុយសម្រាប់ SELL)។ ទីផ្សារចំហៀង = មិនជួញដូរ។",aiHow2:"Pullback៖ លើ M5 តម្លៃត្រឡប់មកតំបន់ EMA20–EMA50 ក្នុងទៀន ៦ ចុងក្រោយ ដោយមិនបំបែក EMA50 ជ្រៅ។",aiHow3:"Trigger៖ ទៀនសញ្ញាបិទតាមនិន្នាការ ជា Engulfing, Pin bar ឬទៀនកម្លាំងខ្លាំង។",aiHow4:"តម្រង៖ RSI 14 ក្នុងតំបន់កម្លាំង និងកំពុងបត់, រចនាសម្ព័ន្ធ Higher low, ភាពប្រែប្រួល ATR ធម្មតា, មានចន្លោះដល់ Swing បន្ទាប់, វគ្គ London/New York, គ្មានព័ត៌មាន USD សំខាន់ក្នុង ៣០ នាទី។",aiHow5:"ហានិភ័យ៖ SL 0.25 ATR ហួសចំណុចទាបបំផុតនៃ Pullback (ត្រូវនៅចន្លោះ 0.8–3 ATR)។ TP1 = 1R, TP2 = 2R, TP3 = 3R។ ផ្លាស់ SL មក Entry បន្ទាប់ពី TP1។",aiHow6:"លុះត្រាតែច្បាប់ទាំង ១១ ឆ្លងកាត់ ទើប Setup ទទួលបាន A+ ហើយចេញសញ្ញា។ កម្រិត \"A\" បង្ហាញសម្រាប់តាមដានតែប៉ុណ្ណោះ។",aiHist:"Setup A+ ក្នុងទិន្នន័យថ្មីៗ",aiDisc:"ការវិភាគតាមក្បួនលើទិន្នន័យទៀនពិត មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ Scalping មានហានិភ័យខ្ពស់ សញ្ញាអាចខាតបាន។ លទ្ធផលកន្លងមកមិនធានាអនាគតទេ។ សូមផ្ទៀងផ្ទាត់លើក្រាហ្វខ្លួនឯង ប្រើតម្លៃរបស់ Broker អ្នក និងប្រថុយតែប្រាក់ដែលអ្នកអាចបាត់បង់បាន។",aiC_bias:"ទិសដៅ M15 (EMA50 / EMA200)",aiC_align:"M5 EMA20 / EMA50 ស្របនឹង M15",aiC_pullback:"Pullback ចូលតំបន់ EMA20–50",aiC_trigger:"ទៀន Trigger តាម Price action",aiC_session:"វគ្គ London / New York (14:00–24:00 ICT)",aiC_news:"គ្មានព័ត៌មាន USD សំខាន់ ±៣០ នាទី",aiC_risk:"ទំហំ SL 0.8–3 × ATR",aiC_rsi:"RSI 14 ក្នុងតំបន់កម្លាំង និងកំពុងបត់",aiC_structure:"រចនាសម្ព័ន្ធ Higher low / Lower high",aiC_vol:"ភាពប្រែប្រួលធម្មតា (ATR)",aiC_room:"ចន្លោះដល់គោលដៅ ≥ 1.5R",aiCore:"ចាំបាច់",aiG_Ap:"A+ បានបញ្ជាក់ — ចេញសញ្ញា",aiG_A:"Setup A — តាមដានតែប៉ុណ្ណោះ មិនទាន់គ្រប់ច្បាប់",aiG_B:"B — លក្ខខណ្ឌកំពុងបង្កើត មិនចូល",aiG_C:"C — មិនមានអត្ថប្រយោជន៍ពេលនេះ",aiG_N:"M15 ចំហៀង — គ្មាននិន្នាការ មិនជួញដូរ",aiG_na:"ទិន្នន័យមិនទាន់គ្រប់",aiWaitT:"កំពុងរង់ចាំ Setup A+",aiWaitP:"ម៉ាស៊ីនពិនិត្យរាល់ទៀន ៥ នាទីដែលបិទ។ សញ្ញាចេញនៅទីនេះតែពេលច្បាប់ទាំង ១១ បញ្ជាក់។",aiLive:"ផ្ទាល់",aiSigNew:"សញ្ញា A+ ថ្មី",aiValid:"មានសុពលភាពដល់",aiTrig:"Trigger",aiRiskT:"ហានិភ័យ",aiMoveBE:"ផ្លាស់ SL មក Entry បន្ទាប់ TP1",aiCopy:"ចម្លងកម្រិត",aiCopied:"បានចម្លងកម្រិត",aiAddTrade:"កត់ត្រាជា Trade",aiSt_open:"សកម្ម",aiSt_tp1:"ដល់ TP1",aiSt_tp2:"ដល់ TP2",aiSt_tp3:"ដល់ TP3",aiSt_sl:"ដល់ SL",aiSt_expired:"ផុតកំណត់",aiNoHist:"មិនទាន់មាន Setup A+ ក្នុងទិន្នន័យទេ — ម៉ាស៊ីនតឹងរ៉ឹងដោយចេតនា។",aiHSetups:"Setup",aiHWin:"ដល់ TP1",aiHAvg:"មធ្យម",aiLoading:"កំពុងផ្ទុកទៀនពិត…",aiNoData:"មិនអាចទាញទិន្នន័យទៀនបាន — គ្មានការវិភាគ គ្មានសញ្ញា។ សូមព្យាយាមម្តងទៀតក្នុងមួយនាទី។",aiSrcDelay:"តម្លៃ Futures — អាចខុសពីតម្លៃ Spot របស់ Broker ពីរបីដុល្លារ។ បន្ថែម Twelve Data key សម្រាប់ XAU/USD spot។",aiNewsUnknown:"ព័ត៌មានមិនអាចទាញបាន",aiTrig_engulf:"Engulfing",aiTrig_pin:"Pin bar",aiTrig_momentum:"ទៀនកម្លាំង",aiNotifyDenied:"ការជូនដំណឹង Browser ត្រូវបានបិទសម្រាប់គេហទំព័រនេះ។",mktLive:"ផ្ទាល់",mktLoading:"កំពុងផ្ទុកតម្លៃផ្ទាល់…",mktSrc:"តម្លៃពី TradingView",mktFail:"មិនអាចផ្ទុកតម្លៃផ្ទាល់បានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ឬកម្មវិធីបិទពាណិជ្ជកម្ម។",nlAnalysis:"វិភាគ",pfAcct:"គណនីជួញដូរ",pfAcctHint:"Trade និងសមតុល្យត្រូវបានកត់ត្រាក្នុងគណនីនេះ។",pfAcctMulti:"ប្តូររវាងគណនីរបស់អ្នក។ Trade ចាស់រក្សាគណនីដើម។",ccAllTime:"លទ្ធផលសរុប",ccDiscT:"ពិន្ទុវិន័យ",ccDiscSub:"ពីការដាក់ពិន្ទុ Trade · ការអនុវត្តផែនការ",ccDiscNone:"ដាក់ពិន្ទុ Trade ដើម្បីកសាងពិន្ទុរបស់អ្នក",nlOverview:"ទិដ្ឋភាពទូទៅ",nlPerf:"លទ្ធផល",nlJournal:"ទិនានុប្បវត្តិ",nlSignals:"សញ្ញា",nlNews:"ព័ត៌មាន",nlTools:"ឧបករណ៍",ntTitle:"ការជូនដំណឹង",ntReadAll:"សម្គាល់ថាបានអានទាំងអស់",ntAll:"ទាំងអស់",ntUpdate:"បច្ចុប្បន្នភាព",ntPromo:"ប្រូម៉ូសិន",ntSignal:"ការជូនដំណឹងសញ្ញា",ntDesktop:"ការជូនដំណឹងលើកុំព្យូទ័រ",ntEmpty:"អ្នកបានមើលទាំងអស់ហើយ។",ntEmptyUpdate:"មិនទាន់មានបច្ចុប្បន្នភាពទេ។",ntEmptyPromo:"មិនមានប្រូម៉ូសិននៅពេលនេះទេ។",ntEmptySignal:"មិនទាន់មានការជូនដំណឹងសញ្ញាទេ។",ntEliteOnly:"ការជូនដំណឹងសញ្ញាសម្រាប់សមាជិក Elite។",ntOpen:"បើក",ntTypeUpdate:"បច្ចុប្បន្នភាព",ntTypePromotion:"ប្រូម៉ូសិន",ntTypeSignal:"សញ្ញា",ntDeskBlocked:"ត្រូវបានបិទក្នុងការកំណត់កម្មវិធីរុករក",ntNeedSql:"ការជូនដំណឹងត្រូវការ devten-notifications-setup.sql។",ntJustNow:"ទើបតែ",keyLabel:"លេខកូដបើកដំណើរការ",keyActivate:"បើកដំណើរការ",keyHow:"ទិញលេខកូដពីអ្នកគ្រប់គ្រង AROM TRADE រួចបិទភ្ជាប់នៅទីនេះ។ លេខកូដកំណត់គម្រោង (Premium ឬ Elite) និងចំនួនថ្ងៃ។ ប្រសិនបើអ្នកមានគម្រោងនោះរួចហើយ ថ្ងៃនឹងត្រូវបន្ថែម។",keyContact:"ទាក់ទងអ្នកគ្រប់គ្រងដើម្បីទិញលេខកូដ",keyBad:"សូមបញ្ចូលលេខកូដពេញ ឧ. DEVT-7KQ2-M9XP-4HZT។",key_invalid_key:"លេខកូដនេះមិនត្រឹមត្រូវ។ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",key_key_revoked:"លេខកូដនេះត្រូវបានលុបចោល។",key_key_expired:"លេខកូដនេះផុតកំណត់ហើយ។",key_key_used_up:"លេខកូដនេះត្រូវបានប្រើរួចហើយ។",key_key_already_used_by_you:"អ្នកបានប្រើលេខកូដនេះរួចហើយ។",key_too_many_attempts:"លេខកូដខុសច្រើនពេក។ សូមរង់ចាំ ១ ម៉ោង ហើយព្យាយាមម្តងទៀត។",key_not_authenticated:"សូមចូលគណនីជាមុន។",keyNoSvc:"ការបើកដោយលេខកូដមិនទាន់រៀបចំទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។",keyOk:"បានបើកដំណើរការ!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"មុខងារទាំងអស់",planCurrent:"បច្ចុប្បន្ន",premF0:"មុខងារ Premium ទាំងអស់",premF5:"ការវិភាគសញ្ញា AI៖ សញ្ញា Scalping A+ ជាមួយ Entry, SL និង TP",premPayX:"បង់ {p} ជាមួយ KHQR",premExtendX:"បន្ថែម ៣០ ថ្ងៃ · {p}",premPaidSub2:"{plan} សកម្មរហូតដល់ {d}។",payQrBtn:"បង់ជាមួយ KHQR",payQrNote:"ស្កេនជាមួយ ABA, ACLEDA, Wing ឬកម្មវិធីធនាគារ Bakong ណាមួយ។ គម្រោងរបស់អ្នកបើកដោយស្វ័យប្រវត្តិ មិនចាំបាច់ផ្ញើរូបថតអេក្រង់ទេ។",keyHave:"មានលេខកូដបើកដំណើរការទេ?",payRecover:"បានបង់ប្រាក់ហើយ តែមិនទាន់បើក? ពិនិត្យការបង់ប្រាក់របស់ខ្ញុំ",qrBack:"ប្តូរគម្រោង",qrPlanLine:"{plan} · {d} ថ្ងៃ",qrS1:"បើកកម្មវិធីធនាគារ ហើយចុច ស្កេន",qrS2:"ស្កេន QR នេះ ហើយបញ្ជាក់ចំនួនទឹកប្រាក់",qrS3:"សូមបើកផ្ទាំងនេះទុក វានឹងបើកដោយស្វ័យប្រវត្តិ",qrWait:"កំពុងរង់ចាំការបង់ប្រាក់…",qrChecking:"កំពុងពិនិត្យ…",qrMaking:"កំពុងបង្កើត QR…",qrDelayed:"ការពិនិត្យជាមួយធនាគារយឺតបន្តិច។ ប្រសិនបើអ្នកបានបង់រួចហើយ សូមបើកផ្ទាំងនេះទុក គម្រោងនឹងបើកភ្លាមពេលបញ្ជាក់។ បើយូរពេក សូមផ្ញើលេខ Bill ទៅអ្នកគ្រប់គ្រង។",qrMismatch:"បានរកឃើញការបង់ប្រាក់ ប៉ុន្តែតិចជាងតម្លៃគម្រោង។ សូមទាក់ទងអ្នកគ្រប់គ្រង ជាមួយលេខ Bill។",qrWrongAcc:"បានរកឃើញការបង់ប្រាក់ទៅគណនីផ្សេង។ សូមទាក់ទងអ្នកគ្រប់គ្រង ជាមួយលេខ Bill។",qrExpired:"QR នេះផុតកំណត់ហើយ",qrRegen:"បង្កើត QR ថ្មី",qrCheck:"ខ្ញុំបានបង់ហើយ ពិនិត្យឥឡូវ",qrSave:"រក្សាទុករូប QR",qrBill:"Bill",qrBillCopied:"បានចម្លងលេខ Bill",qrNoPay:"រកមិនឃើញការបង់ប្រាក់ដែលមិនទាន់បើកក្នុងរយៈពេល ៣ ថ្ងៃចុងក្រោយ។",qrErr:"មិនអាចបង្កើត QR បានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ហើយព្យាយាមម្តងទៀត។",qrNetwork:"បញ្ហាបណ្តាញ។ កំពុងព្យាយាមម្តងទៀត…",qrAria:"លេខកូដបង់ប្រាក់ KHQR",qrNotFound:"មិនទាន់រកឃើញការបង់ប្រាក់សម្រាប់ QR នេះទេ។ ប្រសិនបើអ្នកទើបបង់ សូមរង់ចាំមួយនាទី ហើយពិនិត្យម្តងទៀត។",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"មុខងារ Elite",eliteCta:"បើក Elite",sgTitle:"អ្នកផ្តល់សញ្ញា",sgSub:"សញ្ញាជួញដូរផ្ទាល់ពី AROM TRADE · សមាជិក Elite",sgActive:"សកម្ម",sgAll:"ទាំងអស់",sgNew:"សញ្ញាថ្មី",sgLockSub:"បើកសញ្ញា BUY / SELL ផ្ទាល់ ជាមួយកម្រិត Entry, Stop Loss និង Take Profit។ Elite៖ $14.99 / ៣០ ថ្ងៃ · លេខកូដបើកដំណើរការ។",sgStatActive:"សញ្ញាសកម្ម",sgStatClosed:"បានបិទ",sgStatWin:"អត្រាឈ្នះ",sgEmpty:"មិនទាន់មានសញ្ញាទេ។ សញ្ញាថ្មីនឹងបង្ហាញនៅទីនេះភ្លាមៗ។",sgEmptyActive:"មិនមានសញ្ញាសកម្មនៅពេលនេះទេ។",sgEntry:"Entry",sgSymbol:"និមិត្តសញ្ញា",sgSide:"ទិស",sgNote:"កំណត់ចំណាំ",sgPost:"ផ្សាយសញ្ញា",sgBad:"ពិនិត្យកម្រិត៖ BUY ត្រូវ SL < Entry < TP1; SELL ត្រូវ SL > Entry > TP1។",sgPosted:"បានផ្សាយសញ្ញា",sgNewToast:"សញ្ញាថ្មី៖ {s}",sgNeedSql:"សញ្ញាត្រូវការ SQL Elite (devten-elite-setup.sql)។",sgDel:"លុប",sgDelQ:"លុបសញ្ញានេះ?",sgUpdated:"បានធ្វើបច្ចុប្បន្នភាពសញ្ញា",sgLoading:"កំពុងផ្ទុកសញ្ញា…",stActive:"សកម្ម",stTp1:"ដល់ TP1",stTp2:"ដល់ TP2",stTp3:"ដល់ TP3",stSl:"ដល់ SL",stBe:"រួចខ្លួន",stCancelled:"បានបោះបង់",sgDisc:"សញ្ញាជាគំនិតជួញដូររបស់អ្នកផ្តល់ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ លទ្ធផលកន្លងមកមិនធានាលទ្ធផលអនាគតទេ។ ជួញដូរដោយហានិភ័យផ្ទាល់ខ្លួន និងកំណត់ទំហំឲ្យសមរម្យ។",
+    dkSess:"វគ្គជួញដូរ",dkGold:"មាស · XAUUSD",dkNews:"ព័ត៌មាន USD បន្ទាប់",dkSig:"សញ្ញា AI · មាស",dkNoNews:"គ្មានថ្ងៃនេះ",dkSigWait:"រង់ចាំ A+",dkGrade:"កម្រិត {g} · {s}",dkScan:"ស្កេនបន្ទាប់ {t}",dkChg:"{c} ថ្ងៃនេះ",naNext:"ព័ត៌មាន USD បន្ទាប់",naNoNext:"ថ្ងៃនេះគ្មានព័ត៌មាន USD ខ្ពស់/មធ្យមទៀតទេ",naInT:"ក្នុង {t}",naAgoT:"{t} មុន",naNow:"កំពុងចេញផ្សាយ",naUpcoming:"នឹងមកដល់",naReleased:"បានចេញផ្សាយ",naAbove:"ខ្ពស់ជាងការព្យាករណ៍",naBelow:"ទាបជាងការព្យាករណ៍",naRxGold:"មាសចាប់តាំងពីចេញផ្សាយ៖ {mv} ({a}× ATR)",naRxUp:"ទីផ្សារយល់ថា USD ខ្លាំង",naRxDn:"ទីផ្សារយល់ថា USD ខ្សោយ",naRxFlat:"មិនទាន់មានប្រតិកម្មច្បាស់",naActLbl:"លទ្ធផលពិត",naNoComp:"សុន្ទរកថា / សេចក្តីថ្លែងការណ៍៖ គ្មានលេខប្រៀបធៀប រំពឹងការប្រែប្រួលទាំងសងខាង",nlManage:"មាន Trade បើក? រំកិល SL ទៅចំណុចចូល ឬកាត់បន្ថយទំហំមុនការចេញផ្សាយ",naLockShort:"ចាក់សោព័ត៌មាន",naLeanOnly:"ទំនោរតាមការព្យាករណ៍ {d} មិនទាន់បញ្ជាក់",naLeanPin:"ទំនោរបច្ចុប្បន្ន៖ {d}។ ពិនិត្យម្តងទៀតក្រោយការចេញផ្សាយ",termNoAp:"មិនទាន់មាន A+",termApLive:"A+ ផ្ទាល់",termNoData:"គ្មានទិន្នន័យទៀន",termHint:"អូសដើម្បីផ្លាស់ទី · រមូរដើម្បីពង្រីក · អូសអ័ក្សតម្លៃដើម្បីកែមាត្រដ្ឋាន · ចុចពីរដងដើម្បីកំណត់ឡើងវិញ",termHintTouch:"អូសដើម្បីផ្លាស់ទី · ច្របាច់ម្រាមដៃដើម្បីពង្រីក",termTipIn:"ពង្រីក",termTipOut:"បង្រួម",termTipAuto:"កែតម្លៃស្វ័យប្រវត្តិ",termTipReset:"កំណត់ទិដ្ឋភាពឡើងវិញ",termTipLatest:"ទៅទៀនចុងក្រោយ",termTipFull:"ពេញអេក្រង់ (ចុច Esc ដើម្បីចេញ)",termTrend:"និន្នាការ",nlAi:"សញ្ញា AI",aiTitle:"ការវិភាគសញ្ញា AI",aiSub:"ម៉ាស៊ីន Scalping តាមនិន្នាការ-Pullback · ទិសដៅ M15 + ចូល M5 · ចេញសញ្ញាតែ Setup A+ ប៉ុណ្ណោះ",aiNow:"វិភាគឥឡូវ",aiAlertOn:"បើកការជូនដំណឹង",aiAlertOff:"ការជូនដំណឹងបើក ✓",aiLockSub:"ម៉ាស៊ីន A+ ស្កេន XAUUSD រៀងរាល់ ៥ នាទី ហើយចេញ Entry, SL និង TP តែពេលច្បាប់ទាំង ១១ បញ្ជាក់។ Elite: $14.99 / ៣០ ថ្ងៃ។",aiGrade:"កម្រិត Setup",aiBias:"ទិសដៅ M15",aiPrice:"តម្លៃបិទចុងក្រោយ",aiCandle:"ទៀន (ICT)",aiNext:"ស្កេនបន្ទាប់",aiChecklist:"បញ្ជីបញ្ជាក់ A+",aiHow:"របៀបដែលម៉ាស៊ីនសម្រេច",aiHow1:"និន្នាការ៖ លើ M15 តម្លៃបិទលើ EMA50, EMA50 លើ EMA200 និងកំពុងឡើង → BUY តែប៉ុណ្ណោះ (ផ្ទុយសម្រាប់ SELL)។ ទីផ្សារចំហៀង = មិនជួញដូរ។",aiHow2:"Pullback៖ លើ M5 តម្លៃត្រឡប់មកតំបន់ EMA20–EMA50 ក្នុងទៀន ៦ ចុងក្រោយ ដោយមិនបំបែក EMA50 ជ្រៅ។",aiHow3:"Trigger៖ ទៀនសញ្ញាបិទតាមនិន្នាការ ជា Engulfing, Pin bar ឬទៀនកម្លាំងខ្លាំង។",aiHow4:"តម្រង៖ RSI 14 ក្នុងតំបន់កម្លាំង និងកំពុងបត់, រចនាសម្ព័ន្ធ Higher low, ភាពប្រែប្រួល ATR ធម្មតា, មានចន្លោះដល់ Swing បន្ទាប់, វគ្គ London/New York, គ្មានព័ត៌មាន USD សំខាន់ក្នុង ៣០ នាទី។",aiHow5:"ហានិភ័យ៖ SL 0.25 ATR ហួសចំណុចទាបបំផុតនៃ Pullback (ត្រូវនៅចន្លោះ 0.8–3 ATR)។ TP1 = 1R, TP2 = 2R, TP3 = 3R។ ផ្លាស់ SL មក Entry បន្ទាប់ពី TP1។",aiHow6:"លុះត្រាតែច្បាប់ទាំង ១១ ឆ្លងកាត់ ទើប Setup ទទួលបាន A+ ហើយចេញសញ្ញា។ កម្រិត \"A\" បង្ហាញសម្រាប់តាមដានតែប៉ុណ្ណោះ។",aiHist:"Setup A+ ក្នុងទិន្នន័យថ្មីៗ",aiDisc:"ការវិភាគតាមក្បួនលើទិន្នន័យទៀនពិត មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ Scalping មានហានិភ័យខ្ពស់ សញ្ញាអាចខាតបាន។ លទ្ធផលកន្លងមកមិនធានាអនាគតទេ។ សូមផ្ទៀងផ្ទាត់លើក្រាហ្វខ្លួនឯង ប្រើតម្លៃរបស់ Broker អ្នក និងប្រថុយតែប្រាក់ដែលអ្នកអាចបាត់បង់បាន។",aiC_bias:"ទិសដៅ M15 (EMA50 / EMA200)",aiC_align:"M5 EMA20 / EMA50 ស្របនឹង M15",aiC_pullback:"Pullback ចូលតំបន់ EMA20–50",aiC_trigger:"ទៀន Trigger តាម Price action",aiC_session:"វគ្គ London / New York (14:00–24:00 ICT)",aiC_news:"គ្មានព័ត៌មាន USD សំខាន់ ±៣០ នាទី",aiC_risk:"ទំហំ SL 0.8–3 × ATR",aiC_rsi:"RSI 14 ក្នុងតំបន់កម្លាំង និងកំពុងបត់",aiC_structure:"រចនាសម្ព័ន្ធ Higher low / Lower high",aiC_vol:"ភាពប្រែប្រួលធម្មតា (ATR)",aiC_room:"ចន្លោះដល់គោលដៅ ≥ 1.5R",aiCore:"ចាំបាច់",aiG_Ap:"A+ បានបញ្ជាក់ — ចេញសញ្ញា",aiG_A:"Setup A — តាមដានតែប៉ុណ្ណោះ មិនទាន់គ្រប់ច្បាប់",aiG_B:"B — លក្ខខណ្ឌកំពុងបង្កើត មិនចូល",aiG_C:"C — មិនមានអត្ថប្រយោជន៍ពេលនេះ",aiG_N:"M15 ចំហៀង — គ្មាននិន្នាការ មិនជួញដូរ",aiG_na:"ទិន្នន័យមិនទាន់គ្រប់",aiWaitT:"កំពុងរង់ចាំ Setup A+",aiWaitP:"ម៉ាស៊ីនពិនិត្យរាល់ទៀន ៥ នាទីដែលបិទ។ សញ្ញាចេញនៅទីនេះតែពេលច្បាប់ទាំង ១១ បញ្ជាក់។",aiLive:"ផ្ទាល់",aiSigNew:"សញ្ញា A+ ថ្មី",aiValid:"មានសុពលភាពដល់",aiTrig:"Trigger",aiRiskT:"ហានិភ័យ",aiMoveBE:"ផ្លាស់ SL មក Entry បន្ទាប់ TP1",aiCopy:"ចម្លងកម្រិត",aiCopied:"បានចម្លងកម្រិត",aiAddTrade:"កត់ត្រាជា Trade",aiSt_open:"សកម្ម",aiSt_tp1:"ដល់ TP1",aiSt_tp2:"ដល់ TP2",aiSt_tp3:"ដល់ TP3",aiSt_sl:"ដល់ SL",aiSt_expired:"ផុតកំណត់",aiNoHist:"មិនទាន់មាន Setup A+ ក្នុងទិន្នន័យទេ — ម៉ាស៊ីនតឹងរ៉ឹងដោយចេតនា។",aiHSetups:"Setup",aiHWin:"ដល់ TP1",aiHAvg:"មធ្យម",aiLoading:"កំពុងផ្ទុកទៀនពិត…",aiNoData:"មិនអាចទាញទិន្នន័យទៀនបាន — គ្មានការវិភាគ គ្មានសញ្ញា។ សូមព្យាយាមម្តងទៀតក្នុងមួយនាទី។",aiSrcDelay:"តម្លៃ Futures — អាចខុសពីតម្លៃ Spot របស់ Broker ពីរបីដុល្លារ។ បន្ថែម Twelve Data key សម្រាប់ XAU/USD spot។",aiNewsUnknown:"ព័ត៌មានមិនអាចទាញបាន",aiTrig_engulf:"Engulfing",aiTrig_pin:"Pin bar",aiTrig_momentum:"ទៀនកម្លាំង",aiNotifyDenied:"ការជូនដំណឹង Browser ត្រូវបានបិទសម្រាប់គេហទំព័រនេះ។",mktLive:"ផ្ទាល់",mktLoading:"កំពុងផ្ទុកតម្លៃផ្ទាល់…",mktSrc:"តម្លៃពី TradingView",mktFail:"មិនអាចផ្ទុកតម្លៃផ្ទាល់បានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ឬកម្មវិធីបិទពាណិជ្ជកម្ម។",nlAnalysis:"វិភាគ",pfAcct:"គណនីជួញដូរ",pfAcctHint:"Trade និងសមតុល្យត្រូវបានកត់ត្រាក្នុងគណនីនេះ។",pfAcctMulti:"ប្តូររវាងគណនីរបស់អ្នក។ Trade ចាស់រក្សាគណនីដើម។",ccAllTime:"លទ្ធផលសរុប",ccDiscT:"ពិន្ទុវិន័យ",ccDiscSub:"ពីការដាក់ពិន្ទុ Trade · ការអនុវត្តផែនការ",ccDiscNone:"ដាក់ពិន្ទុ Trade ដើម្បីកសាងពិន្ទុរបស់អ្នក",nlOverview:"ទិដ្ឋភាពទូទៅ",nlPerf:"លទ្ធផល",nlJournal:"ទិនានុប្បវត្តិ",nlSignals:"សញ្ញា",nlNews:"ព័ត៌មាន",nlTools:"ឧបករណ៍",ntTitle:"ការជូនដំណឹង",ntReadAll:"សម្គាល់ថាបានអានទាំងអស់",ntAll:"ទាំងអស់",ntUpdate:"បច្ចុប្បន្នភាព",ntPromo:"ប្រូម៉ូសិន",ntSignal:"ការជូនដំណឹងសញ្ញា",ntDesktop:"ការជូនដំណឹងលើកុំព្យូទ័រ",ntEmpty:"អ្នកបានមើលទាំងអស់ហើយ។",ntEmptyUpdate:"មិនទាន់មានបច្ចុប្បន្នភាពទេ។",ntEmptyPromo:"មិនមានប្រូម៉ូសិននៅពេលនេះទេ។",ntEmptySignal:"មិនទាន់មានការជូនដំណឹងសញ្ញាទេ។",ntEliteOnly:"ការជូនដំណឹងសញ្ញាសម្រាប់សមាជិក Elite។",ntOpen:"បើក",ntTypeUpdate:"បច្ចុប្បន្នភាព",ntTypePromotion:"ប្រូម៉ូសិន",ntTypeSignal:"សញ្ញា",ntDeskBlocked:"ត្រូវបានបិទក្នុងការកំណត់កម្មវិធីរុករក",ntNeedSql:"ការជូនដំណឹងត្រូវការ devten-notifications-setup.sql។",ntJustNow:"ទើបតែ",keyLabel:"លេខកូដបើកដំណើរការ",keyActivate:"បើកដំណើរការ",keyHow:"ទិញលេខកូដពីអ្នកគ្រប់គ្រង AROM TRADE រួចបិទភ្ជាប់នៅទីនេះ។ លេខកូដកំណត់គម្រោង (Premium ឬ Elite) និងចំនួនថ្ងៃ។ ប្រសិនបើអ្នកមានគម្រោងនោះរួចហើយ ថ្ងៃនឹងត្រូវបន្ថែម។",keyContact:"ទាក់ទងអ្នកគ្រប់គ្រងដើម្បីទិញលេខកូដ",keyBad:"សូមបញ្ចូលលេខកូដពេញ ឧ. DEVT-7KQ2-M9XP-4HZT។",key_invalid_key:"លេខកូដនេះមិនត្រឹមត្រូវ។ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",key_key_revoked:"លេខកូដនេះត្រូវបានលុបចោល។",key_key_expired:"លេខកូដនេះផុតកំណត់ហើយ។",key_key_used_up:"លេខកូដនេះត្រូវបានប្រើរួចហើយ។",key_key_already_used_by_you:"អ្នកបានប្រើលេខកូដនេះរួចហើយ។",key_too_many_attempts:"លេខកូដខុសច្រើនពេក។ សូមរង់ចាំ ១ ម៉ោង ហើយព្យាយាមម្តងទៀត។",key_not_authenticated:"សូមចូលគណនីជាមុន។",keyNoSvc:"ការបើកដោយលេខកូដមិនទាន់រៀបចំទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។",keyOk:"បានបើកដំណើរការ!",premBtnElite:"ELITE",planPremium:"Premium",planElite:"Elite",planBest:"មុខងារទាំងអស់",planCurrent:"បច្ចុប្បន្ន",premF0:"មុខងារ Premium ទាំងអស់",premF5:"ការវិភាគសញ្ញា AI៖ សញ្ញា Scalping A+ ជាមួយ Entry, SL និង TP",premPayX:"បង់ {p} ជាមួយ KHQR",premExtendX:"បន្ថែម ៣០ ថ្ងៃ · {p}",premPaidSub2:"{plan} សកម្មរហូតដល់ {d}។",payQrBtn:"បង់ជាមួយ KHQR",payQrNote:"ស្កេនជាមួយ ABA, ACLEDA, Wing ឬកម្មវិធីធនាគារ Bakong ណាមួយ។ គម្រោងរបស់អ្នកបើកដោយស្វ័យប្រវត្តិ មិនចាំបាច់ផ្ញើរូបថតអេក្រង់ទេ។",keyHave:"មានលេខកូដបើកដំណើរការទេ?",payRecover:"បានបង់ប្រាក់ហើយ តែមិនទាន់បើក? ពិនិត្យការបង់ប្រាក់របស់ខ្ញុំ",qrBack:"ប្តូរគម្រោង",qrPlanLine:"{plan} · {d} ថ្ងៃ",qrS1:"បើកកម្មវិធីធនាគារ ហើយចុច ស្កេន",qrS2:"ស្កេន QR នេះ ហើយបញ្ជាក់ចំនួនទឹកប្រាក់",qrS3:"សូមបើកផ្ទាំងនេះទុក វានឹងបើកដោយស្វ័យប្រវត្តិ",qrWait:"កំពុងរង់ចាំការបង់ប្រាក់…",qrChecking:"កំពុងពិនិត្យ…",qrMaking:"កំពុងបង្កើត QR…",qrDelayed:"ការពិនិត្យជាមួយធនាគារយឺតបន្តិច។ ប្រសិនបើអ្នកបានបង់រួចហើយ សូមបើកផ្ទាំងនេះទុក គម្រោងនឹងបើកភ្លាមពេលបញ្ជាក់។ បើយូរពេក សូមផ្ញើលេខ Bill ទៅអ្នកគ្រប់គ្រង។",qrMismatch:"បានរកឃើញការបង់ប្រាក់ ប៉ុន្តែតិចជាងតម្លៃគម្រោង។ សូមទាក់ទងអ្នកគ្រប់គ្រង ជាមួយលេខ Bill។",qrWrongAcc:"បានរកឃើញការបង់ប្រាក់ទៅគណនីផ្សេង។ សូមទាក់ទងអ្នកគ្រប់គ្រង ជាមួយលេខ Bill។",qrExpired:"QR នេះផុតកំណត់ហើយ",qrRegen:"បង្កើត QR ថ្មី",qrCheck:"ខ្ញុំបានបង់ហើយ ពិនិត្យឥឡូវ",qrSave:"រក្សាទុករូប QR",qrBill:"Bill",qrBillCopied:"បានចម្លងលេខ Bill",qrNoPay:"រកមិនឃើញការបង់ប្រាក់ដែលមិនទាន់បើកក្នុងរយៈពេល ៣ ថ្ងៃចុងក្រោយ។",qrErr:"មិនអាចបង្កើត QR បានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ហើយព្យាយាមម្តងទៀត។",qrNetwork:"បញ្ហាបណ្តាញ។ កំពុងព្យាយាមម្តងទៀត…",qrAria:"លេខកូដបង់ប្រាក់ KHQR",qrNotFound:"មិនទាន់រកឃើញការបង់ប្រាក់សម្រាប់ QR នេះទេ។ ប្រសិនបើអ្នកទើបបង់ សូមរង់ចាំមួយនាទី ហើយពិនិត្យម្តងទៀត។",qrNoAuto:"ការបញ្ជាក់ដោយស្វ័យប្រវត្តិជាមួយធនាគារមិនទាន់ដំណើរការទេ។ សូមបង់ប្រាក់ធម្មតា រួចចុច \"ខ្ញុំបានបង់ហើយ ជូនដំណឹងអ្នកគ្រប់គ្រង\"។ គម្រោងនឹងបើកបន្ទាប់ពីពិនិត្យដោយដៃមួយភ្លែត។",qrClaim:"ខ្ញុំបានបង់ហើយ ជូនដំណឹងអ្នកគ្រប់គ្រង",qrClaimed:"បានផ្ញើទៅអ្នកគ្រប់គ្រងហើយ។ គម្រោងនឹងបើកបន្ទាប់ពីពួកគេបញ្ជាក់ការបង់ប្រាក់។ អ្នកអាចបិទផ្ទាំងនេះ ហើយត្រឡប់មកវិញបាន។",qrPickPaid:"ការបញ្ជាក់ដោយស្វ័យប្រវត្តិជាមួយធនាគារមិនទាន់ដំណើរការទេ។ សូមជ្រើសរើសការបង់ប្រាក់ដែលអ្នកបានធ្វើ អ្នកគ្រប់គ្រងនឹងបញ្ជាក់៖",qrIPaidThis:"ខ្ញុំបានបង់ទាំងនេះ",promoHave:"មានកូដបញ្ចុះតម្លៃទេ?",promoLabel:"កូដបញ្ចុះតម្លៃ",promoApply:"ប្រើ",promoRemove:"ដកចេញ",promoOk:"បានប្រើ {code}៖ អ្នកសន្សំបាន {off}",promoSaved:"បានរក្សាទុកកូដ {code}។ វានឹងត្រូវបានប្រើនៅពេលអ្នកដំឡើង។",promoEmpty:"សូមវាយកូដបញ្ចុះតម្លៃជាមុនសិន។",promoErr_not_found:"មិនមានកូដនេះទេ។ សូមពិនិត្យអក្ខរាវិរុទ្ធ។",promoErr_inactive:"កូដនេះត្រូវបានផ្អាក។",promoErr_not_started:"កូដនេះមិនទាន់ដំណើរការទេ។",promoErr_expired:"កូដនេះផុតកំណត់ហើយ។",promoErr_plan_mismatch:"កូដនេះប្រើបានសម្រាប់តែ {plan} ប៉ុណ្ណោះ។ សូមជ្រើសរើសគម្រោងនោះ។",promoErr_limit_reached:"សូមអភ័យទោស កូដនេះត្រូវបានប្រើអស់ហើយ។",promoErr_already_used:"អ្នកបានប្រើកូដនេះរួចហើយ។",promoErr_unavailable:"មិនអាចពិនិត្យកូដបានទេឥឡូវនេះ។ សូមព្យាយាមម្តងទៀតបន្តិចទៀត។",promoErr_price_changed:"តម្លៃទើបតែផ្លាស់ប្តូរ។ សូមប្រើកូដម្តងទៀត។",promoQrLine:"កូដ {code} · អ្នកសន្សំបាន {off}",pfPremium:"PREMIUM",pfElite:"ELITE",eliteFeature:"មុខងារ Elite",eliteCta:"បើក Elite",sgTitle:"អ្នកផ្តល់សញ្ញា",sgSub:"សញ្ញាជួញដូរផ្ទាល់ពី AROM TRADE · សមាជិក Elite",sgActive:"សកម្ម",sgAll:"ទាំងអស់",sgNew:"សញ្ញាថ្មី",sgLockSub:"បើកសញ្ញា BUY / SELL ផ្ទាល់ ជាមួយកម្រិត Entry, Stop Loss និង Take Profit។ Elite៖ $14.99 / ៣០ ថ្ងៃ · លេខកូដបើកដំណើរការ។",sgStatActive:"សញ្ញាសកម្ម",sgStatClosed:"បានបិទ",sgStatWin:"អត្រាឈ្នះ",sgEmpty:"មិនទាន់មានសញ្ញាទេ។ សញ្ញាថ្មីនឹងបង្ហាញនៅទីនេះភ្លាមៗ។",sgEmptyActive:"មិនមានសញ្ញាសកម្មនៅពេលនេះទេ។",sgEntry:"Entry",sgSymbol:"និមិត្តសញ្ញា",sgSide:"ទិស",sgNote:"កំណត់ចំណាំ",sgPost:"ផ្សាយសញ្ញា",sgBad:"ពិនិត្យកម្រិត៖ BUY ត្រូវ SL < Entry < TP1; SELL ត្រូវ SL > Entry > TP1។",sgPosted:"បានផ្សាយសញ្ញា",sgNewToast:"សញ្ញាថ្មី៖ {s}",sgNeedSql:"សញ្ញាត្រូវការ SQL Elite (devten-elite-setup.sql)។",sgDel:"លុប",sgDelQ:"លុបសញ្ញានេះ?",sgUpdated:"បានធ្វើបច្ចុប្បន្នភាពសញ្ញា",sgLoading:"កំពុងផ្ទុកសញ្ញា…",stActive:"សកម្ម",stTp1:"ដល់ TP1",stTp2:"ដល់ TP2",stTp3:"ដល់ TP3",stSl:"ដល់ SL",stBe:"រួចខ្លួន",stCancelled:"បានបោះបង់",sgDisc:"សញ្ញាជាគំនិតជួញដូររបស់អ្នកផ្តល់ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ លទ្ធផលកន្លងមកមិនធានាលទ្ធផលអនាគតទេ។ ជួញដូរដោយហានិភ័យផ្ទាល់ខ្លួន និងកំណត់ទំហំឲ្យសមរម្យ។",
     naLockTitle:"មុខងារ Premium",naLockSub:"បើកការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL សម្រាប់ XAUUSD, EURUSD, GBPUSD និង USDJPY ពីព័ត៌មាន USD ថ្ងៃនេះ។ Elite៖ $14.99 / ៣០ ថ្ងៃ · លេខកូដបើកដំណើរការ។",naLockCta:"បើកជាមួយ Premium",premF4:"ការវិភាគព័ត៌មានទីផ្សារ៖ ទិសដៅ BUY / SELL ពីព័ត៌មាន USD",naTitle:"ការវិភាគព័ត៌មានទីផ្សារ",naSub:"ព័ត៌មាន USD ផលប៉ះពាល់ខ្ពស់ និងមធ្យមថ្ងៃនេះ → ទិសដៅ BUY / SELL ដែលរំពឹងទុក",naUsdBias:"ទិសដៅ USD",naBull:"USD ខ្លាំង",naBear:"USD ខ្សោយ",naFlat:"អព្យាក្រឹត / ចម្រុះ",naFromActual:"ផ្អែកលើលទ្ធផលដែលបានចេញ {n}",naFromFc:"ផ្អែកលើការព្យាករណ៍ (មិនទាន់បញ្ចូលលទ្ធផល)",naNone:"ថ្ងៃនេះគ្មានព្រឹត្តិការណ៍ USD ខ្ពស់/មធ្យមទេ — គ្មានទិសដៅព័ត៌មាន។",naBuy:"BUY",naSell:"SELL",naWait:"រង់ចាំ",naStrong:"ខ្លាំង",naModerate:"មធ្យម",naWeak:"ខ្សោយ",naNoBias:"គ្មានទិសដៅច្បាស់",naIfHigher:"លទ្ធផលខ្ពស់ជាងការព្យាករណ៍",naIfLower:"លទ្ធផលទាបជាងការព្យាករណ៍",naUsdUp:"USD ↑",naUsdDn:"USD ↓",naEventRisk:"សុន្ទរកថា / ហានិភ័យព្រឹត្តិការណ៍ — ទិសដៅអាស្រ័យលើសម្លេង។ រំពឹងការប្រែប្រួលខ្លាំង រង់ចាំប្រតិកម្មទីផ្សារ។",naActual:"លទ្ធផលពិត (ក្រោយចេញ)",naActPh:"ឧ. 0.4%",naLean:"ទំនោរការព្យាករណ៍",naRes:"លទ្ធផល",naBetter:"ល្អជាងរំពឹង → USD ↑",naWorse:"អន់ជាងរំពឹង → USD ↓",naInline:"ស្របនឹងការរំពឹង → ប្រតិកម្មតិច",naDisc:"សម្រាប់ការសិក្សាប៉ុណ្ណោះ — មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុទេ។ ទិសដៅផ្អែកលើប្រតិកម្មធម្មតា (ទិន្នន័យអាមេរិកល្អជាងរំពឹង → USD ខ្លាំង)។ ទីផ្សារអាចលោតទាំងសងខាង ត្រឡប់វិញក្នុងរយៈពេលប៉ុន្មាននាទី ឬបានគណនាព័ត៌មានរួចហើយ។ សូមពិនិត្យជាមួយការវិភាគផ្ទាល់ខ្លួន និងប្រើ Stop Loss ជានិច្ច។",newsTitle:"ប្រតិទិនព័ត៌មាន USD",newsSub:"តែព្រឹត្តិការណ៍ដុល្លារអាមេរិក · ម៉ោងនៅកម្ពុជា",newsThis:"សប្តាហ៍នេះ",newsNext:"សប្តាហ៍ក្រោយ",impHigh:"ខ្ពស់",impMed:"មធ្យម",impLow:"ទាប",impHol:"ថ្ងៃឈប់សម្រាក",newsRefreshTip:"ផ្ទុកប្រតិទិនឡើងវិញ",newsLoading:"កំពុងផ្ទុកព្រឹត្តិការណ៍ USD…",newsEmpty:"គ្មានព្រឹត្តិការណ៍ USD ត្រូវនឹងតម្រងនេះទេ។",newsErr:"មិនអាចផ្ទុកប្រតិទិនបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត រួចព្យាយាមម្តងទៀត។",newsUpd:"ធ្វើបច្ចុប្បន្នភាព",newsCached:"ច្បាប់ចម្លងក្រៅបណ្តាញ",newsSrc:"ប្រភព៖ Forex Factory។ ម៉ោងបម្លែងទៅ Asia/Phnom_Penh (UTC+7)។",newsAllDay:"ពេញមួយថ្ងៃ",newsNextEv:"ព្រឹត្តិការណ៍បន្ទាប់",newsIn:"ក្នុងរយៈពេល",newsNow:"ឥឡូវនេះ",newsFc:"ការព្យាករណ៍",newsPrev:"មុន",newsToday:"ថ្ងៃនេះ",
     gp:"ចំណេញសរុប",gl:"ខាតសរុប",gpTip:"ផលបូកនៃ Trade ឈ្នះទាំងអស់",glTip:"ផលបូកនៃ Trade ខាតទាំងអស់",prevSave:"នឹងរក្សាទុកជា",prevBad:"សូមបញ្ចូលលេខត្រឹមត្រូវ ឧ. 25.50",prevFix:"សញ្ញាកំណត់ដោយលទ្ធផល",
     expectancy:"តម្លៃរំពឹងទុក",expFoot:"ចំណេញ/ខាតមធ្យមក្នុងមួយ Trade",avgWL:"ឈ្នះ / ខាត មធ្យម",maxDD:"ការធ្លាក់ចុះអតិបរមា",ddFoot:"ពីកំពូលទៅបាត",keep:"បន្តអនុវត្តឱ្យបានទៀងទាត់",streakW:"ឈ្នះជាប់គ្នា",streakL:"ខាតជាប់គ្នា",rr:"ចំណេញ : ហានិភ័យ",
@@ -5392,13 +5471,14 @@ function needPremium(){
    The key is checked and applied ONLY inside the database function redeem_key(), never in the browser. */
 const KEY_CONTACT_URL = '';   // e.g. 'https://t.me/your_username' — shows a "Contact admin to buy a key" button
 const Pay = {plan:'premium', busy:false};
+const Promo = {code:'', plan:'', q:null, busy:false, tried:'', triedPlan:''};   // the code the buyer applied + the server's quote for it
 function premPickSync(){
   document.querySelectorAll('#planPick .plan-opt').forEach(b => {
     const on = b.dataset.plan === Pay.plan;
     b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
     b.classList.toggle('cur', (b.dataset.plan === 'elite' && Prem.elite) || (b.dataset.plan === 'premium' && Prem.active && !Prem.elite));
   });
-  const pa = $('payQrAmt'); if(pa) pa.textContent = PLAN_PRICE[Pay.plan];
+  promoPriceSync(); promoPlanChanged();
   const c = $('keyContact');
   if(c){ c.style.display = KEY_CONTACT_URL ? 'inline-flex' : 'none'; if(KEY_CONTACT_URL) c.href = KEY_CONTACT_URL; }
 }
@@ -5406,7 +5486,7 @@ function premView(v){ ['pvPlan','pvQr','pvOk'].forEach(id => $(id).classList.tog
 function openPremium(plan){
   if(!requireAuth()) return;
   Pay.plan = plan === 'elite' || plan === 'premium' ? plan : (Prem.elite ? 'elite' : 'premium');
-  $('premErr').textContent = ''; $('keyIn').value = ''; $('payErr').textContent = ''; qrStop(); Qr.row = null;
+  $('premErr').textContent = ''; $('keyIn').value = ''; $('payErr').textContent = ''; qrStop(); Qr.row = null; $('payUnpaid').hidden = true; qrShowClaim(false); promoOnOpen();
   $('keyToggle').setAttribute('aria-expanded', 'false'); $('keyBlock').hidden = true;
   premView('pvPlan'); syncPremiumUI();
   $('premiumModal').classList.add('show');
@@ -5414,6 +5494,7 @@ function openPremium(plan){
 }
 function premClose(){ if(typeof qrStop === 'function') qrStop(); $('premiumModal').classList.remove('show'); }
 function premShowPaid(data){
+  promoClear(false); try{ sessionStorage.removeItem('aromPromo'); }catch(e){}
   const plan = (data && data.plan) === 'elite' ? 'elite' : 'premium';
   const until = (data && (data.until || data.premium_until)) || (plan === 'elite' ? Prem.eliteUntil : Prem.until);
   $('premPaidSub').textContent = t('premPaidSub2').replace('{plan}', t(plan === 'elite' ? 'planElite' : 'planPremium')).replace('{d}', until ? premDate(until) : '—');
@@ -5498,12 +5579,12 @@ async function qrCreate(){
   Qr.busy = true; qrStop(); $('payErr').textContent = ''; $('payQrBtn').disabled = true;
   premView('pvQr'); qrOverlay(true, 'busy'); qrStatus('qrMaking', 'wait'); qrBusyBtns(true);
   $('qrPlan').textContent = t('qrPlanLine').replace('{plan}', t(Qr.plan === 'elite' ? 'planElite' : 'planPremium')).replace('{d}', '30');
-  $('qrAmt').textContent = PLAN_PRICE[Qr.plan]; $('qrMerchant').textContent = ''; $('qrBillNo').textContent = '—';
+  $('qrAmt').textContent = promoShownPrice(Qr.plan); $('qrMerchant').textContent = ''; $('qrBillNo').textContent = '—'; $('qrPromo').hidden = true;
   try{
     if(typeof qrcode !== 'function') throw new Error('qr library missing');
-    const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'create', plan:Qr.plan}});
+    const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'create', plan:Qr.plan, promo:promoCodeFor(Qr.plan)}});
     if(error) throw error;
-    if(!data || data.error || !data.payload) throw new Error((data && data.error) || 'no qr');
+    if(!data || data.error || !data.payload) throw Object.assign(new Error((data && data.error) || 'no qr'), {plan: data && data.plan});
     Qr.row = data; Qr.deadline = new Date(data.expires_at).getTime(); Qr.total = Math.max(1000, Qr.deadline - Date.now()); Qr.slow = false;
     const fr = $('qrFrame').parentElement.clientWidth || 300;
     qrDraw($('qrCanvas'), data.payload, Math.max(180, Math.min(300, fr - 24)));
@@ -5511,11 +5592,14 @@ async function qrCreate(){
     $('qrAmt').textContent = money; $('qrMerchant').textContent = data.merchant || '';
     $('qrCanvas').setAttribute('aria-label', t('qrAria') + ' · ' + money);
     $('qrBillNo').textContent = qrBill(data.payload) || '—';
-    qrOverlay(false); qrStatus('qrWait', 'wait'); qrBusyBtns(false);
+    if(data.promo_code && Number(data.discount) > 0){ $('qrPromo').hidden = false; $('qrPromo').textContent = t('promoQrLine').replace('{code}', data.promo_code).replace('{off}', promoMoney(data.discount)); }
+    qrOverlay(false); qrStatus('qrWait', 'wait'); qrBusyBtns(false); qrShowClaim(false);
     qrTick(); Qr.tick = setInterval(qrTick, 1000); qrSchedule();
   }catch(e){
     console.error('KHQR create error:', e);
-    Qr.row = null; premView('pvPlan'); const pe = $('payErr'); pe.className = 'prem-err'; pe.textContent = t('qrErr');
+    Qr.row = null; premView('pvPlan'); const pe = $('payErr'); pe.className = 'prem-err';
+    const pm = /^promo_/.test(String(e && e.message)) ? String(e.message).slice(6) : '';
+    if(pm){ promoClear(true); promoShowError(pm, e.plan); pe.textContent = ''; } else pe.textContent = t('qrErr');
   }finally{ Qr.busy = false; $('payQrBtn').disabled = false; }
 }
 function qrTick(){
@@ -5529,7 +5613,8 @@ async function qrExpire(){
   qrStop();
   const r = await qrCheck(false);              // one last look: the payment may have landed right at the deadline
   if(r === 'paid') return;
-  qrOverlay(true, 'expired'); qrStatus('qrExpired', 'err'); $('qrSaveBtn').disabled = true;
+  qrOverlay(true, 'expired'); $('qrSaveBtn').disabled = true;
+  if(r !== 'claimed'){ qrStatus('qrExpired', 'err'); qrShowClaim(true); }                     // a late payer can still tell the admin
 }
 async function qrCheck(manual){
   if(!Qr.row || Qr.checking || !supabaseClient) return 'busy';
@@ -5539,10 +5624,13 @@ async function qrCheck(manual){
     if(error) throw error;
     if(!data || data.error) throw new Error((data && data.error) || 'check');
     if(data.status === 'paid'){ await qrPaid(data); return 'paid'; }
-    if(data.status === 'expired'){ if(manual) qrStatus('qrNotFound', 'warn'); return 'expired'; }
-    const b = data.bakong || 'ok';
+    const b = data.bakong || 'ok', noAuto = b === 'geo_blocked' || b === 'no_token';
+    if(data.status === 'claimed'){ Qr.slow = true; qrShowClaim(false); qrStatus('qrClaimed', 'ok'); return 'claimed'; }
+    if(noAuto || b === 'rejected' || b === 'unreachable' || manual) qrShowClaim(true);        // the bank cannot confirm by itself: let the user ask the admin
+    if(data.status === 'expired'){ if(manual) qrStatus(noAuto ? 'qrNoAuto' : 'qrNotFound', 'warn'); qrShowClaim(true, noAuto); return 'expired'; }
     if(b === 'amount_mismatch') qrStatus('qrMismatch', 'err');
     else if(b === 'wrong_account') qrStatus('qrWrongAcc', 'err');
+    else if(noAuto){ Qr.slow = true; qrStatus('qrNoAuto', 'warn'); qrShowClaim(true, true); }
     else if(b !== 'ok'){ Qr.slow = true; qrStatus('qrDelayed', 'warn'); }
     else { Qr.slow = false; qrStatus('qrWait', 'wait'); }
     return 'pending';
@@ -5589,10 +5677,116 @@ $('payRecover').onclick = async () => {
     const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'recover'}});
     if(error) throw error;
     if(data && data.status === 'paid'){ await loadPremium(); premShowPaid(data); pe.textContent = ''; }
-    else pe.textContent = t(data && data.bakong && data.bakong !== 'ok' ? 'qrDelayed' : 'qrNoPay');
+    else {
+      const un = (data && data.unpaid) || [], bk = data && data.bakong, noAuto = bk === 'geo_blocked' || bk === 'no_token';
+      payUnpaidRender(un);
+      pe.textContent = t(data && data.status === 'claimed' ? 'qrClaimed' : un.length && (noAuto || (bk && bk !== 'ok')) ? 'qrPickPaid' : bk && bk !== 'ok' ? 'qrDelayed' : 'qrNoPay');
+    }
   }catch(e){ console.error('KHQR recover error:', e); pe.className = 'prem-err'; pe.textContent = t('qrNetwork'); }
   finally{ btn.disabled = false; }
 };
+/* ---------- "I paid" without bank confirmation ----------
+   Bakong refuses payment checks from servers outside Cambodia, so the site cannot always confirm a payment by itself. The user taps
+   "I paid"; claim_payment() marks that QR as claimed (it changes no plan) and an admin approves it in Admin → Activations. */
+function qrShowClaim(on, primary){
+  const b = $('qrClaimBtn'), c = $('qrCheckBtn'); if(!b) return; b.hidden = !on;
+  b.classList.toggle('secondary', !(on && primary)); c.classList.toggle('secondary', !!(on && primary)); b.style.order = on && primary ? '-1' : '';
+}
+async function qrClaimId(id){
+  const {data, error} = await supabaseClient.rpc('claim_payment', {p_id:id, p_note:null});
+  if(error) throw error;
+  const d = typeof data === 'string' ? JSON.parse(data) : data;
+  return !!(d && d.ok);
+}
+$('qrClaimBtn').onclick = async () => {
+  if(!Qr.row || !supabaseClient) return;
+  const btn = $('qrClaimBtn'); btn.disabled = true;
+  try{
+    if(await qrClaimId(Qr.row.id)){ qrShowClaim(false); Qr.slow = true; qrStatus('qrClaimed', 'ok'); qrCheck(false); }
+    else qrStatus('qrNetwork', 'warn');
+  }catch(e){ console.error('KHQR claim error:', e); qrStatus('qrNetwork', 'warn'); }
+  finally{ btn.disabled = false; }
+};
+/* ---------- Promo codes ----------
+   The discount is ALWAYS worked out on the server (khqr function: action quote / create, rules in the database). The browser only
+   shows what the server answers; it never sends a price. A code is saved from the ?promo=CODE link and applied when the buyer opens the upgrade window. */
+const promoMoney = n => '$' + Number(n).toFixed(2);
+const promoOffText = q => promoMoney(q.discount) + (q.promo && q.promo.kind === 'percent' ? ' (' + Number(q.promo.value) + '%)' : '');
+const promoCodeFor = plan => (Promo.q && Promo.q.ok && Promo.plan === plan) ? Promo.code : '';
+function promoShownPrice(plan){ return promoCodeFor(plan) ? promoMoney(Promo.q.final) : PLAN_PRICE[plan]; }
+function promoPriceSync(){
+  const amt = $('payQrAmt'), old = $('payQrOld'); if(!amt || !old) return;
+  const on = !!promoCodeFor(Pay.plan);
+  amt.textContent = on ? promoMoney(Promo.q.final) : PLAN_PRICE[Pay.plan];
+  old.hidden = !on; old.textContent = on ? PLAN_PRICE[Pay.plan] : '';
+}
+function promoMsg(text, mode){ const m = $('promoMsg'); m.className = 'promo-msg' + (mode ? ' ' + mode : ''); m.textContent = text || ''; $('promoRemove').hidden = mode !== 'ok'; }
+function promoOpenBlock(){ $('promoBlock').hidden = false; $('promoToggle').setAttribute('aria-expanded', 'true'); }
+function promoShowError(code, plan){
+  promoOpenBlock();
+  const key = 'promoErr_' + code, name = plan ? t(plan === 'elite' ? 'planElite' : 'planPremium') : '';
+  promoMsg((T.en[key] ? t(key) : t('promoErr_unavailable')).replace('{plan}', name), 'err');
+}
+function promoClear(keepInput){ Promo.code = ''; Promo.q = null; Promo.plan = ''; if(!keepInput){ Promo.tried = ''; Promo.triedPlan = ''; } if(!keepInput && $('promoIn')) $('promoIn').value = ''; if($('promoMsg')) promoMsg('', ''); promoPriceSync(); }
+async function promoApply(auto){
+  if(Promo.busy || !supabaseClient) return;
+  const code = $('promoIn').value.trim().toUpperCase();
+  if(!code){ promoClear(true); if(!auto) promoMsg(t('promoEmpty'), 'err'); return; }
+  Promo.busy = true; Promo.tried = code; Promo.triedPlan = Pay.plan; $('promoBtn').disabled = true; promoMsg(t('qrChecking'), '');
+  try{
+    const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'quote', plan:Pay.plan, promo:code}});
+    if(error) throw error;
+    if(!data || !data.ok){ Promo.code = ''; Promo.q = null; Promo.plan = ''; promoPriceSync(); promoShowError((data && data.error) || 'unavailable', data && data.plan); return; }
+    Promo.code = data.promo.code; Promo.q = data; Promo.plan = data.plan; $('promoIn').value = Promo.code;
+    promoMsg(t('promoOk').replace('{code}', Promo.code).replace('{off}', promoOffText(data)), 'ok'); promoPriceSync();
+    try{ sessionStorage.setItem('aromPromo', Promo.code); }catch(e){}
+  }catch(e){ console.error('Promo quote error:', e); promoShowError('unavailable'); }
+  finally{ Promo.busy = false; $('promoBtn').disabled = false; }
+}
+/* the plan picker moved: the same code may price differently on the other plan, or not apply to it. Re-check it once per plan (no repeated calls). */
+function promoPlanChanged(){
+  const typed = $('promoIn') ? $('promoIn').value.trim().toUpperCase() : '';
+  if(typed && Promo.tried === typed && Promo.triedPlan !== Pay.plan && !Promo.busy) promoApply(true);
+}
+function promoOnOpen(){
+  let saved = ''; try{ saved = sessionStorage.getItem('aromPromo') || ''; }catch(e){}
+  if(!Promo.code && saved && $('promoIn')){ $('promoIn').value = saved; promoOpenBlock(); promoApply(true); }
+  promoPriceSync();
+}
+$('promoToggle').onclick = () => {
+  const open = $('promoToggle').getAttribute('aria-expanded') !== 'true';
+  $('promoToggle').setAttribute('aria-expanded', open ? 'true' : 'false'); $('promoBlock').hidden = !open;
+  if(open && window.matchMedia('(pointer:fine)').matches) $('promoIn').focus();
+};
+$('promoBtn').onclick = () => promoApply(false);
+$('promoRemove').onclick = () => { promoClear(false); try{ sessionStorage.removeItem('aromPromo'); }catch(e){} $('promoIn').focus(); };
+$('promoIn').addEventListener('input', () => {
+  const v = $('promoIn').value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 24); if(v !== $('promoIn').value) $('promoIn').value = v;
+  if(Promo.code && v !== Promo.code){ Promo.code = ''; Promo.q = null; Promo.plan = ''; promoPriceSync(); promoMsg('', ''); }     // edited after applying: the old discount no longer holds
+});
+$('promoIn').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); promoApply(false); } });
+(function(){ try{ const pc = new URLSearchParams(location.search).get('promo');
+  if(pc && /^[A-Za-z0-9_-]{3,24}$/.test(pc)){ sessionStorage.setItem('aromPromo', pc.toUpperCase()); setTimeout(() => toast(t('promoSaved').replace('{code}', pc.toUpperCase())), 900); } }catch(e){} })();
+function payUnpaidRender(list){
+  const box = $('payUnpaid'); box.textContent = ''; box.hidden = !list.length; if(!list.length) return;
+  const fmt = new Intl.DateTimeFormat(S.lang === 'km' ? 'km-KH' : 'en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false});
+  list.slice(0, 5).forEach(u => {
+    const row = document.createElement('div'); row.className = 'pu-row';
+    const info = document.createElement('div'); info.className = 'pu-info';
+    const b1 = document.createElement('b'); b1.textContent = t(u.plan === 'elite' ? 'planElite' : 'planPremium') + ' · ' + (u.currency === 'KHR' ? Math.round(u.amount) + ' ៛' : '$' + Number(u.amount).toFixed(2));
+    const s1 = document.createElement('small'); s1.textContent = u.bill + ' · ' + fmt.format(new Date(u.created_at));
+    info.append(b1, s1);
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn secondary small'; btn.textContent = t('qrIPaidThis');
+    btn.onclick = async () => {
+      btn.disabled = true; const pe = $('payErr');
+      try{
+        if(await qrClaimId(u.id)){ row.remove(); pe.className = 'prem-err info'; pe.textContent = t('qrClaimed'); if(!box.children.length) box.hidden = true; }
+        else { pe.className = 'prem-err'; pe.textContent = t('qrNetwork'); btn.disabled = false; }
+      }catch(e){ console.error('KHQR claim error:', e); pe.className = 'prem-err'; pe.textContent = t('qrNetwork'); btn.disabled = false; }
+    };
+    row.append(info, btn); box.appendChild(row);
+  });
+}
 $('premiumChip').onclick = () => openPremium();
 document.querySelectorAll('#planPick .plan-opt').forEach(b => b.onclick = () => { Pay.plan = b.dataset.plan; premPickSync(); });
 $('chartLockBtn').onclick = () => openPremium('premium');
@@ -7637,15 +7831,17 @@ function openAdmin(){
 function admShow(tab, force){
   Adm.tab = tab;
   document.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', nt:'admNt', mt:'admMt'};
+  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', promo:'admPromo', nt:'admNt', mt:'admMt'};
   Object.entries(map).forEach(([k, id]) => $(id).classList.toggle('on', k === tab));
   if(tab === 'ov') admLoadOverview();
   else if(tab === 'users' && (force || !Adm.users.length)) admLoadUsers(true);
   else if(tab === 'audit' && (force || !Adm.audit.length)) admLoadAudit(true);
   else if(tab === 'pay') admLoadPayments();
+  else if(tab === 'promo') admLoadPromo();
   else if(tab === 'keys') admLoadKeys();
   else if(tab === 'nt') admLoadNotifs();
   else if(tab === 'mt') mtAdmLoad();
+  admClaimBadge();
 }
 function admStamp(){ Adm.loadedAt = new Date(); $('admUpdated').textContent = 'Updated ' + new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(Adm.loadedAt) + ' ICT'; }
 
@@ -7744,6 +7940,8 @@ const ADM_ACT = {
   signup:['auth','SIGN-UP'], email_verified:['auth','VERIFIED'], login:['auth','LOGIN'], password_changed:['warn','PASSWORD'], email_changed:['warn','EMAIL CHANGED'],
   username_set:['', 'USERNAME'], name_changed:['', 'NAME'], avatar_changed:['', 'PHOTO'],
   plan_upgrade:['money','UPGRADE PAID'], payment_created:['', 'QR CREATED'], payment_expired:['', 'QR EXPIRED'], plan_change:['plan','PLAN CHANGE'], admin_grant:['plan','ADMIN GRANT'],
+  payment_claimed:['warn','PAID? CLAIM'], payment_rejected:['bad','CLAIM REJECTED'],
+  promo_created:['plan','PROMO CREATED'], promo_toggled:['', 'PROMO PAUSE/RESUME'], promo_deleted:['bad','PROMO DELETED'],
   notification_sent:['plan','NOTICE SENT'],
   key_redeemed:['money','KEY REDEEMED'], key_created:['plan','KEYS CREATED'], key_revoked:['bad','KEY REVOKED'], key_failed:['warn','WRONG KEY'],
   trade_added:['', 'TRADE +'], trade_deleted:['bad','TRADE −'], signal_posted:['plan','SIGNAL'], signal_status:['', 'SIGNAL STATUS'], signal_deleted:['bad','SIGNAL −'], admin_role:['warn','ADMIN ROLE']
@@ -7752,8 +7950,11 @@ function admDetail(r){
   const d = r.detail || {};
   switch(r.action){
     case 'signup': return `Signed up${d.username ? ' as @' + d.username : ''}`;
-    case 'plan_upgrade': return `Paid ${admMoney(d.amount)} for <b class="gold">${esc(String(d.plan || '').toUpperCase())}</b>${d.bill ? ' · bill ' + esc(d.bill) : ''}`;
-    case 'payment_created': case 'payment_expired': return `${esc(String(d.plan || '').toUpperCase())} · ${admMoney(d.amount)}${d.bill ? ' · bill ' + esc(d.bill) : ''}`;
+    case 'plan_upgrade': return `Paid ${admMoney(d.amount)} for <b class="gold">${esc(String(d.plan || '').toUpperCase())}</b>${d.bill ? ' · bill ' + esc(d.bill) : ''}${d.promo ? ' · promo ' + esc(d.promo) : ''}`;
+    case 'promo_created': return `Code <b class="gold">${esc(d.code)}</b> · ${d.kind === 'percent' ? esc(String(d.value)) + '% off' : admMoney(d.value) + ' off'} · ${esc(d.plan || 'any')} plan${d.max_uses ? ' · max ' + esc(String(d.max_uses)) + ' uses' : ''}`;
+    case 'promo_toggled': return `${esc(d.code)} ${d.active ? 'resumed' : 'paused'}`;
+    case 'promo_deleted': return `${esc(d.code)} deleted`;
+    case 'payment_created': case 'payment_expired': case 'payment_claimed': case 'payment_rejected': return `${esc(String(d.plan || '').toUpperCase())} · ${admMoney(d.amount)}${d.bill ? ' · bill ' + esc(d.bill) : ''}`;
     case 'plan_change': return d.plan === 'premium_lifetime' ? `Lifetime Premium ${d.to ? 'ON' : 'OFF'}` : `${esc(String(d.plan).toUpperCase())}: ${esc(d.from ? admDay(d.from) : '—')} → ${esc(d.to ? admDay(d.to) : 'removed')}`;
     case 'admin_grant': return d.plan === 'none' ? 'Removed paid plans' : `+${d.days} days ${esc(String(d.plan).toUpperCase())} → ${esc(admDay(d.until))}`;
     case 'name_changed': return `${esc(d.from || '—')} → ${esc(d.to || '—')}`;
@@ -7798,7 +7999,56 @@ function admCsv(){
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+/* ---- Bank connection + unconfirmed QR payments ----
+   Bakong refuses payment checks from outside Cambodia, so some payments need an admin: check the bill number in the bank app, then Approve. */
+async function admClaimBadge(force){
+  if(!force && Date.now() - (Adm.badgeAt || 0) < 20000) return;
+  Adm.badgeAt = Date.now();
+  try{ const rows = await admRpc('admin_payments', {p_status:'claimed', p_limit:100}); const b = $('admPayBadge'); b.textContent = rows.length; b.hidden = !rows.length; }catch(e){}
+}
+async function admBankCheck(){
+  const box = $('admBank'); Adm.bankChecked = true; box.className = 'adm-bank'; box.textContent = 'Checking the bank connection…';
+  try{
+    const {data, error} = await supabaseClient.functions.invoke('khqr', {body:{action:'diag'}});
+    if(error) throw error;
+    if(data && data.error) throw new Error(data.error);
+    const where = data.egress && data.egress.country ? ' · server location ' + data.egress.country : '';
+    box.className = 'adm-bank ' + (data.ok ? 'ok' : 'bad');
+    box.innerHTML = `<b>${data.ok ? '● Automatic bank confirmation is working' : '● Automatic bank confirmation is NOT working'}</b><span>${esc(data.verdict || '')}${esc(where)}${data.bakongHttpStatus ? ' · Bakong HTTP ' + esc(String(data.bakongHttpStatus)) : ''}</span>${data.ok ? '' : '<span>Until that is fixed, payments stay unconfirmed: approve them below after you see the bill number in your bank app.</span>'}`;
+  }catch(e){ box.className = 'adm-bank bad'; box.textContent = 'Could not run the bank check: ' + String((e && e.message) || e); }
+}
+async function admLoadClaims(){
+  const box = $('admClaims');
+  try{
+    const rows = (await admRpc('admin_payments', {p_status:'claimed,pending,expired', p_limit:60})).filter(r => Date.now() - new Date(r.created_at).getTime() < 3 * 864e5);
+    const claimed = rows.filter(r => r.status === 'claimed').length, b = $('admPayBadge');
+    b.textContent = claimed; b.hidden = !claimed; Adm.badgeAt = Date.now();
+    if(!rows.length){ box.innerHTML = ''; return; }
+    box.innerHTML = `<div class="adm-claims-h"><b>Unconfirmed QR payments</b> · last 3 days · <span>${claimed} waiting for you</span></div><table class="adm-table"><thead><tr><th>Created (ICT)</th><th>User</th><th>Plan</th><th>Amount</th><th>Bill number</th><th>Status</th><th></th></tr></thead><tbody>${
+      rows.map(r => `<tr><td data-l="Created" style="white-space:nowrap">${esc(admWhen(r.created_at))}</td>
+        <td data-l="User">${r.username ? '@' + esc(r.username) + '<span class="adm-sub">' + esc(r.email || '') + '</span>' : esc(r.email || '—')}</td>
+        <td data-l="Plan"><span class="adm-plan ${r.plan === 'elite' ? 'elite' : 'premium'}">${esc(String(r.plan).toUpperCase())}</span></td>
+        <td data-l="Amount" data-amt="${esc(admMoney(r.amount))}">${esc(admMoney(r.amount))}${r.promo_code ? '<span class="adm-sub">promo ' + esc(r.promo_code) + (r.list_price ? ' · list ' + esc(admMoney(r.list_price)) : '') + '</span>' : ''}</td>
+        <td data-l="Bill"><button type="button" class="adm-bill" data-copy="${esc(r.bill_number)}" title="Copy">${esc(r.bill_number)}</button></td>
+        <td data-l="Status"><span class="adm-act ${r.status === 'claimed' ? 'warn' : ''}">${r.status === 'claimed' ? 'USER SAYS PAID' : esc(String(r.status).toUpperCase())}</span></td>
+        <td data-l="" class="adm-row-actions"><button type="button" class="btn small" data-appr="${esc(r.id)}">Approve +30 days</button><button type="button" class="btn secondary small" data-rej="${esc(r.id)}">Reject</button></td></tr>`).join('')}</tbody></table>`;
+  }catch(e){ admErr(box, e); }
+}
+$('admClaims').addEventListener('click', async e => {
+  const cp = e.target.closest('[data-copy]'); if(cp){ admCopy(cp.dataset.copy, 'Bill number'); return; }
+  const btn = e.target.closest('[data-appr],[data-rej]'); if(!btn) return;
+  const approve = btn.hasAttribute('data-appr'), row = btn.closest('tr'), bill = row.querySelector('.adm-bill').dataset.copy;
+  const who = row.children[1].textContent.trim(), plan = row.children[2].textContent.trim(), amt = row.children[3].dataset.amt || row.children[3].textContent.trim();
+  if(!confirm(approve ? `Approve ${plan} (${amt}) for ${who}?\n\nOnly approve after you see bill number ${bill} (or exactly ${amt}) in your bank app. This adds 30 days.` : `Reject bill ${bill}? The user can create a new QR.`)) return;
+  btn.disabled = true;
+  try{
+    await admRpc(approve ? 'admin_approve_payment' : 'admin_reject_payment', {p_id: approve ? btn.dataset.appr : btn.dataset.rej});
+    toast(approve ? 'Approved ✓ plan activated' : 'Rejected'); admLoadPayments(); admClaimBadge(true);
+  }catch(err){ toast(String((err && err.message) || err), true); btn.disabled = false; }
+});
+$('admBankChk').onclick = () => admBankCheck();
 async function admLoadPayments(){
+  admLoadClaims(); if(!Adm.bankChecked) admBankCheck();
   const box = $('admPayList'); box.innerHTML = '<div class="adm-msg">Loading…</div>';
   try{
     const rows = await admRpc('admin_audit', {p_action:'key_redeemed,plan_upgrade,admin_grant', p_search:null, p_limit:300, p_before:null});
@@ -7815,6 +8065,107 @@ async function admLoadPayments(){
   }catch(e){ admErr(box, e); }
 }
 
+/* ---- Promo codes: create + tracker ----
+   Everything comes from admin-only database functions. Uses are counted from real payments: paid = used, claimed / open QR = waiting. */
+const PM_ERR = {bad_code:'Code must be 3-24 characters: letters, numbers, - or _', code_taken:'That code already exists', percent_max_99:'A percent discount can be 1 to 99',
+  fixed_max_1000:'A fixed discount can be up to $1,000', bad_value:'Enter a discount above 0', bad_max_uses:'Max uses must be 1 or more (or leave it blank)',
+  bad_per_user:'Uses per person must be 1 or more', expiry_in_past:'The expiry date must be in the future', bad_plan:'Pick a plan', forbidden:'This account is not an admin.',
+  in_use:'This code was already used, so it cannot be deleted. Pause it instead.', not_found:'Code not found'};
+const pmErr = e => { const m = String((e && e.message) || e || ''); return PM_ERR[m] || m; };
+const pmLink = code => location.origin + '/pricing?promo=' + encodeURIComponent(code);
+const pmDisc = c => c.kind === 'percent' ? Number(c.value) + '% off' : admMoney(c.value) + ' off';
+function pmState(c){
+  const now = Date.now();
+  if(!c.active) return ['paused', 'PAUSED'];
+  if(c.valid_until && new Date(c.valid_until).getTime() < now) return ['expired', 'EXPIRED'];
+  if(c.valid_from && new Date(c.valid_from).getTime() > now) return ['sched', 'SCHEDULED'];
+  if(c.max_uses != null && c.paid + c.reserved >= c.max_uses) return ['full', 'FULL'];
+  return ['active', 'ACTIVE'];
+}
+async function admLoadPromo(){
+  const kp = $('admPromoKpi'), box = $('admPromoList');
+  try{
+    const rows = await admRpc('admin_promo_list'); Adm.promo = rows;
+    const sum = k => rows.reduce((a, r) => a + Number(r[k] || 0), 0);
+    kp.innerHTML = `<div class="adm-kpi"><small>Active codes</small><b>${rows.filter(r => pmState(r)[0] === 'active').length}</b><span>${rows.length} total</span></div>
+      <div class="adm-kpi"><small>Paid redemptions</small><b>${sum('paid')}</b><span>${sum('reserved')} waiting</span></div>
+      <div class="adm-kpi"><small>Discount given</small><b>${esc(admMoney(sum('discount_total')))}</b><span>on paid orders</span></div>
+      <div class="adm-kpi"><small>Revenue with promo</small><b>${esc(admMoney(sum('revenue')))}</b><span>after discounts</span></div>`;
+    box.innerHTML = rows.length ? `<table class="adm-table"><thead><tr><th>Code</th><th>Discount</th><th>Plan</th><th>Used</th><th>Discount given</th><th>Revenue</th><th>Status</th><th>Expires</th><th></th></tr></thead><tbody>${
+      rows.map(c => { const st = pmState(c), pct = c.max_uses ? Math.min(100, Math.round((c.paid + c.reserved) / c.max_uses * 100)) : 0;
+        return `<tr data-id="${esc(c.id)}" data-code="${esc(c.code)}"><td data-l="Code"><button type="button" class="adm-bill" data-pm-copy title="Copy code">${esc(c.code)}</button>${c.campaign ? '<span class="adm-sub">' + esc(c.campaign) + '</span>' : ''}</td>
+          <td data-l="Discount"><b>${esc(pmDisc(c))}</b></td>
+          <td data-l="Plan"><span class="adm-plan ${c.plan === 'elite' ? 'elite' : c.plan === 'premium' ? 'premium' : 'free'}">${c.plan === 'any' ? 'ANY' : esc(String(c.plan).toUpperCase())}</span></td>
+          <td data-l="Used">${esc(c.max_uses != null ? c.paid + ' / ' + c.max_uses : String(c.paid))}${c.reserved ? '<span class="adm-sub">+' + esc(String(c.reserved)) + ' waiting</span>' : ''}${c.max_uses ? '<div class="pm-bar"><i style="width:' + pct + '%"></i></div>' : ''}</td>
+          <td data-l="Discount given">${esc(admMoney(c.discount_total))}</td>
+          <td data-l="Revenue">${esc(admMoney(c.revenue))}</td>
+          <td data-l="Status"><span class="pm-st ${st[0]}">${st[1]}</span></td>
+          <td data-l="Expires">${c.valid_until ? esc(admDay(c.valid_until)) : 'Never'}</td>
+          <td data-l="" class="adm-row-actions"><button type="button" class="btn secondary small" data-pm-link>Copy link</button><button type="button" class="btn secondary small" data-pm-detail>Details</button><button type="button" class="btn secondary small" data-pm-toggle>${c.active ? 'Pause' : 'Resume'}</button>${c.paid + c.reserved === 0 ? '<button type="button" class="btn secondary small" data-pm-del>Delete</button>' : ''}</td></tr>`; }).join('')}</tbody></table>`
+      : '<div class="adm-msg">No promo codes yet. Create the first one above.</div>';
+    admStamp();
+  }catch(e){ admErr(box, e); }
+}
+async function admPromoDetail(id, code){
+  const box = $('admPromoDetail'); box.innerHTML = '<div class="adm-msg">Loading…</div>'; box.scrollIntoView({block:'nearest', behavior:'smooth'});
+  try{
+    const rows = await admRpc('admin_promo_redemptions', {p_id:id}); Adm.promoRows = {code, rows};
+    box.innerHTML = `<div class="pm-detail-h"><b>${esc(code)}</b> · ${rows.length} order${rows.length === 1 ? '' : 's'}<span class="pm-link">${esc(pmLink(code))}</span><span class="sp"></span><button type="button" class="btn secondary small" data-pm-csv ${rows.length ? '' : 'disabled'}>Export CSV</button><button type="button" class="btn secondary small" data-pm-close>Close</button></div>${
+      rows.length ? `<table class="adm-table"><thead><tr><th>Created (ICT)</th><th>User</th><th>Plan</th><th>List price</th><th>Discount</th><th>Paid</th><th>Status</th><th>Bill</th></tr></thead><tbody>${
+        rows.map(r => `<tr><td data-l="Created" style="white-space:nowrap">${esc(admWhen(r.created_at))}</td>
+          <td data-l="User">${r.username ? '@' + esc(r.username) + '<span class="adm-sub">' + esc(r.email || '') + '</span>' : esc(r.email || '—')}</td>
+          <td data-l="Plan"><span class="adm-plan ${r.plan === 'elite' ? 'elite' : 'premium'}">${esc(String(r.plan).toUpperCase())}</span></td>
+          <td data-l="List price">${esc(admMoney(r.list_price != null ? r.list_price : r.amount))}</td><td data-l="Discount">−${esc(admMoney(r.discount))}</td><td data-l="Paid"><b>${esc(admMoney(r.amount))}</b></td>
+          <td data-l="Status"><span class="adm-act ${r.status === 'paid' ? 'money' : r.status === 'claimed' ? 'warn' : ''}">${esc(String(r.status).toUpperCase())}</span></td>
+          <td data-l="Bill"><code>${esc(r.bill_number || '')}</code></td></tr>`).join('')}</tbody></table>` : '<div class="adm-msg">Nobody has used this code yet.</div>'}`;
+  }catch(e){ admErr(box, e); }
+}
+/* CSV for your own records: cells that start with = + - @ are neutralised so a spreadsheet never runs them as formulas */
+function pmCsv(){
+  const d = Adm.promoRows; if(!d || !d.rows.length) return;
+  const cell = v => { let s = String(v == null ? '' : v); if(/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  const head = ['code', 'created', 'paid_at', 'user', 'email', 'plan', 'list_price', 'discount', 'amount_paid', 'status', 'bill'];
+  const lines = [head.join(',')].concat(d.rows.map(r => [d.code, r.created_at, r.paid_at, r.username || '', r.email || '', r.plan, r.list_price == null ? '' : r.list_price, r.discount == null ? 0 : r.discount, r.amount, r.status, r.bill_number].map(cell).join(',')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'})); a.download = 'promo-' + d.code + '.csv';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$('pmForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = $('pmMsg'), btn = $('pmSubmit'); msg.className = 'pm-msg'; msg.textContent = '';
+  const value = Number($('pmValue').value), mu = $('pmMax').value.trim(), pu = $('pmPer').value.trim(), exp = $('pmExp').value;
+  if(!(value > 0)){ msg.className = 'pm-msg err'; msg.textContent = PM_ERR.bad_value; $('pmValue').focus(); return; }
+  btn.disabled = true;
+  try{
+    const r = await admRpc('admin_promo_create', {p_code:$('pmCode').value.trim(), p_kind:$('pmKind').value, p_value:value, p_plan:$('pmPlan').value,
+      p_max_uses: mu ? parseInt(mu, 10) : null, p_per_user: pu ? parseInt(pu, 10) : 1, p_valid_until: exp ? exp + 'T23:59:59+07:00' : null,
+      p_campaign:$('pmCamp').value.trim() || null, p_note:null});
+    msg.className = 'pm-msg ok'; msg.textContent = 'Created ' + r.code + ' ✓  Link: ' + pmLink(r.code);
+    $('pmForm').reset(); $('pmPer').value = '1'; admCopy(r.code, 'Code ' + r.code); admLoadPromo();
+  }catch(err){ msg.className = 'pm-msg err'; msg.textContent = pmErr(err); }
+  finally{ btn.disabled = false; }
+});
+$('admPromo').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.hasAttribute('data-pm-csv')){ pmCsv(); return; }
+  if(b.hasAttribute('data-pm-close')){ $('admPromoDetail').innerHTML = ''; return; }
+  const row = b.closest('tr[data-id]'); if(!row) return;
+  const id = row.dataset.id, code = row.dataset.code;
+  if(b.hasAttribute('data-pm-copy')){ admCopy(code, 'Code'); return; }
+  if(b.hasAttribute('data-pm-link')){ admCopy(pmLink(code), 'Link'); return; }
+  if(b.hasAttribute('data-pm-detail')){ admPromoDetail(id, code); return; }
+  if(b.hasAttribute('data-pm-toggle')){
+    b.disabled = true;
+    try{ const r = await admRpc('admin_promo_toggle', {p_id:id, p_active: b.textContent.trim() === 'Resume'}); toast(r.active ? code + ' resumed' : code + ' paused'); admLoadPromo(); }
+    catch(err){ toast(pmErr(err), true); b.disabled = false; }
+    return;
+  }
+  if(b.hasAttribute('data-pm-del')){
+    if(!confirm('Delete promo code ' + code + '? It has never been used. This cannot be undone.')) return;
+    b.disabled = true;
+    try{ await admRpc('admin_promo_delete', {p_id:id}); toast(code + ' deleted'); admLoadPromo(); }
+    catch(err){ toast(pmErr(err), true); b.disabled = false; }
+  }
+});
 /* ---- Activation keys ---- */
 const Keys = {rows:[], last:[], timer:null};
 function keyState(k){
