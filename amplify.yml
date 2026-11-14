@@ -1,0 +1,35 @@
+# AWS Amplify Hosting: plain static site (no build step). /api/* is served by the Lambda in aws/lambda (see aws/README.md).
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - echo "static site, nothing to build"
+  artifacts:
+    baseDirectory: /
+    files:
+      - '*.html'
+      - sw.js
+      - manifest.webmanifest
+      - 'icons/**/*'
+      - 'logo/**/*'
+      - 'vendor/**/*'
+  customHeaders:
+    - pattern: 'sw.js'
+      headers:
+        - key: Cache-Control
+          value: 'no-cache, no-store, must-revalidate'
+        - key: Service-Worker-Allowed
+          value: '/'
+        - key: Content-Type
+          value: 'application/javascript; charset=utf-8'
+    - pattern: 'manifest.webmanifest'
+      headers:
+        - key: Content-Type
+          value: 'application/manifest+json'
+        - key: Cache-Control
+          value: 'public, max-age=3600'
+    - pattern: 'icons/**'
+      headers:
+        - key: Cache-Control
+          value: 'public, max-age=604800'

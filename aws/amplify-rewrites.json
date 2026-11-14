@@ -1,0 +1,6 @@
+[
+  { "source": "/api/<*>", "target": "https://REPLACE-WITH-YOUR-LAMBDA-URL.lambda-url.ap-southeast-1.on.aws/api/<*>", "status": "200" },
+  { "source": "/analysis", "target": "/analysis.html", "status": "200" },
+  { "source": "/pricing", "target": "/pricing.html", "status": "200" },
+  { "source": "/index", "target": "/", "status": "301" }
+]
