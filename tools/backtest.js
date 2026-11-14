@@ -108,6 +108,7 @@ const blocked = (r, rules) => rules.some(x => FEATURES[x.feature](r) === x.bucke
   const AiEng = loadEngine();
   let m1;
   if (arg('csv')) m1 = readCsv(arg('csv')); else if (arg('td')) m1 = await fetchTwelve(arg('td'), +arg('days', 20)); else { console.error('give --csv <file> or --td <XAU/USD>'); process.exit(1); }
+  if (arg('save')) { fs.mkdirSync(path.dirname(arg('save')), { recursive: true }); fs.writeFileSync(arg('save'), m1.map(x => [x.t, x.o, x.h, x.l, x.c].join(',')).join('\n')); }
   if (m1.length < 1500) throw new Error('need at least ~1500 M1 candles, got ' + m1.length);
   console.log(`${SYMBOL}: ${m1.length} M1 candles · ${new Date(m1[0].t * 1000).toISOString().slice(0, 16)} → ${new Date(m1[m1.length - 1].t * 1000).toISOString().slice(0, 16)} · spread ${SPREAD}`);
 
