@@ -5977,6 +5977,10 @@ const AiEng = (() => {
   const MODES = {
     scalp:    {key:'scalp',    base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true,
                keys:['bias','align','pullback','trigger','session','news','risk','room','sr','tline','retest']},
+    // btcx: SHADOW research mode (BTC only, never posted). Scalping v3 without the momentum trigger and with a 0.3 ATR stop pad.
+    // Backtest BTCUSD 20 days, $5 spread: n=52, +0.26R/trade, positive in both halves (+0.25R / +0.32R). One market, small sample: forward-test before trusting.
+    btcx:     {key:'btcx',     base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true, only:/^BTC/, noMom:true, stopPad:.3, shadow:true,
+               keys:['bias','align','pullback','trigger','session','news','risk','room','sr','tline','retest']},
     sweep:    {key:'sweep',    base:60,   htf:300,   valid:300,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', sweep:true, only:/^BTC/, minRiskPct:.0005,
                keys:['sweep','session','news','risk']},
     m5:       {key:'m5',       base:300,  htf:900,   valid:900,   rr:[1, 2, 3],     session:true,  maxBars:48,  eName:'M5',  hName:'M15'},
@@ -6036,6 +6040,7 @@ const AiEng = (() => {
     const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A1 = P.atr[i];
     const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key, max:M.keys.length};
     let j = -1; for(let k = P.htf.length - 1; k >= 0; k--){ if(P.htf[k].t + M.htf <= closeT){ j = k; break; } }
+    if(M.only && !M.only.test(P.sym)){ out.grade = 'n/a'; return out; }
     if(i < 60 || A1 == null || P.e50[i] == null || j < 55 || P.h50b[j] == null || P.hAtr[j] == null){ out.grade = 'n/a'; return out; }
     const A5 = P.hAtr[j], add = (key, pass, val, core) => out.checks.push({key, pass:!!pass, val, core});
     // 1) M5 trend: close beyond EMA50, EMA20 beyond EMA50, EMA20 rising / falling
@@ -6067,8 +6072,8 @@ const AiEng = (() => {
     // 4) Rejection candle off the level
     const p = m[i - 1], rng = Math.max(b.h - b.l, 1e-9), body = Math.abs(b.c - b.o);
     let trig = null;
-    if(L && b.c > b.o){ if(p.c < p.o && b.c >= p.o && b.o <= p.c) trig = 'engulf'; else if(Math.min(b.o, b.c) - b.l >= 1.5 * body && b.c >= b.l + .6 * rng) trig = 'pin'; else if(body >= .55 * rng && b.c > p.h) trig = 'momentum'; }
-    if(!L && b.c < b.o){ if(p.c > p.o && b.c <= p.o && b.o >= p.c) trig = 'engulf'; else if(b.h - Math.max(b.o, b.c) >= 1.5 * body && b.c <= b.h - .6 * rng) trig = 'pin'; else if(body >= .55 * rng && b.c < p.l) trig = 'momentum'; }
+    if(L && b.c > b.o){ if(p.c < p.o && b.c >= p.o && b.o <= p.c) trig = 'engulf'; else if(Math.min(b.o, b.c) - b.l >= 1.5 * body && b.c >= b.l + .6 * rng) trig = 'pin'; else if(!M.noMom && body >= .55 * rng && b.c > p.h) trig = 'momentum'; }
+    if(!L && b.c < b.o){ if(p.c > p.o && b.c <= p.o && b.o >= p.c) trig = 'engulf'; else if(b.h - Math.max(b.o, b.c) >= 1.5 * body && b.c <= b.h - .6 * rng) trig = 'pin'; else if(!M.noMom && body >= .55 * rng && b.c < p.l) trig = 'momentum'; }
     add('trigger', !!trig, trig, true);
     // 5) Session: all sessions, weekdays (market open)
     const wd = new Date(closeT * 1000).getUTCDay(); add('session', P.allWeek || (wd >= 1 && wd <= 5), P.allWeek ? '24/7' : 'any', true);
@@ -6076,7 +6081,7 @@ const AiEng = (() => {
     const nz = news ? news(closeT) : true; add('news', nz === true, nz === null ? 'unknown' : null, true);
     // 7) Stop beyond the zone / swing: SL past the pullback extreme or the level, whichever is further; 0.3–1.5 × M5 ATR
     const base = level != null ? (L ? Math.min(ext, level - tol) : Math.max(ext, level + tol)) : ext;
-    const entry = b.c, sl = L ? base - .1 * A5 : base + .1 * A5, risk = Math.abs(entry - sl);
+    const entry = b.c, sl = L ? base - (M.stopPad || .1) * A5 : base + (M.stopPad || .1) * A5, risk = Math.abs(entry - sl);
     add('risk', risk >= .3 * A5 && risk <= 1.5 * A5, +(risk / A5).toFixed(2), true);
     // 8) Room: no opposing S/R zone before TP2 (2R)
     const opp = Z.filter(z => L ? z.lo > entry : z.hi < entry).sort((x, y) => L ? x.lo - y.lo : y.hi - x.hi)[0];
