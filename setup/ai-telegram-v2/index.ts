@@ -52,11 +52,17 @@ async function newsFn() {
   } catch (_) { return () => null; }
 }
 // Entry Timer checklist lines (same rules as Trade Finder → Time the trade on the website)
-const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING" };
+const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING", sweep: "SWEEP (experimental)", btcx: "BTC SHADOW" };
 const dur = (sec) => sec >= 86400 ? Math.round(sec / 86400) + " days" : sec >= 3600 ? Math.round(sec / 3600) + " hours" : Math.round(sec / 60) + " min";
 function timerLines(ev, buy, s, M) {
   const c = Object.fromEntries(ev.checks.map((x) => [x.key, x]));
   const ok = (k) => (c[k] && c[k].pass ? "✅" : "▫️");
+  if (M.sweep) return [
+    `${ok("sweep")} Liquidity sweep of a recent M1 swing ${buy ? "low" : "high"}, closed back inside`,
+    `${ok("risk")} Stop beyond the sweep extreme`,
+    `${ok("news")} No high-impact news ±30 min`,
+    `⚠️ Experimental: BTCUSD only, edge not yet proven. Risk small.`,
+  ];
   return [
     `${ok("bias")} ${M.hName}${M.daily ? " + Daily" : ""} trend ${buy ? "up" : "down"}`,
     `${ok("align")} ${M.eName} EMA20/50 aligned`,
@@ -129,6 +135,7 @@ Deno.serve(async (req) => {
   const { data: openAll } = await db.from("ai_signals").select("*").eq("status", "open");
   for (const sym of symbols) for (const mk of modes) {
     const M = AiEng.MODES[mk];
+    if (M.only && !M.only.test(sym)) continue;      // e.g. the sweep mode is BTC only
     const open = (openAll || []).filter((r) => r.symbol === sym && (r.mode || "scalp") === mk);
     if (!due(M) && !open.length) continue;
     const out = { symbol: sym, mode: mk, posted: null, updates: [] };
@@ -146,7 +153,7 @@ Deno.serve(async (req) => {
         const r = sim.res, hits = r === "open" || r === "sl" || r === "expired" ? 0 : +r.slice(2, 3);
         const closed = !(r === "open" || r.endsWith("+"));
         const msgs = [], tag = `${sym} ${row.side} @ ${fx(row.entry, sym)} · ${MLABEL[mk]}`;
-        if (!row.window_sent && nowS > Number(row.t) + M.valid && r === "open" && hits === 0) {
+        if (!M.shadow && !row.window_sent && nowS > Number(row.t) + M.valid && r === "open" && hits === 0) {
           try { await tg(`⌛ <b>Entry window closed</b> (${hm.format(new Date((Number(row.t) + M.valid) * 1000))} ICT)\nIn the trade? Keep the plan. Not in? Don't chase, wait for the next setup.\n${tag}`, row.tg_message_id); } catch (_) { /* keep going */ }
           await db.from("ai_signals").update({ window_sent: true }).eq("id", row.id);
         }
@@ -154,14 +161,20 @@ Deno.serve(async (req) => {
         if (closed && r === "sl") msgs.push("❌ <b>SL hit</b> (−1R)");
         else if (closed && r === "expired") msgs.push(`⏱ <b>Expired</b> — no TP or SL within ${dur(M.maxBars * M.base)}`);
         else if (closed && hits > 0 && hits < (Number(row.tp3) > 0 ? 3 : 2)) msgs.push(`⏹ <b>Closed</b> — price returned to the stop after TP${hits}`);
-        for (const x of msgs) { try { await tg(`${x}\n${tag}`, row.tg_message_id); } catch (_) { /* keep going */ }
+        for (const x of (M.shadow ? [] : msgs)) { try { await tg(`${x}\n${tag}`, row.tg_message_id); } catch (_) { /* keep going */ }
           await push(cfg, { update: true, key: `upd|${sym}|${mk}|${row.t}|${plain(x).slice(0, 24)}`, symbol: sym, mode: mk, title: `${sym} ${row.side} · ${plain(x).split(" — ")[0]}`, body: tag }); }
         if (msgs.length || closed) {
-          await db.from("ai_signals").update({ hits, status: closed ? "closed" : "open", result: closed ? r : null, updated_at: new Date().toISOString() }).eq("id", row.id);
+          // realized R (spread excluded): SL -1 · TP1 then stop at entry +0.5 · TP2 +1.5 (half off at TP1) · expired 0
+          const rR = !closed ? null : r === "sl" ? -1 : r === "expired" || r === "unknown" ? 0 : hits >= 2 ? 1.5 : hits === 1 ? 0.5 : 0;
+          await db.from("ai_signals").update({ hits, status: closed ? "closed" : "open", result: closed ? r : null, r_result: rR, updated_at: new Date().toISOString() }).eq("id", row.id);
           out.updates.push({ t: row.t, result: r });
         }
       }
       if (!due(M)) { report.push(out); continue; }
+      // feed guard: always reported in the run output (feed). Set ai_bot_config feed_guard = on to ALSO stop posting NEW M1 signals when the candles look unreliable
+      const q = M.base <= 60 ? AiEng.feedQuality(m) : null;
+      out.feed = q;
+      if (q && !q.ok && cfg.feed_guard === "on") { out.skipped = "feed quality (candle opens do not match previous closes)"; report.push(out); continue; }
       // 2) new A+ on the last two closed candles; unique (symbol, mode, t) prevents double posts
       for (const i of [n - 1, n]) {
         const ev = AiEng.evalAt(P, i, news);
@@ -169,10 +182,11 @@ Deno.serve(async (req) => {
         const s = ev.signal;
         if (nowS > s.validUntil) continue;
         const { data: ins, error: e2 } = await db.from("ai_signals").upsert(
-          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source },
+          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source, feat: s.feat || null },
           { onConflict: "symbol,mode,t", ignoreDuplicates: true }).select();
         if (e2) throw new Error(e2.message);
         if (!ins || !ins.length) continue;
+        if (M.shadow) { out.shadow = { side: s.side, entry: s.entry, t: s.t }; continue; }   // shadow: logged to ai_signals only, never posted
         const mid = await tg(signalText(sym, s, ev, data.source, M));
         await db.from("ai_signals").update({ tg_message_id: mid }).eq("id", ins[0].id);
         out.posted = { side: s.side, entry: s.entry, t: s.t };
@@ -181,7 +195,7 @@ Deno.serve(async (req) => {
       }
       const last = AiEng.evalAt(P, n, news);
       // 3) "Get ready" when every core rule passes except the trigger (once per symbol + mode per slot)
-      if (!last.signal && last.side && !out.posted) {
+      if (!M.shadow && !last.signal && last.side && !out.posted) {
         const core = last.checks.filter((c) => c.core), miss = core.filter((c) => !c.pass);
         if (miss.length === 1 && miss[0].key === "trigger") {
           const slot = Math.floor(m[n].t / ({ scalp: 7200, intraday: 14400, swing: 43200 })[mk]);

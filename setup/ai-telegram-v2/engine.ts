@@ -10,6 +10,12 @@ const AiEng = (() => {
   const MODES = {
     scalp:    {key:'scalp',    base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true,
                keys:['bias','align','pullback','trigger','session','news','risk','room','sr','tline','retest']},
+    // btcx: SHADOW research mode (BTC only, never posted). Scalping v3 without the momentum trigger and with a 0.3 ATR stop pad.
+    // Backtest BTCUSD 20 days, $5 spread: n=52, +0.26R/trade, positive in both halves (+0.25R / +0.32R). One market, small sample: forward-test before trusting.
+    btcx:     {key:'btcx',     base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true, only:/^BTC/, noMom:true, stopPad:.3, shadow:true,
+               keys:['bias','align','pullback','trigger','session','news','risk','room','sr','tline','retest']},
+    sweep:    {key:'sweep',    base:60,   htf:300,   valid:300,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', sweep:true, only:/^BTC/, minRiskPct:.0005,
+               keys:['sweep','session','news','risk']},
     m5:       {key:'m5',       base:300,  htf:900,   valid:900,   rr:[1, 2, 3],     session:true,  maxBars:48,  eName:'M5',  hName:'M15'},
     intraday: {key:'intraday', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1'},
     swing:    {key:'swing',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true},
@@ -39,12 +45,12 @@ const AiEng = (() => {
   function prep(bars, htf, mode, sym){
     const M = MODES[mode] || MODES.m5;
     htf = htf && htf.length ? htf : agg(bars, M.htf, M.base, 1);
-    const P = {M, m:bars, m5:bars, htf, m15:htf, allWeek:/^(BTC|ETH)/.test(String(sym || ''))};
+    const P = {M, m:bars, m5:bars, htf, m15:htf, allWeek:/^(BTC|ETH)/.test(String(sym || '')), sym:String(sym || '')};
     const c = bars.map(x => x.c), h = bars.map(x => x.h), l = bars.map(x => x.l);
     P.e20 = ema(c, 20); P.e50 = ema(c, 50); P.rsi = rsiF(c); P.atr = atrF(h, l, c);
     const hc = htf.map(x => x.c); P.h50 = ema(hc, 50); P.h200 = ema(hc, 200);
     if(M.daily){ P.d1 = agg(bars, 86400, M.base, 0.75); const dc = P.d1.map(x => x.c); P.dE = ema(dc, P.d1.length >= 60 ? 50 : 20); }
-    if(M.v3) prepV3(P);
+    if(M.v3 || M.sweep) prepV3(P);
     return P; }
 
   /* ---------- Scalping v3 helpers ----------
@@ -67,6 +73,7 @@ const AiEng = (() => {
     const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A1 = P.atr[i];
     const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key, max:M.keys.length};
     let j = -1; for(let k = P.htf.length - 1; k >= 0; k--){ if(P.htf[k].t + M.htf <= closeT){ j = k; break; } }
+    if(M.only && !M.only.test(P.sym)){ out.grade = 'n/a'; return out; }
     if(i < 60 || A1 == null || P.e50[i] == null || j < 55 || P.h50b[j] == null || P.hAtr[j] == null){ out.grade = 'n/a'; return out; }
     const A5 = P.hAtr[j], add = (key, pass, val, core) => out.checks.push({key, pass:!!pass, val, core});
     // 1) M5 trend: close beyond EMA50, EMA20 beyond EMA50, EMA20 rising / falling
@@ -98,8 +105,8 @@ const AiEng = (() => {
     // 4) Rejection candle off the level
     const p = m[i - 1], rng = Math.max(b.h - b.l, 1e-9), body = Math.abs(b.c - b.o);
     let trig = null;
-    if(L && b.c > b.o){ if(p.c < p.o && b.c >= p.o && b.o <= p.c) trig = 'engulf'; else if(Math.min(b.o, b.c) - b.l >= 1.5 * body && b.c >= b.l + .6 * rng) trig = 'pin'; else if(body >= .55 * rng && b.c > p.h) trig = 'momentum'; }
-    if(!L && b.c < b.o){ if(p.c > p.o && b.c <= p.o && b.o >= p.c) trig = 'engulf'; else if(b.h - Math.max(b.o, b.c) >= 1.5 * body && b.c <= b.h - .6 * rng) trig = 'pin'; else if(body >= .55 * rng && b.c < p.l) trig = 'momentum'; }
+    if(L && b.c > b.o){ if(p.c < p.o && b.c >= p.o && b.o <= p.c) trig = 'engulf'; else if(Math.min(b.o, b.c) - b.l >= 1.5 * body && b.c >= b.l + .6 * rng) trig = 'pin'; else if(!M.noMom && body >= .55 * rng && b.c > p.h) trig = 'momentum'; }
+    if(!L && b.c < b.o){ if(p.c > p.o && b.c <= p.o && b.o >= p.c) trig = 'engulf'; else if(b.h - Math.max(b.o, b.c) >= 1.5 * body && b.c <= b.h - .6 * rng) trig = 'pin'; else if(!M.noMom && body >= .55 * rng && b.c < p.l) trig = 'momentum'; }
     add('trigger', !!trig, trig, true);
     // 5) Session: all sessions, weekdays (market open)
     const wd = new Date(closeT * 1000).getUTCDay(); add('session', P.allWeek || (wd >= 1 && wd <= 5), P.allWeek ? '24/7' : 'any', true);
@@ -107,7 +114,7 @@ const AiEng = (() => {
     const nz = news ? news(closeT) : true; add('news', nz === true, nz === null ? 'unknown' : null, true);
     // 7) Stop beyond the zone / swing: SL past the pullback extreme or the level, whichever is further; 0.3–1.5 × M5 ATR
     const base = level != null ? (L ? Math.min(ext, level - tol) : Math.max(ext, level + tol)) : ext;
-    const entry = b.c, sl = L ? base - .1 * A5 : base + .1 * A5, risk = Math.abs(entry - sl);
+    const entry = b.c, sl = L ? base - (M.stopPad || .1) * A5 : base + (M.stopPad || .1) * A5, risk = Math.abs(entry - sl);
     add('risk', risk >= .3 * A5 && risk <= 1.5 * A5, +(risk / A5).toFixed(2), true);
     // 8) Room: no opposing S/R zone before TP2 (2R)
     const opp = Z.filter(z => L ? z.lo > entry : z.hi < entry).sort((x, y) => L ? x.lo - y.lo : y.hi - x.hi)[0];
@@ -123,14 +130,64 @@ const AiEng = (() => {
     if(out.grade === 'A+'){
       const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
       out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:null,
-        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:trig, mode:M.key, rr:M.rr, maxBars:M.maxBars};
+        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:trig, mode:M.key, rr:M.rr, maxBars:M.maxBars,
+        feat:{lvl:zone ? 'SR' : onTl ? 'trendline' : 'retest', conf, zn:zone ? zone.n : 0, hr:new Date(closeT * 1000).getUTCHours(),
+          riskA:+(risk / A5).toFixed(2), roomR:room == null ? null : +room.toFixed(1), slope:+(Math.abs(sl20) / A5).toFixed(2), str:+(Math.abs(hc - h50) / A5).toFixed(2),
+          volR:+(A1 / A5).toFixed(3), body:+(body / rng).toFixed(2), dEma:+(Math.abs(b.c - e20) / A1).toFixed(2)}};
     }
     return out;
+  }
+
+  /* ---------- Liquidity sweep (experimental, BTC only) ----------
+     Price spikes through a recent M1 swing high/low, then closes back inside with a long wick = failed break (stops got run).
+     Backtest (BTCUSD, 20 days, $5 spread, path-correct exits): n=256, +0.02R/trade = NO PROVEN EDGE. Kept as a research mode, off by default. */
+  function evalSweep(P, i, news){
+    const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A1 = P.atr[i];
+    const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key, max:M.keys.length};
+    if((M.only && !M.only.test(P.sym)) || i < 80 || A1 == null){ out.grade = 'n/a'; return out; }
+    const add = (key, pass, val, core) => out.checks.push({key, pass:!!pass, val, core});
+    const PIV = 3, LOOK = 60, rng = Math.max(b.h - b.l, 1e-9), body = Math.abs(b.c - b.o);
+    let side = null;
+    for(let k = i - LOOK; k <= i - PIV - 1 && !side; k++){
+      let isL = true, isH = true;
+      for(let d = 1; d <= PIV; d++){ if(!(m[k].l < m[k - d].l && m[k].l <= m[k + d].l)) isL = false; if(!(m[k].h > m[k - d].h && m[k].h >= m[k + d].h)) isH = false; }
+      if(isL && b.l < m[k].l && b.c > m[k].l && Math.min(b.o, b.c) - b.l >= .5 * rng && b.c > b.o) side = 'BUY';
+      else if(isH && b.h > m[k].h && b.c < m[k].h && b.h - Math.max(b.o, b.c) >= .5 * rng && b.c < b.o) side = 'SELL';
+    }
+    out.side = side; add('sweep', !!side, side ? 'sweep' : null, true);
+    if(!side){ out.grade = 'No setup'; return out; }
+    const L = side === 'BUY', wd = new Date(closeT * 1000).getUTCDay(); add('session', P.allWeek || (wd >= 1 && wd <= 5), P.allWeek ? '24/7' : 'any', true);
+    const nz = news ? news(closeT) : true; add('news', nz === true, nz === null ? 'unknown' : null, true);
+    const entry = b.c, sl = L ? b.l - .1 * A1 : b.h + .1 * A1, risk = Math.abs(entry - sl);
+    add('risk', risk >= M.minRiskPct * entry && risk <= 3 * A1, +(risk / A1).toFixed(2), true);   // spread must stay a small share of 1R; no giant stops
+    // M5 trend context (informational: with-trend sweeps looked better but the sample was small and unstable)
+    let j = -1; for(let k = P.htf.length - 1; k >= 0; k--){ if(P.htf[k].t + M.htf <= closeT){ j = k; break; } }
+    let align = 0; if(j >= 55 && P.h50b[j] != null){ const hc = P.htf[j].c, h20 = P.h20[j], h50 = P.h50b[j], up = hc > h50 && h20 > h50 && h20 > P.h20[j - 3], dn = hc < h50 && h20 < h50 && h20 < P.h20[j - 3]; align = up ? 1 : dn ? -1 : 0; }
+    out.score = out.checks.filter(x => x.pass).length;
+    out.grade = out.checks.every(x => x.pass) ? 'A+' : 'C';
+    if(out.grade === 'A+'){
+      const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
+      out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:null,
+        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:'sweep', mode:M.key, rr:M.rr, maxBars:M.maxBars,
+        feat:{lvl:'sweep', conf:1, zn:0, hr:new Date(closeT * 1000).getUTCHours(), riskA:+(risk / A1).toFixed(2), roomR:null, slope:0, str:0, volR:1, body:+(body / rng).toFixed(2), dEma:0, align}};
+    }
+    return out;
+  }
+  /* Feed sanity check (M1 data). Exchange/futures M1 candles open at the previous close; some aggregated spot feeds do not, and then
+     wick rules (pin bar, engulfing, sweeps) are unreliable. Measured gap = mean |open - previous close| / mean candle range:
+     BTC 0.00; Twelve Data gold 0.29 to 0.42; Twelve Data EURUSD 0.25 to 0.31. bad = gap > 0.15. Calibrated on 3 samples only: warn first, block only when enabled. */
+  function feedQuality(bars, n = 300){
+    const s = bars.slice(-n); if(s.length < 100) return {ok:true, gap:null, ext:null, n:s.length};
+    let gap = 0, rs = 0, ext = 0;
+    for(let k = 1; k < s.length; k++){ gap += Math.abs(s[k].o - s[k - 1].c); rs += s[k].h - s[k].l; if(s[k].o === s[k].h || s[k].o === s[k].l) ext++; }
+    const g = rs > 0 ? gap / rs : 0, e = ext / (s.length - 1);
+    return {ok:!(g > .15), gap:+g.toFixed(2), ext:+e.toFixed(2), n:s.length};
   }
 
   const SESSION = {from:7, to:17};          // UTC hours = 14:00–24:00 Cambodia (London + New York)
   // Evaluate the CLOSED candle at index i. news(tSec) -> true (clear) | false (blocked) | null (unknown)
   function evalAt(P, i, news){
+    if(P.M && P.M.sweep) return evalSweep(P, i, news);
     if(P.M && P.M.v3) return evalV3(P, i, news);
     const M = P.M || MODES.m5, m = P.m, b = m[i], closeT = b.t + M.base, A = P.atr[i];
     const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key};
@@ -224,14 +281,14 @@ const AiEng = (() => {
   // All A+ setups found in the loaded history (news unknown for the past -> session/price rules only)
   function scan(P, news){
     const out = []; let last = -99;
-    const gap = P.M && P.M.v3 ? 10 : 6;
+    const gap = P.M && (P.M.v3 || P.M.sweep) ? 10 : 6;
     for(let i = 120; i < P.m.length; i++){
       const r = evalAt(P, i, news);
       if(r.signal && i - last > gap){ out.push({i, ...r.signal, out:simulate(P.m, i, r.signal)}); last = i; }
     }
     return out;
   }
-  return {prep, evalAt, simulate, scan, toM15, agg, MODES};
+  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, MODES};
 })();
 
 export default AiEng;
