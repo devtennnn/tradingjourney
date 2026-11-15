@@ -1,0 +1,8 @@
+Supabase → Authentication → Emails → Templates. Paste each subject and the matching .html body.
+
+confirm-signup     Confirm your AROM TRADE account · បញ្ជាក់គណនី AROM TRADE
+invite-user        You're invited to AROM TRADE · អ្នកត្រូវបានអញ្ជើញមកកាន់ AROM TRADE
+magic-link         Your AROM TRADE login link · តំណចូលគណនី AROM TRADE
+change-email       Confirm your new email · បញ្ជាក់អ៊ីមែលថ្មីរបស់អ្នក
+reset-password     Reset your AROM TRADE password · កំណត់ពាក្យសម្ងាត់ឡើងវិញ
+reauthentication   Your AROM TRADE security code · លេខកូដសុវត្ថិភាព
