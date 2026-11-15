@@ -7,7 +7,7 @@
 // Deduplicated in public.news_alerts. Chat id + key come from public.ai_bot_config; token is the TELEGRAM_BOT_TOKEN secret.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const SITE = "https://truetradejourney.vercel.app";
+const SITE = (Deno.env.get("SITE_URL") || "https://truetradejourney.vercel.app").replace(/\/$/, "");   // set the Edge Function secret SITE_URL (e.g. https://aromx.trade) to move the links and data calls to a new domain
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const TZ = "Asia/Phnom_Penh";
 const hm = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
