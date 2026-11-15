@@ -79,3 +79,10 @@ New signals, TP / SL / expiry follow-ups, "Get ready" and "Entry window closed" 
 - Kill switch: set `ai_bot_config` key `cards` = `off` to go back to text only.
 - See the new design without waiting for a signal: call the function with `?key=<cron key>&test=card`. It posts ONE card marked "SAMPLE · NOT A SIGNAL".
 - Keep `setup/ai-telegram-v2/` and `supabase/functions/ai-telegram/` identical (index.ts, engine.ts, card.ts).
+
+## Payment messages: to you and to the buyer
+- `supabase/sql/pay-notify.sql`: trigger + `pay_chat_id` (your private chat). Sends YOU "New payment …" when a payment turns paid (any path).
+- `supabase/sql/telegram-link.sql` + functions `tg-link`, `tg-webhook`, `pay-notify`: the buyer can press **Profile → Telegram → Connect Telegram**,
+  press START in the bot, and then also receives a private bilingual "Payment successful" message. Not connected = no message, nothing else changes.
+- One-time: register the bot webhook by opening `https://<project>.supabase.co/functions/v1/tg-webhook?setup=1&key=<cron_secret>` once.
+  This points the bot's incoming messages at `tg-webhook` (the bot did not need incoming messages before; sending is unaffected).

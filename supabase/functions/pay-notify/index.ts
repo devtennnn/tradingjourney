@@ -1,6 +1,8 @@
 // @ts-nocheck
 // Supabase Edge Function: pay-notify  (deploy with verify_jwt = FALSE; it is called by a database trigger and protected by the cron key)
-// Posts a private Telegram message to YOU when a payment turns "paid" (Anajak webhook, own KHQR check, or admin approval).
+// When a payment turns "paid" (Anajak webhook, own KHQR check, or admin approval) it sends two private Telegram messages:
+//   1) to YOU (ai_bot_config.pay_chat_id): who paid, how much, via what;
+//   2) to the BUYER, if they pressed "Connect Telegram" (table telegram_links): a short bilingual confirmation. Not connected = no message.
 //   POST ?key=<ai_bot_config.cron_secret>   body: { "id": "<payments.id>" }
 // Where it goes: ai_bot_config key  pay_chat_id  (your private chat with the bot, or a private admin group). There is NO fallback to the
 // public signals channel on purpose: payment details must never reach subscribers. Without pay_chat_id nothing is sent.
@@ -21,7 +23,6 @@ Deno.serve(async (req) => {
   const c = Object.fromEntries((cfgRows || []).map((r) => [r.key, r.value]));
   if (!c.cron_secret || url.searchParams.get("key") !== c.cron_secret) return json({ error: "unauthorized" }, 401);
   const chat = (c.pay_chat_id || "").trim(), token = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
-  if (!chat) return json({ ok: true, skipped: "pay_chat_id is not set in ai_bot_config" });
   if (!token) return json({ error: "TELEGRAM_BOT_TOKEN is not set" }, 500);
 
   let id = url.searchParams.get("id") || "";
@@ -44,11 +45,34 @@ Deno.serve(async (req) => {
     until ? `📅 Plan active until <b>${esc(ict.format(new Date(until)))}</b> ICT` : "",
   ].filter(Boolean).join("\n");
 
-  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chat, text, parse_mode: "HTML", disable_web_page_preview: true }),
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!j.ok) { console.error("pay-notify telegram:", j.description || r.status); return json({ error: "telegram: " + (j.description || r.status) }, 502); }
-  return json({ ok: true });
+  const send = async (chat_id, body) => {
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id, parse_mode: "HTML", disable_web_page_preview: true, ...body }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!j.ok) console.error("pay-notify telegram:", j.description || r.status);
+    return !!j.ok;
+  };
+  const out = { admin: "skipped (pay_chat_id not set)", user: "skipped (not connected)" };
+  if (chat) out.admin = (await send(chat, { text })) ? "sent" : "failed";
+
+  // the buyer's own confirmation (only if they connected Telegram)
+  const { data: link } = await db.from("telegram_links").select("chat_id").eq("user_id", p.user_id).maybeSingle();
+  if (link?.chat_id) {
+    const site = (Deno.env.get("SITE_URL") || "https://aromx.trade").replace(/\/$/, "");
+    const when = until ? esc(ict.format(new Date(until))) : "";
+    const kh = plan === "ELITE" ? "Elite" : "Premium";
+    const userText = [
+      `✅ <b>Payment successful · ${plan} · ${money(p.amount)}</b>`,
+      when ? `Your plan is active until <b>${when}</b> (ICT).` : "Your plan is now active.",
+      "",
+      `✅ <b>ការទូទាត់បានជោគជ័យ · ${kh} · ${money(p.amount)}</b>`,
+      when ? `គម្រោងរបស់អ្នកសកម្មរហូតដល់ <b>${when}</b> (ម៉ោងកម្ពុជា)។` : "គម្រោងរបស់អ្នកបានសកម្មហើយ។",
+      "",
+      `<code>${esc(p.bill_number)}</code> · Thank you / អរគុណ 🙏`,
+    ].join("\n");
+    out.user = (await send(link.chat_id, { text: userText, reply_markup: { inline_keyboard: [[{ text: "Open AROM TRADE", url: site }]] } })) ? "sent" : "failed";
+  }
+  return json({ ok: true, ...out });
 });
