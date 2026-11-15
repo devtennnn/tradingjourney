@@ -7,7 +7,7 @@ import AiEng from "./engine.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { signalCard, resultCard, readyCard, itemsFromLines } from "./card.ts";
 
-const SITE = "https://truetradejourney.vercel.app";
+const SITE = (Deno.env.get("SITE_URL") || "https://truetradejourney.vercel.app").replace(/\/$/, "");   // set the Edge Function secret SITE_URL (e.g. https://aromx.trade) to move the links and data calls to a new domain
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const ict = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Phnom_Penh", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Phnom_Penh", hour: "2-digit", minute: "2-digit", hour12: false });
