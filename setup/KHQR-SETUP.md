@@ -27,3 +27,11 @@ Set two more secrets and the site switches from our own KHQR to Anajak's hosted 
 Functions: `khqr` (JWT required) and `khqr-webhook` (JWT verification OFF, the gateway calls it). Both are deployed.
 In Anajak's dashboard leave the webhook URL empty (the checkout URL carries it) or set it to `https://<project>.supabase.co/functions/v1/khqr-webhook`.
 Remove the two secrets to go back to our own KHQR + admin approval. Then: Admin → Activations → Check bank connection, and make a 0.01 test payment.
+
+## Bakong token renewal (guide section 3) and the 100 / day limit
+`khqr` renews the Bakong token itself when `BAKONG_EMAIL` is set (`POST /v1/renew_token`). Bakong allows about 100 renewals a day, so it is rationed:
+the token is stored in `public.bakong_token` (run `supabase/sql/bakong-token.sql` once; it is also at the end of `khqr-all.sql`) and shared by every
+instance; a renewal happens only when there is no usable token, it is within 5 minutes of expiry, or Bakong rejected it; at most one attempt per
+10 minutes and 40 per day. Admins can call `khqr` with `{action:"token"}` (status: expiry, renewals today, last error) or `{action:"renew_token"}`.
+Renewal is a call to the same Bakong API, so from Supabase's servers it is refused too (empty 403, "geo_blocked") until a Cambodian relay is used.
+**Anajak does not use this token**: paste a valid Bakong token into the Anajak dashboard settings yourself (renew it from a Cambodian connection if needed).
