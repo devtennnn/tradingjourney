@@ -40,7 +40,7 @@ select cron.schedule(
   'arom-ai-scan',
   '1-59/5 * * * *',
   $$ select net.http_get(
-       url := 'https://truetradejourney.vercel.app/api/ai-scan?key=YOUR_CRON_SECRET',
+       url := 'https://aromx.trade/api/ai-scan?key=YOUR_CRON_SECRET',
        timeout_milliseconds := 20000
      ); $$
 );

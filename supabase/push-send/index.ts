@@ -7,7 +7,7 @@
 import * as webpush from "jsr:@negrel/webpush@0.5.0";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const SITE = "https://truetradejourney.vercel.app";
+const SITE = "https://aromx.trade";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Phnom_Penh", hour: "2-digit", minute: "2-digit", hour12: false });
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });

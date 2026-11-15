@@ -10,11 +10,11 @@
 //   SUPABASE_URL                https://xxxx.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY   service_role key (server only — never put it in index.html)
 //   AI_SYMBOLS                  optional, default "XAUUSD" (e.g. "XAUUSD,XAGUSD")
-//   SITE_URL                    optional, default https://truetradejourney.vercel.app
+//   SITE_URL                    optional, default https://aromx.trade
 // Extra: ?key=...&test=1 sends a test message so you can check the bot can post in the channel.
 const AiEng = require('./_lib/engine.js');
 
-const SITE = (process.env.SITE_URL || 'https://truetradejourney.vercel.app').replace(/\/$/, '');
+const SITE = (process.env.SITE_URL || 'https://aromx.trade').replace(/\/$/, '');
 const SB = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SBK = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const TG = process.env.TELEGRAM_BOT_TOKEN || '';
