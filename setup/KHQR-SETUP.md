@@ -19,3 +19,11 @@ payment (MD5 of the QR) → the site shows the QR with a countdown and asks `khq
 ## 3) Bakong only answers from Cambodia
 From Supabase's servers the check returns an empty 403 ("geo_blocked"). Until a Cambodian relay is set as `BAKONG_API_URL`, a buyer who paid taps
 "I've paid" and you approve it in Admin → Activations (the badge shows waiting claims). Admin → Activations → Check bank connection tells which case you are in.
+
+## Automatic confirmation with Anajak Pay (no Cambodian server needed)
+Set two more secrets and the site switches from our own KHQR to Anajak's hosted checkout; see `setup/anajakpay/README.md`.
+- `ANAJAK_SECRET` = the profile's Payment Secret, `ANAJAK_PROFILE_ID` = the profile id (the id at the end of the checkout URL).
+- Optional safety net: `ANAJAK_TOKEN` (scope `transactions.read` only).
+Functions: `khqr` (JWT required) and `khqr-webhook` (JWT verification OFF, the gateway calls it). Both are deployed.
+In Anajak's dashboard leave the webhook URL empty (the checkout URL carries it) or set it to `https://<project>.supabase.co/functions/v1/khqr-webhook`.
+Remove the two secrets to go back to our own KHQR + admin approval. Then: Admin → Activations → Check bank connection, and make a 0.01 test payment.
