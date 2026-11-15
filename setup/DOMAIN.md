@@ -1,7 +1,11 @@
 # Moving the site to aromx.trade
 
-Vercel already has `aromx.trade` (main) and `www.aromx.trade` (redirects to the main one) on the project `truetradejourney`. The old address
-`truetradejourney.vercel.app` keeps working, so nothing breaks while DNS is being set up.
+**aromx.trade is the one and only address.** `www.aromx.trade` and the old `truetradejourney.vercel.app` both redirect (308) to it
+(`www` in the Vercel domain settings, the old address by the `redirects` rule in `vercel.json`). Visitors who open the old address land on the new one;
+because the browser stores logins per address, they have to sign in once on aromx.trade.
+
+Where the domain is used: `canonical` + Open Graph tags in the three pages, `robots.txt`, `sitemap.xml`, the default `SITE` in the Telegram / push / news
+functions and `api/ai-scan.js` (the secret `SITE_URL` still overrides it), the setup docs, and the Supabase Auth URLs.
 
 ## 1) Cloudflare DNS (Cloudflare → aromx.trade → DNS → Records)
 Add these records. Set the proxy to **DNS only (grey cloud)**, otherwise Vercel cannot issue the HTTPS certificate.
@@ -25,5 +29,6 @@ Add the secret `SITE_URL` = `https://aromx.trade` **only after** step 1 works (o
 
 ## 4) Later
 - Update bookmarks, the Telegram channel description and any links you shared.
-- When you are happy, the old `truetradejourney.vercel.app` address can stay as a backup or be set to redirect to the new domain in Vercel.
+- Telegram: put https://aromx.trade in the channel / bot description (BotFather → Edit Bot → About / Description) and in your profile links.
+- Google Search Console: add the property `aromx.trade` (Domain) and submit `https://aromx.trade/sitemap.xml`.
 - `api/ai-scan.js` (Vercel) already reads the environment variable `SITE_URL` if you ever use it.

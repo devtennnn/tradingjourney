@@ -42,7 +42,7 @@ Then **Deployments → ⋯ → Redeploy** so the new variables load.
 Open in your browser (use your secret):
 
 ```
-https://truetradejourney.vercel.app/api/ai-scan?key=YOUR_CRON_SECRET&test=1
+https://aromx.trade/api/ai-scan?key=YOUR_CRON_SECRET&test=1
 ```
 
 You should see `{"ok":true,…}` and a "🤖 AROM TRADE AI bot connected" post in the channel.
