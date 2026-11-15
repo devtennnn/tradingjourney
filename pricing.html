@@ -501,6 +501,17 @@ button.auth-avatar:hover{border-color:var(--gold)}
 .adm-acts button.danger:hover{border-color:#6e2737;color:var(--red)}
 .adm-act{font-size:10px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:999px;white-space:nowrap;display:inline-block;border:1px solid var(--line);color:var(--muted);background:#152a21}
 .adm-act.money{color:var(--green);border-color:#1f6f4d;background:#10251c}
+.aq-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.aq-seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.aq-seg button{min-height:40px;padding:0 16px;background:none;border:0;color:var(--muted);font:700 13px/1 sans-serif;font-family:inherit;cursor:pointer}
+.aq-seg button.on{background:var(--lime);color:#0b1a0e}
+.aq-nav{display:flex;gap:6px;align-items:center}.aq-nav .field{height:40px;min-width:150px}
+.aq-chk{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.aq-label{font-size:20px;font-weight:800;margin:4px 0 12px}
+.aq-r.pos{color:var(--green)}.aq-r.neg{color:#ff8fa3}
+.aq-bar2{display:block;height:4px;border-radius:99px;margin-top:5px;background:var(--line);max-width:90px}.aq-bar2.pos{background:var(--green)}.aq-bar2.neg{background:#ff5d73}
+.aq-list summary{cursor:pointer;font-weight:700}
+.adm-row-actions{white-space:nowrap}
 .adm-act.plan{color:var(--gold2);border-color:#3e5c25;background:#1a3016}
 .adm-act.auth{color:#9db4ff;border-color:#2d3b66;background:#141a2b}
 .adm-act.warn{color:#ffb454;border-color:#7a4a2a;background:#2a1d10}
@@ -2997,6 +3008,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
       <button type="button" data-t="keys">Activation keys</button>
       <button type="button" data-t="audit">Audit log</button>
       <button type="button" data-t="pay">Activations</button>
+      <button type="button" data-t="aiq">AI report</button>
       <button type="button" data-t="nt">Notifications</button>
       <button type="button" data-t="mt">Maintenance</button>
     </div>
@@ -3046,6 +3058,17 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
           <span class="hint" id="kCount"></span>
         </div>
         <div id="kList"></div>
+      </div>
+      <div class="adm-pane" id="admAiq">
+        <div class="aq-bar">
+          <div class="aq-seg" id="aqSeg" role="group" aria-label="Report period"><button type="button" data-p="day" class="on">Day</button><button type="button" data-p="week">Week</button><button type="button" data-p="month">Month</button></div>
+          <div class="aq-nav"><button type="button" class="btn secondary small" id="aqPrev" aria-label="Previous period">‹</button><input type="date" class="field" id="aqDate" aria-label="Select date"><button type="button" class="btn secondary small" id="aqNext" aria-label="Next period">›</button><button type="button" class="btn secondary small" id="aqToday">Today</button></div>
+          <label class="aq-chk"><input type="checkbox" id="aqRes"> Include research signals</label>
+          <span class="grow"></span>
+          <button type="button" class="btn small" id="aqImg">Download image</button><button type="button" class="btn secondary small" id="aqCsv">CSV</button>
+        </div>
+        <div class="aq-label" id="aqLabel"></div>
+        <div id="aqBody"></div>
       </div>
       <div class="adm-pane" id="admSig" hidden><form id="sgForm"></form><div id="admSigList"></div></div>
       <div class="adm-pane" id="admMt">
@@ -7415,12 +7438,13 @@ function openAdmin(){
 function admShow(tab, force){
   Adm.tab = tab;
   document.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', nt:'admNt', mt:'admMt'};
+  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', aiq:'admAiq', nt:'admNt', mt:'admMt'};
   Object.entries(map).forEach(([k, id]) => $(id).classList.toggle('on', k === tab));
   if(tab === 'ov') admLoadOverview();
   else if(tab === 'users' && (force || !Adm.users.length)) admLoadUsers(true);
   else if(tab === 'audit' && (force || !Adm.audit.length)) admLoadAudit(true);
   else if(tab === 'pay') admLoadPayments();
+  else if(tab === 'aiq') admLoadAiq();
   else if(tab === 'keys') admLoadKeys();
   else if(tab === 'nt') admLoadNotifs();
   else if(tab === 'mt') mtAdmLoad();
@@ -7593,6 +7617,203 @@ async function admLoadPayments(){
     admStamp();
   }catch(e){ admErr(box, e); }
 }
+
+/* ---- AI signal report: Day / Week / Month by pair, exported as an image or CSV ----
+   Numbers come from the admin-only database function admin_ai_report (supabase/sql/ai-report.sql). Periods follow Phnom Penh time (ICT, UTC+7).
+   The image is drawn in the browser on a canvas (nothing is uploaded). R = realized result before spread: SL -1, TP1 +0.5, TP2/TP3 +1.5, expired 0. */
+const Aq = {per:'day', date:'', research:false, data:null, range:null};
+const AQ_NAME = {BTCUSD:'Bitcoin', XAUUSD:'Gold', XAGUSD:'Silver', EURUSD:'Euro', GBPUSD:'Pound', USDJPY:'Yen', NQ:'Nasdaq 100', OIL:'WTI Oil'};
+const AQ_KIND = {day:'DAILY REPORT', week:'WEEKLY REPORT', month:'MONTHLY REPORT'};
+const aqDay = d => d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+const aqToday = () => new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Phnom_Penh', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+const aqUtc = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(Date.UTC(y, (m || 1) - 1, d || 1)); };   // a calendar date held as UTC midnight (date arithmetic only)
+const aqFmt = (d, o) => new Intl.DateTimeFormat('en-GB', Object.assign({timeZone:'UTC'}, o)).format(d);
+/** {from, to (exclusive), label, short} for the day / ISO week (Mon-Sun) / month that contains dateStr, in ICT */
+function aqRange(per, dateStr){
+  const base = aqUtc(dateStr); let a = new Date(base), b = new Date(base), label, short;
+  if(per === 'week'){ a.setUTCDate(a.getUTCDate() - ((base.getUTCDay() + 6) % 7)); b = new Date(a); b.setUTCDate(b.getUTCDate() + 7);
+    const z = new Date(b); z.setUTCDate(z.getUTCDate() - 1);
+    label = aqFmt(a, {day:'numeric', month:'short'}) + ' – ' + aqFmt(z, {day:'numeric', month:'short', year:'numeric'}); short = 'week-' + aqDay(a); }
+  else if(per === 'month'){ a = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1)); b = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + 1, 1));
+    label = aqFmt(a, {month:'long', year:'numeric'}); short = 'month-' + aqDay(a).slice(0, 7); }
+  else { b.setUTCDate(b.getUTCDate() + 1); label = aqFmt(a, {weekday:'short', day:'numeric', month:'short', year:'numeric'}); short = 'day-' + aqDay(a); }
+  const inst = d => new Date(aqDay(d) + 'T00:00:00+07:00');
+  return {from:inst(a), to:inst(b), label, short, days:Math.round((b - a) / 864e5), startDay:aqDay(a)};
+}
+function aqStep(dir){
+  const d = aqUtc(Aq.date);
+  if(Aq.per === 'month') d.setUTCMonth(d.getUTCMonth() + dir); else d.setUTCDate(d.getUTCDate() + dir * (Aq.per === 'week' ? 7 : 1));
+  Aq.date = aqDay(d); admLoadAiq();
+}
+const aqR = n => { n = Number(n || 0); return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(2) + 'R'; };
+const aqRate = (w, l) => (+w + +l) ? Math.round(+w / (+w + +l) * 100) : null;
+const aqCls = n => n > 0 ? 'pos' : n < 0 ? 'neg' : '';
+const aqRes = s => s.status === 'closed' ? ({sl:'SL', tp1:'TP1', tp2:'TP2', tp3:'TP3', expired:'EXP'})[s.result] || String(s.result || '—').toUpperCase() : (s.hits ? 'OPEN · TP' + s.hits : 'OPEN');
+const aqWhen = t => new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false}).format(new Date(Number(t) * 1000));
+
+async function admLoadAiq(){
+  if(!Aq.date) Aq.date = aqToday();
+  $('aqDate').value = Aq.date;
+  document.querySelectorAll('#aqSeg button').forEach(b => b.classList.toggle('on', b.dataset.p === Aq.per));
+  const r = aqRange(Aq.per, Aq.date); $('aqLabel').textContent = r.label;
+  const box = $('aqBody'); box.innerHTML = '<div class="adm-msg">Loading…</div>';
+  try{
+    const d = await admRpc('admin_ai_report', {p_from:r.from.toISOString(), p_to:r.to.toISOString(), p_research:Aq.research});
+    Aq.data = d; Aq.range = r; aqRender(); admStamp();
+  }catch(e){
+    Aq.data = null; const m = String((e && e.message) || e || '');
+    box.innerHTML = `<div class="adm-msg">${/function|does not exist|schema cache/i.test(m) && !/forbidden/.test(m) ? 'Run <b>supabase/sql/ai-report.sql</b> once in Supabase → SQL Editor, then reload this tab.' : /forbidden/.test(m) ? 'This account is not an admin.' : esc(m)}</div>`;
+  }
+}
+function aqRender(){
+  const d = Aq.data, t = d.total || {}, pairs = d.pairs || [], sigs = d.signals || [], box = $('aqBody');
+  const kpi = (l, v, sub, cls) => `<div class="adm-kpi"><small>${l}</small><b class="${cls || ''}">${v}</b><span>${sub || '&nbsp;'}</span></div>`;
+  const wr = aqRate(t.wins, t.losses);
+  if(!+t.signals){ box.innerHTML = '<div class="adm-msg">No AI signals in this period.</div>'; return; }
+  const maxAbs = Math.max(0.01, ...pairs.map(p => Math.abs(p.net_r)));
+  const rows = pairs.map(p => { const pw = aqRate(p.wins, p.losses);
+    return `<tr><td data-l="Pair"><b>${esc(p.symbol)}</b><span class="adm-sub">${esc(AQ_NAME[p.symbol] || '')}</span></td>
+      <td data-l="Signals">${p.signals}</td><td data-l="Wins">${p.wins}</td><td data-l="Losses">${p.losses}</td><td data-l="Open">${p.open}</td>
+      <td data-l="TP1 / TP2 / TP3">${p.tp1} / ${p.tp2} / ${p.tp3}</td><td data-l="Win rate">${pw == null ? '—' : pw + '%'}</td>
+      <td data-l="Net R"><span class="aq-r ${aqCls(p.net_r)}">${aqR(p.net_r)}</span><i class="aq-bar2 ${aqCls(p.net_r)}" style="width:${(Math.abs(p.net_r) / maxAbs * 100).toFixed(0)}%"></i></td>
+      <td data-l="" class="adm-row-actions"><button type="button" class="btn secondary small" data-aq-img="${esc(p.symbol)}">Image</button></td></tr>`; }).join('');
+  const list = sigs.slice(0, 120).map(s => `<tr><td data-l="Time (ICT)" style="white-space:nowrap">${esc(aqWhen(s.t))}</td><td data-l="Pair"><b>${esc(s.symbol)}</b></td><td data-l="Mode">${esc(s.mode)}</td>
+      <td data-l="Side"><span class="adm-act ${s.side === 'BUY' ? 'money' : 'bad'}">${esc(s.side)}</span></td><td data-l="Entry">${Number(s.entry)}</td>
+      <td data-l="Result"><span class="adm-act ${s.result === 'sl' ? 'bad' : /^tp/.test(s.result || '') ? 'money' : ''}">${esc(aqRes(s))}</span></td>
+      <td data-l="R"><span class="aq-r ${aqCls(s.r)}">${s.r == null ? '—' : aqR(s.r)}</span></td></tr>`).join('');
+  box.innerHTML = `<div class="adm-kpis">
+      ${kpi('Signals', t.signals, `${t.closed} closed · ${t.open} open`)}
+      ${kpi('Win rate', wr == null ? '—' : wr + '%', `${t.wins} wins · ${t.losses} losses`)}
+      ${kpi('Net result', aqR(t.net_r), 'realized R, before spread', 'aq-r ' + aqCls(t.net_r))}
+      ${kpi('Targets hit', `${t.tp1} / ${t.tp2} / ${t.tp3}`, 'TP1 / TP2 / TP3')}</div>
+    <div class="adm-card"><h3>By pair</h3><table class="adm-table"><thead><tr><th>Pair</th><th>Signals</th><th>Wins</th><th>Losses</th><th>Open</th><th>TP1 / TP2 / TP3</th><th>Win rate</th><th>Net R</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+    <details class="adm-card aq-list"><summary>Signals in this period (${sigs.length}${sigs.length >= 500 ? '+' : ''})</summary><table class="adm-table"><thead><tr><th>Time (ICT)</th><th>Pair</th><th>Mode</th><th>Side</th><th>Entry</th><th>Result</th><th>R</th></tr></thead><tbody>${list}</tbody></table></details>
+    <div class="hint" style="margin-top:10px">Results are the engine's own simulation on the candle feed, before spread and slippage. They are for review, not a promise of future results.</div>`;
+}
+
+/* ---------- image (canvas) ---------- */
+const AQC = {bg1:'#0a1a13', bg2:'#06100b', panel:'#10241b', line:'#23443a', text:'#eaf5ee', muted:'#8fa89a', dim:'#5f7a6c', lime:'#b9f25a', buy:'#2ee6a0', sell:'#ff5d73', amber:'#ffcf70', gold:'#f5c96a', gray:'#9aa7a0', ink:'#06100b'};
+const AQF = 'Inter, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif';
+function aqRound(g, x, y, w, h, r){ r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function aqText(g, s, x, y, o = {}){ g.font = (o.w || 600) + ' ' + (o.size || 28) + 'px ' + AQF; g.fillStyle = o.color || AQC.text; g.textAlign = o.align || 'left'; g.textBaseline = 'alphabetic';
+  try{ g.letterSpacing = (o.ls || 0) + 'px'; }catch(e){} g.fillText(String(s), x, y); try{ g.letterSpacing = '0px'; }catch(e){} }
+function aqBox(g, x, y, w, h, o = {}){ aqRound(g, x, y, w, h, o.r ?? 24); if(o.fill) { g.fillStyle = o.fill; g.fill(); } if(o.stroke){ g.lineWidth = o.sw || 2; g.strokeStyle = o.stroke; g.stroke(); } }
+function aqCanvas(h){
+  const c = document.createElement('canvas'); c.width = 1080; c.height = h; const g = c.getContext('2d');
+  const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, AQC.bg1); bg.addColorStop(1, AQC.bg2); g.fillStyle = bg; g.fillRect(0, 0, 1080, h);
+  const gl = g.createRadialGradient(990, 90, 0, 990, 90, 430); gl.addColorStop(0, 'rgba(185,242,90,.20)'); gl.addColorStop(1, 'rgba(185,242,90,0)'); g.fillStyle = gl; g.fillRect(0, 0, 1080, h);
+  g.fillStyle = 'rgba(255,255,255,.06)'; for(let y = 20; y < h; y += 36) for(let x = 20; x < 1080; x += 36){ g.fillRect(x, y, 3, 3); }
+  g.lineWidth = 2; g.strokeStyle = AQC.line; g.strokeRect(1, 1, 1078, h - 2);
+  return {c, g};
+}
+function aqHeader(g, chip){
+  g.save(); g.translate(56, 50); g.scale(0.1115, 0.1115); g.translate(-196, -205);
+  const lg = g.createLinearGradient(196, 797, 788, 205); lg.addColorStop(0, '#8fc23e'); lg.addColorStop(.55, '#b9f25a'); lg.addColorStop(1, '#e3ffa8');
+  g.beginPath(); g.rect(0, 0, 1000, 1000); g.rect(590, 618, 150, 36); g.rect(712, 0, 300, 1000); g.clip('evenodd');   // the same notch as the site logo
+  g.fillStyle = lg; g.fill(new Path2D('M 295 240 H 712 V 618 H 604 V 348 H 295 Z'));
+  g.strokeStyle = lg; g.lineWidth = 108; g.lineJoin = 'round'; g.stroke(new Path2D('M 658 294 L 327 572 A 79 79 0 0 0 378 708 H 750')); g.restore();
+  aqText(g, 'AROM TRADE', 142, 96, {size:38, w:800, color:AQC.lime, ls:4});
+  if(chip){ g.font = '800 24px ' + AQF; const w = Math.max(220, g.measureText(chip).width + 70); aqBox(g, 1024 - w, 58, w, 52, {r:26, fill:'rgba(185,242,90,.10)', stroke:AQC.lime}); aqText(g, chip, 1024 - w / 2, 93, {size:24, w:800, color:AQC.lime, align:'center', ls:2}); }
+}
+function aqTiles(g, y, tiles){
+  const n = tiles.length, gap = 16, w = (968 - gap * (n - 1)) / n;
+  tiles.forEach((t, i) => { const x = 56 + i * (w + gap); aqBox(g, x, y, w, 150, {r:24, fill:AQC.panel, stroke:AQC.line});
+    aqText(g, t.l, x + 24, y + 42, {size:19, w:700, color:AQC.dim, ls:2}); aqText(g, t.v, x + 24, y + 98, {size:t.size || 52, w:800, color:t.color || AQC.text}); aqText(g, t.s || '', x + 24, y + 130, {size:19, w:500, color:AQC.muted}); });
+}
+function aqFooter(g, y){
+  g.strokeStyle = AQC.line; g.lineWidth = 2; g.beginPath(); g.moveTo(56, y); g.lineTo(1024, y); g.stroke();
+  const gen = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false}).format(new Date());
+  aqText(g, 'Generated ' + gen + ' ICT · AROM TRADE AI Signals', 56, y + 44, {size:22, w:600, color:AQC.muted});
+  aqText(g, 'Engine simulation on the candle feed, before spread and slippage.', 56, y + 80, {size:20, w:400, color:AQC.dim});
+  aqText(g, 'Not financial advice. Past results do not guarantee future results.', 56, y + 110, {size:20, w:400, color:AQC.dim});
+  return y + 150;
+}
+/** cut a tall working canvas down to its real height */
+function aqCrop(src, h){
+  const c = document.createElement('canvas'); c.width = 1080; c.height = h; const g = c.getContext('2d'); g.drawImage(src, 0, 0, 1080, h, 0, 0, 1080, h);
+  g.lineWidth = 2; g.strokeStyle = AQC.line; g.strokeRect(1, 1, 1078, h - 2); return c;
+}
+const aqColR = n => n > 0 ? AQC.buy : n < 0 ? AQC.sell : AQC.muted;
+function aqTotalsOf(rows){ const o = {signals:0, closed:0, open:0, wins:0, losses:0, tp1:0, tp2:0, tp3:0, net_r:0}; rows.forEach(r => Object.keys(o).forEach(k => { o[k] += Number(r[k] || 0); })); return o; }
+function aqDaily(g, y, days, r){
+  aqText(g, 'DAILY NET R', 56, y, {size:20, w:700, color:AQC.dim, ls:4});
+  const byDay = Object.fromEntries((days || []).map(d => [String(d.day).slice(0, 10), d])), n = r.days, h = 150, base = y + 30 + h / 2, bw = Math.min(40, 920 / n - 6);
+  const maxA = Math.max(1, ...(days || []).map(d => Math.abs(d.net_r)));
+  aqBox(g, 56, y + 20, 968, h + 16, {r:20, fill:AQC.panel, stroke:AQC.line});
+  g.strokeStyle = AQC.line; g.beginPath(); g.moveTo(76, base + 8); g.lineTo(1004, base + 8); g.stroke();
+  for(let i = 0; i < n; i++){ const d = new Date(aqUtc(r.startDay)); d.setUTCDate(d.getUTCDate() + i); const rec = byDay[aqDay(d)], v = rec ? rec.net_r : 0, x = 76 + (928 / n) * (i + .5) - bw / 2, bh = Math.max(rec ? 5 : 2, Math.abs(v) / maxA * (h / 2 - 14));
+    g.fillStyle = rec ? aqColR(v) : AQC.line; aqRound(g, x, v >= 0 ? base + 8 - bh : base + 8, bw, bh, 4); g.fill();
+    if(n <= 16 || i % 5 === 0) aqText(g, aqFmt(d, {day:'numeric'}), x + bw / 2, y + 30 + h + 4, {size:15, w:600, color:AQC.dim, align:'center'}); }
+  return y + 20 + h + 16;
+}
+/** summary image (all pairs), or one pair's image when `pair` is given. Returns a canvas. */
+async function aqDraw(pair){
+  try{ await document.fonts.load('800 40px Inter'); await document.fonts.load('600 20px Inter'); }catch(e){}
+  const d = Aq.data, r = Aq.range, kind = AQ_KIND[Aq.per];
+  const pairs = (d.pairs || []).filter(p => !pair || p.symbol === pair), t = pair ? aqTotalsOf(pairs) : d.total;
+  const sigs = (d.signals || []).filter(s => !pair || s.symbol === pair), wr = aqRate(t.wins, t.losses);
+  const tiles = [{l:'SIGNALS', v:t.signals, s:`${t.closed} closed · ${t.open} open`}, {l:'WIN RATE', v:wr == null ? '—' : wr + '%', s:`${t.wins}W · ${t.losses}L`, color:wr == null ? AQC.muted : wr >= 50 ? AQC.buy : AQC.sell},
+    {l:'NET RESULT', v:aqR(t.net_r), s:'realized R', color:aqColR(t.net_r), size:46}, {l:'TARGETS HIT', v:`${t.tp1}/${t.tp2}/${t.tp3}`, s:'TP1 / TP2 / TP3', size:44}];
+  if(pair){
+    const rowsN = Math.min(sigs.length, 12), H = 200 + 190 + 190 + (rowsN ? 60 + rowsN * 64 + 60 : 0) + 300 + 200;
+    const {c, g} = aqCanvas(H); aqHeader(g, kind); let y = 200;
+    aqText(g, pair, 56, y + 90, {size:112, w:800}); aqText(g, `${AQ_NAME[pair] || ''} · ${r.label}`, 56, y + 140, {size:30, w:600, color:AQC.muted}); y += 190;
+    aqTiles(g, y, tiles); y += 190;
+    if(rowsN){ aqText(g, 'SIGNALS', 56, y + 10, {size:20, w:700, color:AQC.dim, ls:4}); y += 30;
+      aqBox(g, 56, y, 968, 64 * rowsN + 20, {r:24, fill:AQC.panel, stroke:AQC.line});
+      sigs.slice(0, rowsN).forEach((s, i) => { const ry = y + 10 + i * 64, my = ry + 40; if(i){ g.strokeStyle = AQC.line; g.beginPath(); g.moveTo(80, ry); g.lineTo(1000, ry); g.stroke(); }
+        aqText(g, aqWhen(s.t), 80, my, {size:22, w:500, color:AQC.muted}); aqBox(g, 290, ry + 12, 86, 40, {r:20, fill:s.side === 'BUY' ? AQC.buy : AQC.sell}); aqText(g, s.side, 333, my - 2, {size:20, w:800, color:AQC.ink, align:'center'});
+        aqText(g, String(s.mode).toUpperCase(), 400, my, {size:20, w:700, color:AQC.lime, ls:1}); aqText(g, Number(s.entry), 560, my, {size:24, w:700});
+        const lab = aqRes(s); aqText(g, lab, 860, my, {size:22, w:800, color:s.result === 'sl' ? AQC.sell : /^tp/.test(s.result || '') ? AQC.buy : AQC.muted, align:'right'});
+        aqText(g, s.r == null ? '—' : aqR(s.r), 990, my, {size:24, w:800, color:aqColR(s.r), align:'right'}); });
+      y += 64 * rowsN + 50; if(sigs.length > rowsN){ aqText(g, `+ ${sigs.length - rowsN} more in the report`, 56, y - 14, {size:20, w:500, color:AQC.dim}); } }
+    if(d.daily && Aq.per !== 'day') y = aqDaily(g, y + 10, d.daily, r) + 24;
+    return aqCrop(c, aqFooter(g, y + 20));
+  }
+  const maxAbs = Math.max(0.01, ...pairs.map(p => Math.abs(p.net_r)));
+  const H = 200 + 175 + 190 + 60 + pairs.length * 104 + 50 + 300 + 200;
+  const {c, g} = aqCanvas(H); aqHeader(g, kind); let y = 200;
+  aqText(g, kind.replace(' REPORT', '') + ' · ALL PAIRS', 56, y + 20, {size:22, w:700, color:AQC.dim, ls:4});
+  aqText(g, r.label, 56, y + 96, {size:r.label.length > 18 ? 58 : 72, w:800}); aqText(g, 'AI signal performance · times in Phnom Penh (ICT)', 56, y + 140, {size:26, w:600, color:AQC.muted}); y += 175;
+  aqTiles(g, y, tiles); y += 190;
+  aqText(g, 'BY PAIR', 56, y + 10, {size:20, w:700, color:AQC.dim, ls:4}); y += 30;
+  aqBox(g, 56, y, 968, pairs.length * 104 + 20, {r:26, fill:AQC.panel, stroke:AQC.line});
+  pairs.forEach((p, i) => { const ry = y + 10 + i * 104; if(i){ g.strokeStyle = AQC.line; g.beginPath(); g.moveTo(80, ry); g.lineTo(1000, ry); g.stroke(); }
+    aqText(g, p.symbol, 80, ry + 48, {size:38, w:800}); aqText(g, `${AQ_NAME[p.symbol] || ''} · ${p.signals} signal${p.signals === 1 ? '' : 's'}`, 80, ry + 82, {size:21, w:500, color:AQC.muted});
+    const bx = 400, bw = 270, tot = Math.max(1, p.signals); aqBox(g, bx, ry + 30, bw, 20, {r:10, fill:'#1b2b22'});
+    let cx = bx; [[p.wins, AQC.buy], [p.losses, AQC.sell], [p.closed - p.wins - p.losses + p.open, '#4b6a5c']].forEach(([n, col]) => { if(n > 0){ const w = n / tot * bw; g.save(); aqRound(g, bx, ry + 30, bw, 20, 10); g.clip(); g.fillStyle = col; g.fillRect(cx, ry + 30, w, 20); g.restore(); cx += w; } });
+    aqText(g, `${p.wins}W · ${p.losses}L · ${p.open} open`, bx, ry + 82, {size:20, w:500, color:AQC.muted});
+    const pw = aqRate(p.wins, p.losses); aqText(g, pw == null ? '—' : pw + '%', 790, ry + 48, {size:32, w:800, align:'right', color:pw == null ? AQC.muted : pw >= 50 ? AQC.buy : AQC.sell}); aqText(g, 'win rate', 790, ry + 82, {size:19, w:500, color:AQC.dim, align:'right'});
+    aqText(g, aqR(p.net_r), 1000, ry + 48, {size:32, w:800, align:'right', color:aqColR(p.net_r)}); aqText(g, 'net', 1000, ry + 82, {size:19, w:500, color:AQC.dim, align:'right'}); });
+  y += pairs.length * 104 + 50;
+  if(d.daily && Aq.per !== 'day') y = aqDaily(g, y, d.daily, r) + 30;
+  return aqCrop(c, aqFooter(g, y + 14));
+}
+async function aqExport(pair){
+  if(!Aq.data || !+(Aq.data.total || {}).signals){ toast('No AI signals in this period', true); return; }
+  try{
+    const c = await aqDraw(pair || null);
+    const blob = await new Promise(res => c.toBlob(res, 'image/png')); if(!blob) throw new Error('image failed');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'AROM-AI-report-' + Aq.range.short + (pair ? '-' + pair : '') + '.png';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Image saved ✓');
+  }catch(e){ console.error('AI report image error:', e); toast('Could not make the image', true); }
+}
+function aqCsv(){
+  if(!Aq.data || !(Aq.data.signals || []).length){ toast('No AI signals in this period', true); return; }
+  const q = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const head = ['time_ict', 'pair', 'mode', 'side', 'entry', 'sl', 'tp1', 'tp2', 'tp3', 'status', 'result', 'targets_hit', 'r'];
+  const ict = t => new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Phnom_Penh', dateStyle:'short', timeStyle:'medium'}).format(new Date(Number(t) * 1000));
+  const lines = [head.join(',')].concat(Aq.data.signals.map(s => [ict(s.t), s.symbol, s.mode, s.side, s.entry, s.sl, s.tp1, s.tp2, s.tp3, s.status, s.result, s.hits, s.r].map(q).join(',')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], {type:'text/csv;charset=utf-8'})); a.download = 'AROM-AI-signals-' + Aq.range.short + '.csv';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$('aqSeg').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; Aq.per = b.dataset.p; admLoadAiq(); });
+$('aqPrev').onclick = () => aqStep(-1); $('aqNext').onclick = () => aqStep(1);
+$('aqToday').onclick = () => { Aq.date = aqToday(); admLoadAiq(); };
+$('aqDate').addEventListener('change', () => { if($('aqDate').value){ Aq.date = $('aqDate').value; admLoadAiq(); } });
+$('aqRes').addEventListener('change', () => { Aq.research = $('aqRes').checked; admLoadAiq(); });
+$('aqImg').onclick = () => aqExport(null); $('aqCsv').onclick = aqCsv;
+$('aqBody').addEventListener('click', e => { const b = e.target.closest('[data-aq-img]'); if(b) aqExport(b.dataset.aqImg); });
 
 /* ---- Activation keys ---- */
 const Keys = {rows:[], last:[], timer:null};
