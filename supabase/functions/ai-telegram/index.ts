@@ -5,6 +5,7 @@
 // Secrets: TELEGRAM_BOT_TOKEN (Edge Function secret). Chat id + cron key live in public.ai_bot_config (service-role only).
 import AiEng from "./engine.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { signalCard, resultCard, readyCard, itemsFromLines } from "./card.ts";
 
 const SITE = "https://truetradejourney.vercel.app";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
@@ -25,17 +26,54 @@ async function config() {
   if (error) throw new Error("config: " + error.message);
   return Object.fromEntries((data || []).map((r) => [r.key, r.value]));
 }
-function tgSender(token, chat) {
-  return async (text, replyTo) => {
-    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+// ---- image cards: SVG (card.ts) -> PNG (resvg wasm + Inter fonts, fetched once per warm instance) -> Telegram sendPhoto ----
+const RESVG = "2.6.2", INTER = "0.2.3";
+const CDNS = [(p) => `https://cdn.jsdelivr.net/npm/${p}`, (p) => `https://unpkg.com/${p}`];
+async function asset(path) {
+  for (const mk of CDNS) { try { const r = await fetch(mk(path)); if (r.ok) return new Uint8Array(await r.arrayBuffer()); } catch (_) { /* try the next CDN */ } }
+  throw new Error("asset unavailable: " + path);
+}
+let rendererP = null;
+function loadRenderer() {
+  return rendererP ??= (async () => {
+    const { initWasm, Resvg } = await import("npm:@resvg/resvg-wasm@2.6.2");
+    const [wasm, ...fonts] = await Promise.all([asset(`@resvg/resvg-wasm@${RESVG}/index_bg.wasm`),
+      ...["400Regular", "500Medium", "600SemiBold", "700Bold", "800ExtraBold"].map((w) => asset(`@expo-google-fonts/inter@${INTER}/Inter_${w}.ttf`))]);
+    await initWasm(wasm);
+    return (svg) => new Resvg(svg, { font: { fontBuffers: fonts, defaultFontFamily: "Inter", loadSystemFonts: false }, fitTo: { mode: "width", value: 1080 } }).render().asPng();
+  })().catch((e) => { rendererP = null; throw e; });
+}
+/** tg(text, replyTo, card?)  card = { svg, caption? }. With a card it posts a picture; if anything about the picture fails it posts the plain text instead, so an alert is never lost. */
+function tgSender(token, chat, cardsOn = true) {
+  const api = (m) => `https://api.telegram.org/bot${token}/${m}`;
+  const reply = (replyTo) => (replyTo ? { message_id: Number(replyTo), allow_sending_without_reply: true } : null);
+  const sendText = async (text, replyTo) => {
+    const r = await fetch(api("sendMessage"), {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chat, text, parse_mode: "HTML", disable_web_page_preview: true,
-        ...(replyTo ? { reply_parameters: { message_id: Number(replyTo), allow_sending_without_reply: true } } : {}) }),
+      body: JSON.stringify({ chat_id: chat, text, parse_mode: "HTML", disable_web_page_preview: true, ...(replyTo ? { reply_parameters: reply(replyTo) } : {}) }),
     });
     const j = await r.json();
     if (!j.ok) throw new Error("telegram: " + (j.description || r.status));
     return j.result.message_id;
   };
+  const send = async (text, replyTo, card) => {
+    if (card && cardsOn) {
+      try {
+        const png = (await loadRenderer())(card.svg);
+        let cap = card.caption ?? text, pm = "HTML";
+        if (cap.length > 1000) { cap = plain(cap).slice(0, 990) + "…"; pm = ""; }
+        const f = new FormData();
+        f.set("chat_id", String(chat)); f.set("photo", new Blob([png], { type: "image/png" }), "alert.png"); f.set("caption", cap);
+        if (pm) f.set("parse_mode", pm);
+        if (replyTo) f.set("reply_parameters", JSON.stringify(reply(replyTo)));
+        const r = await fetch(api("sendPhoto"), { method: "POST", body: f }), j = await r.json();
+        if (!j.ok) throw new Error("telegram photo: " + (j.description || r.status));
+        send.last = "photo"; return j.result.message_id;
+      } catch (e) { console.error("card failed, sending text instead:", String((e && e.message) || e)); send.fail = String((e && e.message) || e); }
+    }
+    send.last = "text"; return sendText(text, replyTo);
+  };
+  return send;
 }
 async function candles(sym, M) {
   const r = await fetch(`${SITE}/api/candles?symbol=${sym}&tf=${M.base / 60}`, { headers: { "User-Agent": "arom-ai-telegram" } });
@@ -53,7 +91,8 @@ async function newsFn() {
 }
 // Entry Timer checklist lines (same rules as Trade Finder → Time the trade on the website)
 const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING", sweep: "SWEEP (experimental)", btcx: "BTC SHADOW" };
-const dur = (sec) => sec >= 86400 ? Math.round(sec / 86400) + " days" : sec >= 3600 ? Math.round(sec / 3600) + " hours" : Math.round(sec / 60) + " min";
+const pl = (n, u) => n + " " + u + (n === 1 ? "" : "s");
+const dur = (sec) => sec >= 86400 ? pl(Math.round(sec / 86400), "day") : sec >= 3600 ? pl(Math.round(sec / 3600), "hour") : Math.round(sec / 60) + " min";
 function timerLines(ev, buy, s, M) {
   const c = Object.fromEntries(ev.checks.map((x) => [x.key, x]));
   const ok = (k) => (c[k] && c[k].pass ? "✅" : "▫️");
@@ -105,6 +144,41 @@ function readyText(sym, ev, last, M) {
     `<i>Not an entry yet, don't front-run the trigger.</i>`,
   ].join("\n");
 }
+// ---- card data (same facts as the text messages) ----
+const SITE_SHORT = SITE.replace(/^https?:\/\//, "") + "/analysis";
+const sideDot = (side) => (side === "BUY" ? "🟢" : "🔴");
+function signalCardOf(sym, s, ev, src, M, test = false) {
+  const buy = s.side === "BUY", n = ev.checks.filter((c) => c.pass).length;
+  const caption = [`${sideDot(s.side)} <b>${s.side} · ${sym}</b> — A+ ${MLABEL[M.key]}${test ? "  <i>(sample card, not a signal)</i>" : ""}`,
+    `Entry <code>${fx(s.entry, sym)}</code> · SL <code>${fx(s.sl, sym)}</code>`,
+    `TP1 <code>${fx(s.tp1, sym)}</code> · TP2 <code>${fx(s.tp2, sym)}</code>${s.tp3 ? ` · TP3 <code>${fx(s.tp3, sym)}</code>` : ""}`,
+    `⌛ Entry window until <b>${hm.format(new Date(s.validUntil * 1000))}</b> ICT`,
+    `<a href="${SITE}/analysis#wfPanel">AROM TRADE · Trade Finder</a>`].join("\n");
+  return { caption, svg: signalCard({ test, side: s.side, sym, name: NAME[sym] || sym, mode: MLABEL[M.key], hTf: M.hName + (M.daily ? "+D1" : ""), eTf: M.eName, n, total: ev.checks.length,
+    entry: fx(s.entry, sym), sl: fx(s.sl, sym), risk: fx(s.risk, sym), tp1: fx(s.tp1, sym), tp2: fx(s.tp2, sym), tp3: s.tp3 ? fx(s.tp3, sym) : null, rr: M.rr,
+    until: hm.format(new Date(s.validUntil * 1000)), items: itemsFromLines(timerLines(ev, buy, s, M)), at: ict.format(new Date(s.t * 1000)),
+    timeStop: dur(M.maxBars * M.base), site: SITE_SHORT, disclaimer: `Data: ${src}. Algorithmic analysis, not financial advice. Risk only what you can afford to lose.` }) };
+}
+function readyCardOf(sym, ev, last, M) {
+  const buy = ev.side === "BUY";
+  return { caption: `⏳ <b>GET READY · ${sym} ${ev.side}</b> (${esc(NAME[sym] || sym)} · ${MLABEL[M.key]} ${M.eName})\nNot an entry yet, don't front-run the trigger.`,
+    svg: readyCard({ side: ev.side, sym, name: NAME[sym] || sym, mode: MLABEL[M.key], eTf: M.eName, items: itemsFromLines(timerLines(ev, buy, null, M)), price: fx(last.c, sym),
+      hint: `Wait for a ${buy ? "bullish" : "bearish"} engulfing, pin bar or momentum close on ${M.eName}, then the A+ signal posts here.`, at: ict.format(new Date()), site: SITE_SHORT }) };
+}
+/** follow-up card, chosen from the follow-up text (TP hit / SL / expired / closed) */
+function updCardOf(x, sym, row, mk, M, hits) {
+  const t = plain(x), rr = M.rr, d = { side: row.side, sym, name: NAME[sym] || sym, mode: MLABEL[mk], modeFull: "A+ " + MLABEL[mk], entry: fx(row.entry, sym), rr, hits, at: ict.format(new Date()), site: SITE_SHORT };
+  const tp = /TP(\d) hit \(\+([\d.]+)R\)/.exec(t);
+  if (tp) { const k = +tp[1], fin = /target complete/.test(t); Object.assign(d, { kind: fin ? "win" : "tp", title: `TP${k} HIT`, rText: `+${tp[2]}R`, hits: k, sub: k === 1 ? "Move your stop loss to entry" : fin ? "Target complete" : "Runner stays open" }); }
+  else if (/^❌/.test(t)) Object.assign(d, { kind: "sl", title: "STOP LOSS", rText: "−1R", hits: 0, sub: "Trade closed at the stop" });
+  else if (/^⏱/.test(t)) Object.assign(d, { kind: "expired", title: "EXPIRED", sub: t.replace(/^⏱\s*Expired\s*—\s*/, "").replace(/^./, (c) => c.toUpperCase()) });
+  else Object.assign(d, { kind: "closed", title: "CLOSED", sub: `Price returned to the stop after TP${hits}` });
+  return { svg: resultCard(d) };
+}
+function windowCardOf(sym, row, mk, M, until) {
+  return { svg: resultCard({ side: row.side, sym, name: NAME[sym] || sym, mode: MLABEL[mk], modeFull: "A+ " + MLABEL[mk], entry: fx(row.entry, sym), kind: "window", title: "WINDOW CLOSED",
+    sub: `Entry window ended ${until} ICT`, note: "In the trade? Keep the plan. Not in? Don't chase, wait for the next setup.", at: ict.format(new Date()), site: SITE_SHORT }) };
+}
 const UPD = (k, rr) => ({ 1: `✅ <b>TP1 hit</b> (+${rr[0]}R) — move SL to entry`, 2: rr.length < 3 ? `🏆 <b>TP2 hit</b> (+${rr[1]}R) — target complete` : `✅✅ <b>TP2 hit</b> (+${rr[1]}R)`, 3: `🏆 <b>TP3 hit</b> (+${rr[2]}R) — target complete` })[k];
 const UPDATE = { 1: "✅ <b>TP1 hit</b> (+1R) — move SL to entry", 2: "✅✅ <b>TP2 hit</b> (+2R)", 3: "🏆 <b>TP3 hit</b> (+3R) — target complete" };
 
@@ -115,8 +189,17 @@ Deno.serve(async (req) => {
   if (!cfg.cron_secret || url.searchParams.get("key") !== cfg.cron_secret) return json({ error: "unauthorized" }, 401);
   const token = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
   if (!token || !cfg.chat_id) return json({ error: "missing TELEGRAM_BOT_TOKEN secret or chat_id config" }, 500);
-  const tg = tgSender(token, cfg.chat_id);
+  const tg = tgSender(token, cfg.chat_id, cfg.cards !== "off");   // ai_bot_config cards = off → plain text only
 
+  if (url.searchParams.get("test") === "card") {   // posts ONE clearly-labelled sample card so you can see the new design in the channel
+    try {
+      const sym = "BTCUSD", M = AiEng.MODES.scalp, t = Math.floor(Date.now() / 1000);
+      const ev = { checks: [{ key: "bias", pass: true }, { key: "align", pass: true }, { key: "pullback", pass: true, val: "SR" }, { key: "trigger", pass: true, val: "engulf" }, { key: "session", pass: true }, { key: "news", pass: true }, { key: "risk", pass: true, val: 0.91 }, { key: "room", pass: true }, { key: "sr", pass: true }, { key: "retest", pass: true }] };
+      const s = { side: "SELL", entry: 66461.46, sl: 66602.52, risk: 141.06, tp1: 66320.40, tp2: 66179.35, tp3: 0, t, validUntil: t + 600, trigger: "engulf" };
+      const id = await tg("Sample card", null, signalCardOf(sym, s, ev, "sample data", M, true));
+      return json({ ok: true, message_id: id, via: tg.last, error: tg.fail || null });
+    } catch (e) { return json({ error: String(e.message || e) }, 500); }
+  }
   if (url.searchParams.get("test")) {
     try {
       const id = await tg(`🤖 <b>AROM TRADE AI bot connected</b>\nA+ "Time the trade" signals for Gold, Bitcoin and Nasdaq 100 are posted here automatically in 3 strategies: SCALPING (M5→M1), INTRADAY (H1→M15) and SWING (H4+Daily→H1).\n<a href="${SITE}/analysis">Open AI Desk</a>\n<i>Algorithmic analysis, not financial advice.</i>`);
@@ -157,14 +240,14 @@ Deno.serve(async (req) => {
         const closed = !(r === "open" || r.endsWith("+"));
         const msgs = [], tag = `${sym} ${row.side} @ ${fx(row.entry, sym)} · ${MLABEL[mk]}`;
         if (!M.shadow && !row.window_sent && nowS > Number(row.t) + M.valid && r === "open" && hits === 0) {
-          try { await tg(`⌛ <b>Entry window closed</b> (${hm.format(new Date((Number(row.t) + M.valid) * 1000))} ICT)\nIn the trade? Keep the plan. Not in? Don't chase, wait for the next setup.\n${tag}`, row.tg_message_id); } catch (_) { /* keep going */ }
+          try { await tg(`⌛ <b>Entry window closed</b> (${hm.format(new Date((Number(row.t) + M.valid) * 1000))} ICT)\nIn the trade? Keep the plan. Not in? Don't chase, wait for the next setup.\n${tag}`, row.tg_message_id, windowCardOf(sym, row, mk, M, hm.format(new Date((Number(row.t) + M.valid) * 1000)))); } catch (_) { /* keep going */ }
           await db.from("ai_signals").update({ window_sent: true }).eq("id", row.id);
         }
         for (let k = (row.hits || 0) + 1; k <= hits; k++) msgs.push(UPD(k, M.rr));
         if (closed && r === "sl") msgs.push("❌ <b>SL hit</b> (−1R)");
         else if (closed && r === "expired") msgs.push(`⏱ <b>Expired</b> — no TP or SL within ${dur(M.maxBars * M.base)}`);
         else if (closed && hits > 0 && hits < (Number(row.tp3) > 0 ? 3 : 2)) msgs.push(`⏹ <b>Closed</b> — price returned to the stop after TP${hits}`);
-        for (const x of (M.shadow ? [] : msgs)) { try { await tg(`${x}\n${tag}`, row.tg_message_id); } catch (_) { /* keep going */ }
+        for (const x of (M.shadow ? [] : msgs)) { try { await tg(`${x}\n${tag}`, row.tg_message_id, updCardOf(x, sym, row, mk, M, hits)); } catch (_) { /* keep going */ }
           await push(cfg, { update: true, key: `upd|${sym}|${mk}|${row.t}|${plain(x).slice(0, 24)}`, symbol: sym, mode: mk, title: `${sym} ${row.side} · ${plain(x).split(" — ")[0]}`, body: tag }); }
         if (msgs.length || closed) {
           // realized R (spread excluded): SL -1 · TP1 then stop at entry +0.5 · TP2 +1.5 (half off at TP1) · expired 0
@@ -190,9 +273,9 @@ Deno.serve(async (req) => {
         if (e2) throw new Error(e2.message);
         if (!ins || !ins.length) continue;
         if (M.shadow) { out.shadow = { side: s.side, entry: s.entry, t: s.t }; continue; }   // shadow: logged to ai_signals only, never posted
-        const mid = await tg(signalText(sym, s, ev, data.source, M));
+        const mid = await tg(signalText(sym, s, ev, data.source, M), null, signalCardOf(sym, s, ev, data.source, M));
         await db.from("ai_signals").update({ tg_message_id: mid }).eq("id", ins[0].id);
-        out.posted = { side: s.side, entry: s.entry, t: s.t };
+        out.posted = { side: s.side, entry: s.entry, t: s.t, via: tg.last };
         await push(cfg, { key: `sig|${sym}|${mk}|${s.t}`, symbol: sym, mode: mk, title: `🟢 A+ ${s.side} · ${sym} · ${MLABEL[mk]}`.replace("🟢", s.side === "BUY" ? "🟢" : "🔴"),
           body: `Entry ${fx(s.entry, sym)} · SL ${fx(s.sl, sym)} · TP1 ${fx(s.tp1, sym)} · window until ${hm.format(new Date(s.validUntil * 1000))} ICT` });
       }
@@ -203,7 +286,7 @@ Deno.serve(async (req) => {
         if (miss.length === 1 && miss[0].key === "trigger") {
           const slot = Math.floor(m[n].t / ({ scalp: 7200, intraday: 14400, swing: 43200 })[mk]);
           const { data: ins } = await db.from("ai_ready").upsert({ symbol: sym, mode: mk, slot, side: last.side }, { onConflict: "symbol,mode,slot", ignoreDuplicates: true }).select();
-          if (ins && ins.length) { await tg(readyText(sym, last, m[n], M)); out.ready = true; }
+          if (ins && ins.length) { await tg(readyText(sym, last, m[n], M), null, readyCardOf(sym, last, m[n], M)); out.ready = true; }
         }
       }
       out.grade = last.grade; out.bias = last.side;

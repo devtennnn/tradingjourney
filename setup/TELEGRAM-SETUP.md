@@ -71,3 +71,11 @@ Follow-ups are posted as replies: ✅ TP1 hit · ✅✅ TP2 hit · 🏆 TP3 hit 
 - If the price feed fails, nothing is posted (no data = no signal).
 - Stop the bot any time in Supabase SQL: `select cron.unschedule('arom-ai-scan');`
 - Algorithmic analysis, not financial advice — keep the disclaimer in your channel description too.
+
+## Image cards (alerts as pictures)
+New signals, TP / SL / expiry follow-ups, "Get ready" and "Entry window closed" are posted as designed picture cards (1080 px wide) with a short copyable caption (Entry / SL / TPs).
+- The card is drawn as SVG (`card.ts`) and turned into a PNG inside the function (resvg wasm + Inter fonts, downloaded from jsDelivr / unpkg once per warm instance).
+- If anything about the picture fails (CDN down, Telegram rejects the photo), the old plain-text message is posted instead, so an alert is never lost. The cron report shows `via: "photo"` or `"text"`.
+- Kill switch: set `ai_bot_config` key `cards` = `off` to go back to text only.
+- See the new design without waiting for a signal: call the function with `?key=<cron key>&test=card`. It posts ONE card marked "SAMPLE · NOT A SIGNAL".
+- Keep `setup/ai-telegram-v2/` and `supabase/functions/ai-telegram/` identical (index.ts, engine.ts, card.ts).
