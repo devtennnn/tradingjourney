@@ -39,6 +39,8 @@ textarea{width:100%;height:120px;background:#0c1a14;color:var(--text);border:1px
   <button class="pri" id="miRun2">Analyse BTCUSD H1</button>
   <button id="aiModels">List the OpenAI models my key can use</button>
   <button class="pri" id="aiRun">AROM AI: analyst report XAUUSD M15</button>
+  <button class="pri" id="aiBrief">AROM AI: daily market briefing (10 instruments)</button>
+  <button class="pri" id="aiBriefS">AROM AI: session briefing</button>
   <button class="pri" id="aiChat">AROM AI: ask "What is the current gold bias?"</button>
 </div>
 <div id="out"></div>
@@ -147,6 +149,26 @@ $('aiModels').onclick = async () => {
   mdShow('OpenAI models', d.error ? ['ERROR ' + d.error] : ['Current OPENAI_MODEL secret: ' + (d.current || '(not set)'), 'Models your key can use (copy ONE name into the Supabase secret OPENAI_MODEL):'].concat(d.models));
   $('st').textContent = 'Done.'; b.disabled = false;
 };
+
+async function runBrief(kind, id){
+  const b = $(id); b.disabled = true; $('st').textContent = 'Building the ' + kind + ' briefing… the first run can take up to two minutes (it collects data for every instrument).';
+  const d = await aiCall({action:'briefing', kind, lang:'en'}), L = [];
+  if(d.error) L.push('ERROR ' + d.error);
+  else if(d.available === false) L.push('NOT AVAILABLE: ' + d.reason);
+  else { const r = d.briefing;
+    L.push(r.kind + ' briefing · generated ' + r.generated_at + (r.age_seconds != null ? ' (' + r.age_seconds + 's old, from cache)' : '') + ' · session ' + r.session.current + ' · Cambodia ' + r.session.cambodia_time, 'AI status: ' + r.ai.status + ' · model ' + r.ai.model + (r.ai.replaced_fields.length ? ' · replaced by calculated text: ' + r.ai.replaced_fields.join('; ') : ''),
+      'HEADLINE: ' + r.headline, 'OVERVIEW: ' + r.market_overview, 'SESSION: ' + r.session_context, '');
+    for(const i of r.instruments){
+      if(i.available === false){ L.push(i.symbol + ': UNAVAILABLE (' + i.reason + ')'); continue; }
+      L.push(i.symbol + ' [' + i.market_type + '] price ' + i.price + ' · ' + (i.bias || 'bias withheld') + ' · ' + i.alignment + ' · ' + i.freshness + (i.delayed ? ' · DELAYED' : '') + ' · support ' + (i.support ? i.support.low + '-' + i.support.high : 'none') + ' · resistance ' + (i.resistance ? i.resistance.low + '-' + i.resistance.high : 'none') + ' · invalidation ' + (i.invalidation && (i.invalidation.level != null ? i.invalidation.level : i.invalidation.high + '/' + i.invalidation.low)),
+        '   ' + i.summary, '   bullish: ' + i.bullish_scenario, '   bearish: ' + i.bearish_scenario, '   risks: ' + (i.risk_notes || []).join(' | ') + (i.source === 'fallback' ? '   [calculated text]' : ''));
+    }
+    L.push('', 'EVENTS TO WATCH: ' + (r.events_to_watch.map(e => e.event + ' — ' + e.why_it_matters).join(' | ') || 'none'), 'UPCOMING (calendar): ' + (r.upcoming_events == null ? 'calendar unavailable' : (r.upcoming_events.map(e => e.time + ' ' + e.currency + ' ' + e.title + ' (' + e.impact + ')').join(' | ') || 'none in the window')),
+      'CROSS-MARKET: ' + (r.cross_market_notes.join(' | ') || '-'), 'RISKS: ' + r.risks.join(' | '), 'DATA QUALITY: ' + r.data_quality_notes.join(' | '), 'remaining today: ' + d.remaining);
+  }
+  mdShow('AROM AI ' + kind + ' briefing', L); $('st').textContent = 'Done.'; b.disabled = false;
+}
+$('aiBrief').onclick = () => runBrief('daily', 'aiBrief'); $('aiBriefS').onclick = () => runBrief('session', 'aiBriefS');
 let aiConv = null;
 $('aiChat').onclick = async () => {
   const b = $('aiChat'); b.disabled = true; $('st').textContent = 'AROM AI is checking the data… (can take up to a minute)';
