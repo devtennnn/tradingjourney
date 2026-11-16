@@ -37,6 +37,7 @@ textarea{width:100%;height:120px;background:#0c1a14;color:var(--text);border:1px
   <button id="mdHealth">Show quota and health</button>
   <button class="pri" id="miRun">Analyse XAUUSD M15 (indicators, structure, levels)</button>
   <button class="pri" id="miRun2">Analyse BTCUSD H1</button>
+  <button id="aiModels">List the OpenAI models my key can use</button>
   <button class="pri" id="aiRun">AROM AI: analyst report XAUUSD M15</button>
   <button class="pri" id="aiChat">AROM AI: ask "What is the current gold bias?"</button>
 </div>
@@ -129,7 +130,7 @@ for(const [id, sym, tf] of [['miRun','XAUUSD','M15'], ['miRun2','BTCUSD','H1']])
 
 async function aiCall(body){
   const {data, error} = await sb.functions.invoke('arom-ai', {body});
-  if(error){ let code = '', extra = ''; try{ const j = await error.context.json(); code = j && j.error || ''; extra = j && j.limit ? ' (limit ' + j.limit + ')' : ''; }catch(e){} return {error: (code || 'http_error') + extra}; }
+  if(error){ let code = '', extra = ''; try{ const j = await error.context.json(); code = j && j.error || ''; extra = (j && j.limit ? ' (limit ' + j.limit + ')' : '') + (j && j.missing ? ' (missing secret: ' + j.missing + ')' : ''); }catch(e){} return {error: (code || 'http_error') + extra}; }
   return data;
 }
 $('aiRun').onclick = async () => {
@@ -139,6 +140,12 @@ $('aiRun').onclick = async () => {
   else if(d.available === false) L.push('NOT AVAILABLE: ' + d.reason);
   else { const r = d.report; L.push('AI status: ' + r.ai.status + ' · model ' + r.ai.model + ' · from cache ' + r.ai.from_cache + ' · generated ' + r.ai.generated_at, 'engine bias: ' + r.bias + ' · confidence ' + r.confidence + ' · data ' + r.data_timestamp, 'SUMMARY: ' + r.summary, 'STRUCTURE: ' + r.market_structure, 'TREND: ' + r.trend, 'MOMENTUM: ' + r.momentum, 'VOLATILITY: ' + r.volatility, 'BULLISH: ' + r.bullish_scenario, 'BEARISH: ' + r.bearish_scenario, 'INVALIDATION: ' + r.invalidation, 'RISKS: ' + r.risk_notes.join(' | '), 'DATA QUALITY: ' + r.data_quality_notes.join(' | '), 'support: ' + r.support_levels.map(z => z.low + '-' + z.high).join(' | ') + ' · resistance: ' + r.resistance_levels.map(z => z.low + '-' + z.high).join(' | '), 'remaining today: ' + d.remaining); }
   mdShow('AROM AI analyst', L); $('st').textContent = 'Done.'; b.disabled = false;
+};
+$('aiModels').onclick = async () => {
+  const b = $('aiModels'); b.disabled = true; $('st').textContent = 'Asking OpenAI which models your key can use…';
+  const d = await aiCall({action:'models'});
+  mdShow('OpenAI models', d.error ? ['ERROR ' + d.error] : ['Current OPENAI_MODEL secret: ' + (d.current || '(not set)'), 'Models your key can use (copy ONE name into the Supabase secret OPENAI_MODEL):'].concat(d.models));
+  $('st').textContent = 'Done.'; b.disabled = false;
 };
 let aiConv = null;
 $('aiChat').onclick = async () => {

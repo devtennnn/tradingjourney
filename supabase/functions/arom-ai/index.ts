@@ -219,8 +219,18 @@ Deno.serve(async (req) => {
     const b = await req.json().catch(() => ({})), action = String(b.action || ""), ctx = { auth, userId: user.id, userDb };
     if (action === "conversations") { const { data } = await userDb.from("ai_conversations").select("id,title,symbol,updated_at").order("updated_at", { ascending: false }).limit(30); return json({ ok: true, conversations: data || [] }); }
     if (action === "messages") { if (!UUID.test(String(b.conversation_id || ""))) return json({ error: "bad_conversation" }, 400); const { data } = await userDb.from("ai_messages").select("role,content,data_refs,created_at").eq("conversation_id", b.conversation_id).order("id", { ascending: true }).limit(100); return json({ ok: true, messages: data || [] }); }
+    if (action === "models") {   // admin helper: which models can this OpenAI key use? (so the OPENAI_MODEL secret can be chosen from a real list)
+      if (p.is_admin !== true) return json({ error: "admin_only" }, 403);
+      if (!env("OPENAI_API_KEY")) return json({ error: "not_configured", missing: "OPENAI_API_KEY" }, 503);
+      try {
+        const ids = []; for await (const m of getClient().models.list()) ids.push(m.id);
+        const ok = ids.filter((id) => /^(gpt|o\d|chatgpt)/i.test(id) && !/(audio|realtime|tts|transcribe|image|embedding|moderation|search|whisper|dall|instruct|codex)/i.test(id)).sort();
+        return json({ ok: true, models: ok, current: env("OPENAI_MODEL") || null });
+      } catch (e) { const [code, st] = mapError(e); console.error("arom-ai models:", e?.status, String(e?.message ?? e).slice(0, 200)); return json({ error: code }, st); }
+    }
     if (action !== "analyze" && action !== "chat") return json({ error: "unknown_action" }, 400);
-    if (!env("OPENAI_API_KEY") || !env("OPENAI_MODEL")) return json({ error: "not_configured" }, 503);
+    if (!env("OPENAI_API_KEY")) return json({ error: "not_configured", missing: "OPENAI_API_KEY" }, 503);
+    if (!env("OPENAI_MODEL")) return json({ error: "not_configured", missing: "OPENAI_MODEL" }, 503);
     if (limited(user.id)) return json({ error: "slow_down" }, 429);
     return action === "analyze" ? await analyze(b, ctx) : await chat(b, ctx);
   } catch (e) {
