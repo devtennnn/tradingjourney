@@ -1,5 +1,5 @@
 // Supabase Edge Function: "khqr"
-// Creates the payment for the Premium / Elite plans and confirms it. Two ways, chosen by secrets:
+// Creates the payment for the Premium / Elite / Ultra plans and confirms it. Two ways, chosen by secrets:
 //   ANAJAK PAY (hosted checkout, confirmed from inside Cambodia by a signed webhook, so no Bakong geo-block): set ANAJAK_SECRET and ANAJAK_PROFILE_ID.
 //   OWN KHQR + Bakong check (fallback when the Anajak secrets are not set): BAKONG_TOKEN and/or BAKONG_EMAIL (token renewed via /v1/renew_token).
 // The merchant details below are public (they are printed inside every own-KHQR) and are used as defaults when no secret overrides them.

@@ -1,7 +1,19 @@
 # AROM Intelligence (/intelligence)
 
-One page, eight modules, one transparent score. Files: `intelligence.html` (page), `intelligence-engine.js` (the engine, plain JS, also runs in Node for tests),
-`api/candles.js` (now also returns volume `v`), `api/market-news.js` (economic calendar).
+One page, eight modules, one transparent score. **Ultra plan only ($50.99 / 30 days).**
+Files: `intelligence.html` (page), `supabase/functions/intelligence/` (`index.ts` = the gate + data loading, `engine.js` = the analysis engine, plain JS that also runs in Node for tests),
+`api/candles.js` (also returns volume `v`), `api/market-news.js` (economic calendar).
+
+## The gate is server-side
+The engine is NOT shipped to the browser. The page calls the edge function `intelligence` (JWT required). The function checks `profiles.is_admin` or `profiles.ultra_until > now()`
+and answers `403 ultra_required` for everyone else (no analysis in the response, no upstream calls made); signed out = 401; more than 40 requests a minute per user = 429.
+Candles/calendar are fetched by the function from the site's own `/api/candles` and `/api/market-news` (secret `SITE_URL` overrides the default https://aromx.trade).
+Admins count as Ultra.
+
+## Ultra plan
+`supabase/sql/ultra-plan.sql` (run once): `profiles.ultra_until`, `is_ultra()`, Ultra counts as Elite and Premium everywhere (`is_elite`, `is_premium`, `user_tier`, notification audiences),
+Ultra allowed in activation keys / promo codes / payments, `redeem_key`, `admin_create_keys`, `admin_set_plan`, `admin_approve_payment`, admin overview and user list.
+The payment function takes `PLAN_PRICE_ULTRA` (default 50.99). Upgrade link from the locked page: `/pricing?plan=ultra`.
 
 | # | Module | Weight | Data | Notes |
 |---|--------|-------:|------|-------|
@@ -23,5 +35,5 @@ extreme with only a moderate edge, or there is no valid plan (stop too wide, no 
 Not proven: the weights and thresholds (`CFG`, `WEIGHTS` in the engine) are an engineering hypothesis. There is no backtest yet. Next steps worth doing:
 forward-test log (store each decision and its outcome), then tune. It is analysis for education, not financial advice.
 
-Tests: `node` unit tests build candles by hand (BOS/CHoCH, FVG, IFVG, order block, sweeps, equal highs, Fibonacci, VWAP, news gate, decision rules) and run the
+Tests (kept outside the repo during development): unit tests build candles by hand (BOS/CHoCH, FVG, IFVG, order block, sweeps, equal highs, Fibonacci, VWAP, news gate, decision rules) and run the
 engine on the real BTC M1 history in `data/`.
