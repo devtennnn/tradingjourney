@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://aromx.trade/</loc></url>
+  <url><loc>https://aromx.trade/journey</loc></url>
+  <url><loc>https://aromx.trade/news</loc></url>
+  <url><loc>https://aromx.trade/refer</loc></url>
   <url><loc>https://aromx.trade/analysis</loc></url>
   <url><loc>https://aromx.trade/pricing</loc></url>
 </urlset>
