@@ -1,0 +1,192 @@
+// @ts-nocheck
+// Supabase Edge Function: market-data  (JWT required; Ultra members and admins; "health" is admin only)
+// The ONE place AROM AI / Market Intelligence read prices from. Provider: SiftingIO (REST). Quota-aware because the free key is 10,000 calls a month,
+// 5 requests a second: every answer goes through a shared cache table (market_cache), a monthly budget guard and a burst limiter.
+//   POST { action: "quote",   symbol }                       -> { ok, quote, meta }
+//   POST { action: "candles", symbol, timeframe, limit? }    -> { ok, instrument, candles, meta }     timeframe: M1 M5 M15 M30 H1 H4 D1  (H4 is built from H1)
+//   POST { action: "health" }  (admin)                       -> { ok, providers: [...] }
+// Rules: nothing is invented. Missing values stay null. When the quota guard or the provider fails, cached data is returned marked stale, else an error.
+// Index symbols (NAS100, US30, SPX500, GER40) are NOT offered by SiftingIO: they resolve to ETF proxies (QQQ, DIA, SPY, EWG) and the answer says so (asset_class "etf", tracks "NAS100").
+// Secret: SIFTINGIO_API_KEY. Optional: MARKET_QUOTA_RESERVE (default 800 calls kept for admin/diagnostics), MARKET_STALE_THRESHOLD (seconds, default 900).
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+const BASE = "https://api.sifting.io/v1";
+const num = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+
+// ---- symbols: internal name -> provider path. Unverified ones fail gracefully with "symbol_not_found".
+const FX = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD"];
+const SYMBOLS: Record<string, any> = {
+  XAUUSD: { cls: "metal", kind: "commodities", id: "XAUUSD", cur: "USD" }, XAGUSD: { cls: "metal", kind: "commodities", id: "XAGUSD", cur: "USD" },
+  BTCUSD: { cls: "crypto", kind: "crypto", id: "BTCUSD", cur: "USD" }, ETHUSD: { cls: "crypto", kind: "crypto", id: "ETHUSD", cur: "USD" },
+  NAS100: { cls: "etf", kind: "stocks", id: "QQQ", cur: "USD", tracks: "NAS100" }, US30: { cls: "etf", kind: "stocks", id: "DIA", cur: "USD", tracks: "US30" },
+  SPX500: { cls: "etf", kind: "stocks", id: "SPY", cur: "USD", tracks: "SPX500" }, GER40: { cls: "etf", kind: "stocks", id: "EWG", cur: "USD", tracks: "GER40" },
+};
+for (const p of FX) SYMBOLS[p] = { cls: "forex", kind: "forex", id: p, cur: p.slice(3) };
+for (const e of (Deno.env.get("MARKET_EQUITIES") || "AAPL,MSFT,NVDA,TSLA,AMZN,GOOGL,META").split(",").map((x) => x.trim().toUpperCase()).filter(Boolean)) SYMBOLS[e] = { cls: "equity", kind: "stocks", id: e, cur: "USD" };
+
+// ---- timeframes. ttl = how long a cached answer is reused (seconds). H4 is derived from H1.
+const TF: Record<string, any> = {
+  M1: { iv: "1m", sec: 60, ttl: 60 }, M5: { iv: "5m", sec: 300, ttl: 150 }, M15: { iv: "15m", sec: 900, ttl: 420 }, M30: { iv: "30m", sec: 1800, ttl: 900 },
+  H1: { iv: "1h", sec: 3600, ttl: 1800 }, H4: { iv: "1h", sec: 14400, ttl: 1800, derive: true }, D1: { iv: "1d", sec: 86400, ttl: 7200 },
+};
+const STALE_S = () => Math.max(60, parseInt(Deno.env.get("MARKET_STALE_THRESHOLD") || "900", 10) || 900);
+const RESERVE = () => Math.max(0, parseInt(Deno.env.get("MARKET_QUOTA_RESERVE") || "800", 10) || 800);
+
+// ---- pure helpers (also unit-tested) ----
+/** unix seconds / ms / µs / ns or ISO text -> epoch ms (null when unreadable) */
+export function toMs(t) {
+  if (t == null) return null;
+  if (typeof t === "string" && !/^\d+(\.\d+)?$/.test(t.trim())) { const d = Date.parse(t); return Number.isFinite(d) ? d : null; }
+  const n = Number(t); if (!Number.isFinite(n) || n <= 0) return null;
+  return n < 1e11 ? n * 1000 : n < 1e14 ? n : n < 1e17 ? Math.round(n / 1e3) : Math.round(n / 1e6);
+}
+/** validate + normalise raw bars. Drops impossible candles, removes duplicates, sorts oldest first. */
+export function normaliseBars(raw, symbol, timeframe, source, nowMs = Date.now()) {
+  const sec = TF[timeframe].sec, seen = new Map(); let dropped = 0;
+  for (const b of Array.isArray(raw) ? raw : []) {
+    const ts = toMs(b.t ?? b.ts ?? b.timestamp ?? b.time), o = num(b.o ?? b.open), h = num(b.h ?? b.high), l = num(b.l ?? b.low), c = num(b.c ?? b.close), v = num(b.v ?? b.volume);
+    if (ts == null || o == null || h == null || l == null || c == null || h < Math.max(o, c) || l > Math.min(o, c) || h < l || o <= 0 || c <= 0) { dropped++; continue; }
+    if (seen.has(ts)) { dropped++; continue; }
+    seen.set(ts, { symbol, timeframe, open: o, high: h, low: l, close: c, volume: v != null && v > 0 ? v : null, timestamp: new Date(ts).toISOString(), source, complete: ts + sec * 1000 <= nowMs });
+  }
+  return { candles: [...seen.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]), dropped };
+}
+/** H1 -> H4 on UTC 4-hour boundaries; a bucket missing hours is still emitted but flagged incomplete */
+export function toH4(h1, symbol, source, nowMs = Date.now()) {
+  const g = new Map();
+  for (const c of h1) { const t = Date.parse(c.timestamp), k = Math.floor(t / 14400000) * 14400000; (g.get(k) || g.set(k, []).get(k)).push(c); }
+  return [...g.entries()].sort((a, b) => a[0] - b[0]).map(([k, a]) => ({ symbol, timeframe: "H4", open: a[0].open, high: Math.max(...a.map((x) => x.high)), low: Math.min(...a.map((x) => x.low)), close: a[a.length - 1].close,
+    volume: a.every((x) => x.volume != null) ? a.reduce((s, x) => s + x.volume, 0) : null, timestamp: new Date(k).toISOString(), source, complete: a.length === 4 && k + 14400000 <= nowMs }));
+}
+export function normaliseQuote(q, sym, cfg, source, nowMs = Date.now()) {
+  const d = q && (q.data || q), bid = num(d.b ?? d.bid), ask = num(d.a ?? d.ask), last = num(d.p ?? d.price ?? d.last), ts = toMs(d.t ?? d.ts ?? d.timestamp);
+  const price = bid != null && ask != null && ask >= bid ? (bid + ask) / 2 : last;
+  const age = ts != null ? Math.max(0, Math.round((nowMs - ts) / 1000)) : null;
+  return { symbol: cfg.id, requested: sym, tracks: cfg.tracks ?? null, asset_class: cfg.cls, price, bid, ask, change: null, change_percent: null, currency: cfg.cur, source, timestamp: ts != null ? new Date(ts).toISOString() : null,
+    received_at: new Date(nowMs).toISOString(), is_delayed: null, is_stale: age == null ? null : age > STALE_S() };
+}
+
+// ---- provider call: serialised (5 requests a second allowed), records quota headers, retries once on 429 ----
+let gate = Promise.resolve();
+const pace = () => { const p = gate.then(() => new Promise((r) => setTimeout(r, 260))); gate = p; return p; };
+const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+const today = () => new Date().toISOString().slice(0, 10);
+async function health(patch, ok, errMsg) {
+  try {
+    const { data: h } = await db.from("integration_health").select("*").eq("provider", "siftingio").maybeSingle();
+    const cur = h || { provider: "siftingio", calls_today: 0, errors_today: 0, calls_total: 0, errors_total: 0 }, d = today(), same = cur.calls_day === d;
+    const row = { ...cur, ...patch, calls_day: d, calls_today: (same ? cur.calls_today : 0) + 1, errors_today: (same ? cur.errors_today : 0) + (ok ? 0 : 1), calls_total: (cur.calls_total || 0) + 1, errors_total: (cur.errors_total || 0) + (ok ? 0 : 1), status: ok ? "ok" : "error", updated_at: new Date().toISOString() };
+    if (ok) row.last_success_at = new Date().toISOString(); else { row.last_error = String(errMsg || "").slice(0, 200); row.last_error_at = new Date().toISOString(); }
+    await db.from("integration_health").upsert(row, { onConflict: "provider" });
+  } catch (_) { /* health is best effort */ }
+}
+async function sift(path, key, attempt = 0) {
+  await pace();
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 15000);
+  try {
+    const r = await fetch(BASE + path, { headers: { "X-API-Key": key, Accept: "application/json", "User-Agent": "arom-market/1.0" }, signal: ctl.signal });
+    const j = await r.json().catch(() => null), h = (n) => num(r.headers.get(n));
+    const quota = { quota_limit: h("x-quota-limit"), quota_remaining: h("x-quota-remaining"), rate_limit: h("x-ratelimit-limit") };
+    if (r.status === 429 && attempt < 1) { const w = Math.min(5, num(r.headers.get("retry-after")) || 2); await new Promise((res) => setTimeout(res, w * 1000)); return sift(path, key, attempt + 1); }
+    const ok = r.ok && j != null;
+    await health(Object.fromEntries(Object.entries(quota).filter(([, v]) => v != null)), ok, ok ? "" : `HTTP ${r.status}`);
+    return { status: r.status, j, quota };
+  } catch (e) { await health({}, false, e && e.name === "AbortError" ? "timeout" : "network"); return { status: 0, j: null, quota: {} }; }
+  finally { clearTimeout(to); }
+}
+
+// ---- budget guard: spread what is left of the month over the remaining days, keep a reserve ----
+async function allowance() {
+  const { data: h } = await db.from("integration_health").select("quota_remaining,calls_today,calls_day").eq("provider", "siftingio").maybeSingle();
+  if (!h || h.quota_remaining == null) return { ok: true, remaining: null };
+  const now = new Date(), dim = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate(), left = Math.max(1, dim - now.getUTCDate() + 1);
+  const usable = h.quota_remaining - RESERVE(), perDay = Math.floor(usable / left), usedToday = h.calls_day === today() ? h.calls_today : 0;
+  return { ok: usable > 0 && usedToday < Math.max(perDay, 20), remaining: h.quota_remaining, per_day: Math.max(perDay, 0), used_today: usedToday };
+}
+
+// ---- cache ----
+async function cacheGet(key) { const { data } = await db.from("market_cache").select("payload,fetched_at").eq("key", key).maybeSingle(); return data || null; }
+async function cachePut(key, payload) { await db.from("market_cache").upsert({ key, payload, fetched_at: new Date().toISOString() }, { onConflict: "key" }); }
+const ageS = (iso) => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
+
+async function getCandles(sym, tf, limit, key) {
+  const cfg = SYMBOLS[sym], T = TF[tf], ck = `c:${cfg.id}:${tf}`, hit = await cacheGet(ck);
+  if (hit && ageS(hit.fetched_at) < T.ttl) return { payload: hit.payload, from_cache: true, stale: false, fetched_at: hit.fetched_at };
+  const al = await allowance(), source = "siftingio";
+  const serveOld = (why) => (hit ? { payload: hit.payload, from_cache: true, stale: true, fetched_at: hit.fetched_at, why } : { error: why });
+  if (!al.ok) return serveOld("quota_guard");
+  // window: enough bars for `limit` plus weekends/closures, never more than one page (1000 bars) so one request = one call
+  const need = Math.min(1000, Math.max(60, limit) * (T.derive ? 4 : 1)), span = Math.ceil(need * (T.derive ? 3600 : T.sec) * (cfg.cls === "crypto" ? 1.1 : 1.7));
+  const end = new Date(), start = new Date(Date.now() - span * 1000);
+  const r = await sift(`/hist/${cfg.kind}/${encodeURIComponent(cfg.id)}/bars?start=${start.toISOString()}&end=${end.toISOString()}&interval=${T.iv}&limit=${need}`, key);
+  if (r.status === 404) return serveOld("symbol_not_found");
+  if (r.status === 401 || r.status === 403) return serveOld("provider_auth");
+  if (r.status === 429) return serveOld("rate_limited");
+  const raw = r.j && (r.j.data || r.j.bars), arr = Array.isArray(raw) ? raw : raw && Array.isArray(raw.bars) ? raw.bars : null;
+  if (r.status !== 200 || !arr) return serveOld("provider_error");
+  let { candles, dropped } = normaliseBars(arr, cfg.id, T.derive ? "H1" : tf, source);
+  if (T.derive) candles = toH4(candles, cfg.id, source);
+  if (!candles.length) return serveOld("no_data");
+  const payload = { candles: candles.slice(-Math.max(limit, 50)), dropped, derived: !!T.derive };
+  await cachePut(ck, payload);
+  return { payload, from_cache: false, stale: false, fetched_at: new Date().toISOString() };
+}
+async function getQuote(sym, key) {
+  const cfg = SYMBOLS[sym], ck = `q:${cfg.id}`, hit = await cacheGet(ck);
+  if (hit && ageS(hit.fetched_at) < 45) return { payload: hit.payload, from_cache: true, stale: false, fetched_at: hit.fetched_at };
+  const al = await allowance();
+  const old = (why) => (hit ? { payload: hit.payload, from_cache: true, stale: true, fetched_at: hit.fetched_at, why } : { error: why });
+  if (!al.ok) return old("quota_guard");
+  const r = await sift(`/last/quote/${cfg.kind}/${encodeURIComponent(cfg.id)}`, key);
+  if (r.status !== 200 || !r.j) return old(r.status === 404 ? "symbol_not_found" : r.status === 429 ? "rate_limited" : "provider_error");
+  const q = normaliseQuote(r.j, sym, cfg, "siftingio");
+  if (q.price == null) return old("no_data");
+  await cachePut(ck, q);
+  return { payload: q, from_cache: false, stale: false, fetched_at: new Date().toISOString() };
+}
+
+const hitsMap = new Map();      // 30 requests a minute per member
+const limited = (id) => { const now = Date.now(), a = (hitsMap.get(id) || []).filter((t) => now - t < 60_000); a.push(now); hitsMap.set(id, a); if (hitsMap.size > 2000) hitsMap.clear(); return a.length > 30; };
+
+export async function handler(req) {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  try {
+    const url = Deno.env.get("SUPABASE_URL"), anon = Deno.env.get("SUPABASE_ANON_KEY");
+    const uc = createClient(url, anon, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
+    const { data: { user } } = await uc.auth.getUser();
+    if (!user) return json({ error: "unauthorized" }, 401);
+    const { data: p } = await db.from("profiles").select("is_admin,ultra_until").eq("id", user.id).maybeSingle();
+    const admin = !!p && p.is_admin === true, ultra = admin || (!!p && !!p.ultra_until && new Date(p.ultra_until) > new Date());
+    if (!ultra) return json({ error: "ultra_required" }, 403);
+    const b = await req.json().catch(() => ({})), action = String(b.action || "");
+    if (action === "health") {
+      if (!admin) return json({ error: "admin_only" }, 403);
+      const { data } = await db.from("integration_health").select("*");
+      return json({ ok: true, providers: (data || []).map((h) => ({ ...h, stale_threshold_s: STALE_S(), reserve: RESERVE() })), configured: { siftingio: !!Deno.env.get("SIFTINGIO_API_KEY") } });
+    }
+    if (limited(user.id)) return json({ error: "slow_down" }, 429);
+    const key = Deno.env.get("SIFTINGIO_API_KEY"); if (!key) return json({ error: "not_configured" }, 503);
+    const sym = String(b.symbol || "").toUpperCase(); if (!SYMBOLS[sym]) return json({ error: "unknown_symbol", symbols: Object.keys(SYMBOLS) }, 400);
+    const cfg = SYMBOLS[sym], inst = { requested: sym, symbol: cfg.id, asset_class: cfg.cls, tracks: cfg.tracks ?? null, is_proxy: cfg.cls === "etf", currency: cfg.cur };
+    if (action === "quote") {
+      const r = await getQuote(sym, key); if (r.error) return json({ error: r.error }, r.error === "symbol_not_found" ? 404 : 502);
+      const q = { ...r.payload, is_stale: r.stale || r.payload.is_stale || (ageS(r.payload.received_at) > STALE_S()) };
+      return json({ ok: true, quote: q, meta: { from_cache: r.from_cache, fetched_at: r.fetched_at, served_stale: r.stale, reason: r.why ?? null } });
+    }
+    if (action === "candles") {
+      const tf = String(b.timeframe || "M15").toUpperCase(); if (!TF[tf]) return json({ error: "unknown_timeframe", timeframes: Object.keys(TF) }, 400);
+      const limit = Math.min(500, Math.max(20, parseInt(b.limit, 10) || 200));
+      const r = await getCandles(sym, tf, limit, key); if (r.error) return json({ error: r.error }, r.error === "symbol_not_found" ? 404 : 502);
+      const c = r.payload.candles.slice(-limit), last = c[c.length - 1], age = last ? Math.round((Date.now() - Date.parse(last.timestamp)) / 1000) : null;
+      return json({ ok: true, instrument: inst, timeframe: tf, candles: c, meta: { from_cache: r.from_cache, fetched_at: r.fetched_at, served_stale: r.stale, reason: r.why ?? null, count: c.length, dropped_invalid: r.payload.dropped, derived: r.payload.derived,
+        last_candle_at: last ? last.timestamp : null, last_candle_age_s: age, last_candle_complete: last ? last.complete : null, source: "siftingio", is_delayed: null, enough_for_indicators: c.length >= 200 } });
+    }
+    return json({ error: "unknown_action" }, 400);
+  } catch (e) {
+    console.error("market-data:", String(e?.message ?? e));
+    return json({ error: "server_error" }, 500);
+  }
+}
+Deno.serve(handler);
