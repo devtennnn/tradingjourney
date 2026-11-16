@@ -27,19 +27,20 @@ const KEYS = () => ({ twelvedata: process.env.TWELVEDATA_API_KEY, finnhub: proce
 
 const redact = (s) => { let t = String(s == null ? '' : s); for (const k of Object.values(KEYS())) if (k && k.length > 5) t = t.split(k).join('***'); return t.replace(/(apikey|api_token|token)=[^&\s"]+/gi, '$1=***').slice(0, 160); };
 const ageSec = (ts) => (ts ? Math.max(0, Math.round((Date.now() - ts) / 1000)) : null);
-const fresh = (age) => (age == null ? 'unknown' : age <= 120 ? 'real-time (<2 min)' : age <= 1200 ? 'slightly old (<20 min)' : age <= 3 * 3600 ? 'delayed or market closed (<3 h)' : 'stale (>3 h)');
+const fresh = (age) => (age == null ? 'unknown' : age <= 360 ? 'real-time (current 5-min bar)' : age <= 1200 ? 'slightly old (<20 min)' : age <= 3 * 3600 ? 'delayed or market closed (<3 h)' : 'stale (>3 h)');
 
 async function call(url, headers, ms = 12000) {
   const t0 = Date.now(), c = new AbortController(), id = setTimeout(() => c.abort(), ms);
   try {
     const r = await fetch(url, { headers: { 'User-Agent': 'arom-probe/1.0', Accept: 'application/json', ...(headers || {}) }, signal: c.signal });
     const text = await r.text(); let j = null; try { j = JSON.parse(text); } catch (_) { /* not JSON */ }
-    return { status: r.status, j, ms: Date.now() - t0, text: j ? '' : redact(text) };
+    const rl = {}; try { for (const [k, v] of r.headers.entries()) if (/ratelimit|retry-after|credit|quota/i.test(k)) rl[k.replace(/^x-/i, '')] = String(v).slice(0, 40); } catch (_) { /* no headers */ }
+    return { status: r.status, j, ms: Date.now() - t0, text: j ? '' : redact(text), rl };
   } catch (e) { return { status: 0, j: null, ms: Date.now() - t0, text: e && e.name === 'AbortError' ? 'timeout' : 'network error' }; }
   finally { clearTimeout(id); }
 }
 /** one result row; never contains keys or raw provider payloads */
-const row = (provider, symbol, what, o) => ({ provider, symbol, test: what, ok: !!o.ok, status: o.status ?? null, ms: o.ms ?? null, n: o.n ?? null, last_ts: o.ts ? new Date(o.ts).toISOString() : null, age_s: o.ts ? ageSec(o.ts) : null, freshness: o.ts ? fresh(ageSec(o.ts)) : null, price: o.price ?? null, note: o.note ? redact(o.note) : null });
+const row = (provider, symbol, what, o) => ({ provider, symbol, test: what, ok: !!o.ok, status: o.status ?? null, ms: o.ms ?? null, n: o.n ?? null, last_ts: o.ts ? new Date(o.ts).toISOString() : null, age_s: o.ts ? ageSec(o.ts) : null, freshness: o.ts ? fresh(ageSec(o.ts)) : null, price: o.price ?? null, note: [o.note, o.rl && Object.keys(o.rl).length ? 'limits ' + JSON.stringify(o.rl) : ''].filter(Boolean).map(redact).join(' | ') || null });
 const errKind = (r, msg) => { const m = String(msg || '').toLowerCase(); if (r.status === 429 || /rate limit|too many|per minute|credits|frequency|25 requests|call frequency/.test(m)) return 'rate limit / quota'; if (r.status === 401 || /invalid.*(key|token)|unauthor|apikey/.test(m)) return 'key rejected'; if (r.status === 402 || r.status === 403 || /plan|premium|upgrade|subscription|access to this resource|not available|entitle/.test(m)) return 'not included in this plan'; if (r.status === 404 || /not found|invalid.*symbol|unknown|no data/.test(m)) return 'symbol not found'; return r.status ? 'http ' + r.status : r.text; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, process.env.PROBE_FAST ? 0 : ms));
 
@@ -70,23 +71,36 @@ async function finnhub(key, out) {
 }
 async function siftingio(key, out) {
   const H = { 'X-API-Key': key }, B = 'https://api.sifting.io/v1', end = new Date(), start = new Date(Date.now() - 2 * 86400e3), iso = (d) => d.toISOString();
+  const bars = async (kind, nm) => {
+    let r = await call(`${B}/hist/${kind}/${encodeURIComponent(nm)}/bars?start=${iso(start)}&end=${iso(end)}&interval=5m`, H);
+    if (r.status === 429) { const wait = Math.min(8, Number((r.rl && (r.rl['retry-after'] || r.rl['ratelimit-reset'])) || 3)); await sleep(wait * 1000 + 300); r = await call(`${B}/hist/${kind}/${encodeURIComponent(nm)}/bars?start=${iso(start)}&end=${iso(end)}&interval=5m`, H); }
+    const b = r.j && (r.j.data || r.j.bars), arr = Array.isArray(b) ? b : (b && Array.isArray(b.bars) ? b.bars : null);
+    return { r, arr };
+  };
+  const done = (w, what, kind, nm, r, arr) => { const b = arr[arr.length - 1], t = b.t != null ? b.t : b.ts != null ? b.ts : b.timestamp, ts = typeof t === 'number' ? (t < 1e12 ? t * 1000 : t) : Date.parse(t); out.push(row('siftingio', w, what, { ok: true, status: 200, ms: r.ms, n: arr.length, ts: Number.isFinite(ts) ? ts : null, price: b.c != null ? b.c : b.close, note: kind + '/' + nm, rl: r.rl })); };
   for (const w of WATCH) {
-    const [kind, names] = w.sf; let done = false, last = null;
-    for (const nm of names) {
-      const r = await call(`${B}/hist/${kind}/${encodeURIComponent(nm)}/bars?start=${iso(start)}&end=${iso(end)}&interval=5m`, H);
-      const bars = r.j && (r.j.data || r.j.bars); const arr = Array.isArray(bars) ? bars : (bars && Array.isArray(bars.bars) ? bars.bars : null);
-      if (r.status === 200 && arr && arr.length) {
-        const b = arr[arr.length - 1], t = b.t != null ? b.t : b.ts != null ? b.ts : b.timestamp, ts = typeof t === 'number' ? (t < 1e12 ? t * 1000 : t) : Date.parse(t);
-        out.push(row('siftingio', w.s, 'M5 bars', { ok: true, status: 200, ms: r.ms, n: arr.length, ts: Number.isFinite(ts) ? ts : null, price: b.c != null ? b.c : b.close, note: kind + '/' + nm })); done = true; break;
-      }
-      last = r; if (r.status === 401 || r.status === 429) break;
-    }
-    if (!done) out.push(row('siftingio', w.s, 'M5 bars', { ok: false, status: last && last.status, ms: last && last.ms, note: errKind(last || { status: 0, text: '' }, last && last.j && (last.j.error || last.j.message)) + ' (tried ' + names.join(', ') + ')' }));
-    await sleep(300);
+    const [kind, names] = w.sf, kinds = w.cls === 'index' ? ['indices', 'index', 'indexes'] : [kind], tried = []; let ok = false, last = null;
+    const more = w.cls === 'index' ? { NAS100: ['NAS100', 'NDX', 'US100', 'USTEC', 'IXIC', 'NQ'], US30: ['US30', 'DJI', 'DJIA', 'DOW', 'US30USD'], SPX500: ['SPX500', 'SPX', 'GSPC', 'US500', 'SPX500USD'], GER40: ['GER40', 'DAX', 'GDAXI', 'DE40', 'GER30'] }[w.s] || names : names;
+    for (const k of kinds) { for (const nm of more) {
+      const { r, arr } = await bars(k, nm); tried.push(k + '/' + nm + ':' + r.status); last = r;
+      if (r.status === 200 && arr && arr.length) { done(w.s, 'M5 bars', k, nm, r, arr); ok = true; break; }
+      if (r.status === 401) break; await sleep(1500);
+    } if (ok) break; }
+    if (!ok) out.push(row('siftingio', w.s, 'M5 bars', { ok: false, status: last && last.status, ms: last && last.ms, rl: last && last.rl, note: errKind(last || { status: 0, text: '' }, last && last.j && (last.j.error || last.j.message)) + ' (tried ' + tried.join(', ') + ')' }));
+    await sleep(1500);
   }
-  // live quote shape (one example)
+  if (WATCH.some((w) => w.cls === 'index')) {
+    // ETF proxies are NOT the indices: shown only as a labelled fallback candidate
+    for (const [proxy, label] of [['QQQ', 'NAS100 proxy (Invesco QQQ ETF, not the index)'], ['DIA', 'US30 proxy (SPDR DIA ETF, not the index)'], ['SPY', 'SPX500 proxy (SPDR SPY ETF, not the index)'], ['EWG', 'GER40 proxy (iShares Germany ETF, not the index)']]) {
+      const { r, arr } = await bars('stocks', proxy);
+      if (r.status === 200 && arr && arr.length) done(label, 'M5 bars', 'stocks', proxy, r, arr); else out.push(row('siftingio', label, 'M5 bars', { ok: false, status: r.status, ms: r.ms, rl: r.rl, note: errKind(r, r.j && (r.j.error || r.j.message)) }));
+      await sleep(1500);
+    }
+  }
+  // discovery: does the API offer a symbol directory? (status only, tells me where to read the real index names)
+  for (const path of ['/symbols', '/symbols/indices', '/catalog', '/assets', '/meta/symbols', '/instruments']) { const d = await call(B + path, H); out.push(row('siftingio', 'directory', path, { ok: d.status === 200, status: d.status, ms: d.ms, rl: d.rl, note: d.status === 200 ? 'keys: ' + Object.keys(d.j || {}).slice(0, 8).join(',') : '' })); await sleep(800); }
   const q = await call(`${B}/last/quote/forex/EURUSD`, H);
-  out.push(row('siftingio', 'EURUSD', 'last quote', { ok: q.status === 200 && !!q.j, status: q.status, ms: q.ms, note: q.status === 200 ? 'fields: ' + Object.keys(q.j.data || q.j).slice(0, 8).join(',') : errKind(q, q.j && q.j.error) }));
+  out.push(row('siftingio', 'EURUSD', 'last quote', { ok: q.status === 200 && !!q.j, status: q.status, ms: q.ms, rl: q.rl, note: q.status === 200 ? 'fields: ' + Object.keys(q.j.data || q.j).slice(0, 8).join(',') : errKind(q, q.j && q.j.error) }));
 }
 async function alphavantage(key, out) {
   // free key: 25 calls a day and ~5 a minute, so only a few, well spaced calls
@@ -130,6 +144,7 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const auth = String(req.headers.authorization || '');
   if (!(await isAdmin(auth.replace(/^Bearer\s+/i, '')))) return res.status(403).json({ error: 'admin_only' });
+  const only = String((req.query && req.query.symbols) || '').split(',').map((x) => x.trim().toUpperCase()).filter(Boolean); if (only.length) for (let i = WATCH.length - 1; i >= 0; i--) if (!only.includes(WATCH[i].s)) WATCH.splice(i, 1);
   const keys = KEYS(), want = String((req.query && req.query.providers) || Object.keys(RUN).join(',')).split(',').map((x) => x.trim()).filter((x) => RUN[x]);
   const rows = [], configured = {}, skipped = [];
   await Promise.all(want.map(async (p) => {
