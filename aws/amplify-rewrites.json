@@ -4,5 +4,6 @@
   { "source": "/pricing", "target": "/pricing.html", "status": "200" },
   { "source": "/journey", "target": "/journey.html", "status": "200" },
   { "source": "/news", "target": "/news.html", "status": "200" },
+  { "source": "/refer", "target": "/refer.html", "status": "200" },
   { "source": "/index", "target": "/", "status": "301" }
 ]
