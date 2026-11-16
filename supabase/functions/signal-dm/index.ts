@@ -2,6 +2,7 @@
 // Supabase Edge Function: signal-dm  (deploy with verify_jwt = FALSE; called by a database trigger, protected by the cron key)
 // Private copies of AI signals. Who gets them: members who connected Telegram (Profile → Telegram) AND have an ACTIVE Elite or Ultra plan (admins too).
 // Free / Premium members and members whose plan has run out never receive signals. The plan is checked at send time.
+// Each member also picks the markets they want (telegram_links.pairs, set in Alerts -> settings): a market they unticked is never sent to them.
 //   POST ?key=<ai_bot_config.cron_secret>   body: { id, kind: "new" | "update", old_hits, old_status }   (sent by the trigger on public.ai_signals)
 //   new    -> the full signal as ONE TEXT message (entry, SL, TP1-TP3, window, time stop); never a picture card
 //   update -> a short text for each follow-up (TP hit / SL / expired / closed), same wording as the channel
@@ -22,14 +23,17 @@ const pl = (n, u) => n + " " + u + (n === 1 ? "" : "s");
 const dur = (sec) => sec >= 86400 ? pl(Math.round(sec / 86400), "day") : sec >= 3600 ? pl(Math.round(sec / 3600), "hour") : Math.round(sec / 60) + " min";
 const UPD = (k, rr) => ({ 1: `✅ <b>TP1 hit</b> (+${rr[0]}R) — move SL to entry`, 2: rr.length < 3 ? `🏆 <b>TP2 hit</b> (+${rr[1]}R) — target complete` : `✅✅ <b>TP2 hit</b> (+${rr[1]}R)`, 3: `🏆 <b>TP3 hit</b> (+${rr[2]}R) — target complete` })[k];
 
-async function members() {
-  const { data: links, error } = await db.from("telegram_links").select("user_id,chat_id");
-  if (error || !links || !links.length) return [];
+async function members(sym) {
+  let lr = await db.from("telegram_links").select("user_id,chat_id,pairs");
+  if (lr.error) lr = await db.from("telegram_links").select("user_id,chat_id");   // pairs column not created yet: everyone gets every market
+  const links = lr.error ? null : lr.data;
+  if (!links || !links.length) return [];
   const ids = links.map((l) => l.user_id);
   let r = await db.from("profiles").select("id,is_admin,elite_until,ultra_until").in("id", ids);
   if (r.error) r = await db.from("profiles").select("id,is_admin,elite_until").in("id", ids);   // Ultra column not created yet
   const now = Date.now(), ok = new Set((r.data || []).filter((p) => p.is_admin === true || (p.elite_until && Date.parse(p.elite_until) > now) || (p.ultra_until && Date.parse(p.ultra_until) > now)).map((p) => p.id));
-  return links.filter((l) => ok.has(l.user_id));
+  // each member chooses the markets they want (null = all); a market they unticked never reaches them
+  return links.filter((l) => ok.has(l.user_id) && (!Array.isArray(l.pairs) || l.pairs.includes(sym)));
 }
 const post = async (token, method, body) => { const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return await r.json().catch(() => ({})); };
 /** sends to every member, 20 at a time (Telegram allows ~30 a second); `fn(chat)` returns the Telegram answer. */
@@ -63,9 +67,9 @@ Deno.serve(async (req) => {
   const { data: row } = await db.from("ai_signals").select("*").eq("id", id).maybeSingle();
   if (!row) return json({ error: "signal not found" }, 404);
   if (!row.tg_message_id) return json({ ok: true, skipped: "never posted to the channel (shadow mode)" });
-  const chats = await members();
-  if (!chats.length) return json({ ok: true, eligible: 0, sent: 0 });
   const sym = row.symbol, mk = row.mode || "scalp", M = MODE[mk] || MODE.scalp;
+  const chats = await members(sym);
+  if (!chats.length) return json({ ok: true, eligible: 0, sent: 0 });
 
   if (kind === "new") {
     // text only (no picture card): the full signal in one readable message

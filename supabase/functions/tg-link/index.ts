@@ -1,6 +1,7 @@
 // @ts-nocheck
 // Supabase Edge Function: tg-link  (JWT required: called by the signed-in user from the profile screen)
-//   { action: "status" }  -> { linked, tg_username, linked_at, bot }
+//   { action: "status" }  -> { linked, tg_username, linked_at, bot, pairs }   pairs = null (every market) or the markets chosen for private signals
+//   { action: "set_pairs", pairs: [..] | null }  -> { ok, pairs }   choose the markets that send private signals (null = all)
 //   { action: "start" }   -> { url, expires_in }   one-time deep link  https://t.me/<bot>?start=<code>   (valid 15 minutes, one use)
 //   { action: "unlink" }  -> { ok }
 // The bot username comes from Telegram getMe (TELEGRAM_BOT_TOKEN secret). The link is completed by the function tg-webhook when the user presses Start.
@@ -16,6 +17,7 @@ async function bot() {
   try { const j = await (await fetch(`https://api.telegram.org/bot${token}/getMe`)).json(); botName = j?.result?.username || ""; } catch { /* retry next time */ }
   return botName;
 }
+const MARKETS = ["XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY", "NQ", "OIL", "BTCUSD"];
 const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("");
 
 Deno.serve(async (req) => {
@@ -29,8 +31,20 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
 
     if (body.action === "status") {
-      const { data } = await db.from("telegram_links").select("tg_username,linked_at").eq("user_id", user.id).maybeSingle();
-      return json({ linked: !!data, tg_username: data?.tg_username ?? null, linked_at: data?.linked_at ?? null, bot: await bot() });
+      let r = await db.from("telegram_links").select("tg_username,linked_at,pairs").eq("user_id", user.id).maybeSingle();
+      if (r.error) r = await db.from("telegram_links").select("tg_username,linked_at").eq("user_id", user.id).maybeSingle();   // pairs column not created yet
+      const data = r.data;
+      return json({ linked: !!data, tg_username: data?.tg_username ?? null, linked_at: data?.linked_at ?? null, bot: await bot(), pairs: data && Array.isArray(data.pairs) ? data.pairs : null });
+    }
+    if (body.action === "set_pairs") {
+      let pairs = null;
+      if (Array.isArray(body.pairs)) pairs = [...new Set(body.pairs.map((x) => String(x).toUpperCase()).filter((x) => MARKETS.includes(x)))];
+      if (pairs && pairs.length === MARKETS.length) pairs = null;                    // everything ticked = "all markets"
+      const { data: l } = await db.from("telegram_links").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (!l) return json({ error: "not_linked" }, 409);
+      const { error } = await db.from("telegram_links").update({ pairs }).eq("user_id", user.id);
+      if (error) { console.error("tg-link set_pairs:", error.message); return json({ error: "setup_needed" }, 500); }
+      return json({ ok: true, pairs });
     }
     if (body.action === "start") {
       const b = await bot();
