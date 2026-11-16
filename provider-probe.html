@@ -109,6 +109,7 @@ async function miAnalyse(sym, tf){
   const e = a.indicators.ema, m = a.indicators.macd, lv = a.levels;
   L.push(sym + ' ' + tf + ' · source ' + a.source + ' · calculated ' + a.calculated_at);
   L.push('BIAS ' + (a.bias || 'WITHHELD') + ' · evidence score ' + a.evidence_score + ' · confidence ' + a.confidence + ' (no validated model)');
+  L.push('price ' + (a.indicators ? '' : '') + 'last close, VWAP ' + (a.indicators.vwap.value == null ? 'unavailable (' + a.indicators.vwap.reason + ')' : a.indicators.vwap.value + ' [' + a.indicators.vwap.volume_kind + ']'));
   L.push('last candle ' + a.last_candle_at + ' · freshness ' + a.freshness.status + ' (' + a.freshness.age_s + 's) · session ' + a.session.name + ' · Phnom Penh ' + a.session.phnom_penh);
   L.push('candles used ' + a.data.candles_used + (a.data.forming_candle_excluded ? ' (forming candle excluded)' : '') + ' · EMA200 sufficient ' + a.data.sufficient_for_ema200 + ' · unavailable: ' + (a.data.unavailable.join('; ') || 'none'));
   L.push('EMA 9/20/50/100/200: ' + [9,20,50,100,200].map(k => e[k]).join(' / ') + ' · stack ' + a.indicators.ema_stack);
