@@ -2176,8 +2176,7 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
    Direction: steady, honest, a little stern · a trader's desk at night · lime only for the main action and today's figure
    · signature: the mood logged next to each trade */
 #hero{--h-bg:#0d1813;--h-card:#122019;--h-raise:#182a21;--h-line:rgba(238,246,240,.08);--h-t1:#eef6f0;--h-t2:#a9bcb0;--h-t3:#7f968a;--h-pos:#4cc38a;--h-neg:#e5677d;--h-ease:cubic-bezier(.22,1,.36,1)}
-#hero.hero.hx{background:var(--h-bg)!important;border:1px solid var(--h-line)!important;box-shadow:none!important;border-radius:20px;padding:96px 32px 0;margin-bottom:24px;text-align:center}
-#hero::before,#hero::after{display:none!important}
+#hero.hero.hx{padding:96px 32px 0;margin-bottom:24px;text-align:center}
 #hero .hx-copy{max-width:720px}
 #hero .hx-sub{max-width:34rem;margin:20px auto 0;font-size:18px;line-height:28px;color:var(--h-t2)}
 #hero .hx-cta{margin-top:32px;gap:12px}
@@ -2379,6 +2378,8 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
 </section>
 
 <section class="pg-main hero hx" id="hero">
+  <div class="hx-grid" aria-hidden="true"><i style="left:128px;top:64px;animation-delay:0s"></i><i style="left:640px;top:0px;animation-delay:1.2s"></i><i style="left:1088px;top:128px;animation-delay:2.1s"></i><i style="left:64px;top:256px;animation-delay:2.8s"></i><i style="left:960px;top:320px;animation-delay:0.6s"></i><i style="left:1216px;top:384px;animation-delay:1.7s"></i><i style="left:320px;top:448px;animation-delay:3.3s"></i><i style="left:832px;top:512px;animation-delay:0.9s"></i></div>
+  <div class="hx-glow g1" aria-hidden="true"></div><div class="hx-glow g2" aria-hidden="true"></div>
   <div class="hx-copy">
     <h1 class="kt-h1 hx-h1" id="heroH1">Feel the <em>Market.</em> Master <em>Yourself.</em></h1>
     <p class="hx-sub" data-i18n="heroP">Document the journey. Master the process. Every setup, decision, result and lesson — in one private place.</p>
