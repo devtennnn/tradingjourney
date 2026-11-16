@@ -37,3 +37,14 @@ forward-test log (store each decision and its outcome), then tune. It is analysi
 
 Tests (kept outside the repo during development): unit tests build candles by hand (BOS/CHoCH, FVG, IFVG, order block, sweeps, equal highs, Fibonacci, VWAP, news gate, decision rules) and run the
 engine on the real BTC M1 history in `data/`.
+
+## Upload a chart (Ultra)
+
+AROM Intelligence → **Upload a chart**: a member uploads a screenshot plus details (market, timeframe, their idea, optional entry/SL/TP). The edge function `intelligence-chart` sends it to Claude (vision) and returns a structured reading: structure, liquidity, ICT/SMC, indicators, key levels, multi-timeframe (if visible), a review of the member's idea, a trade plan and what a picture cannot tell. Optionally it cross-checks with the live engine.
+
+One-time setup:
+1. Run `supabase/sql/intelligence-chart.sql` in the Supabase SQL Editor (usage table for the daily cap).
+2. Supabase → Edge Functions → Secrets: add `ANTHROPIC_API_KEY` (from console.anthropic.com). Never share it in chat or commit it.
+3. Optional secrets: `INTEL_CHART_DAILY` (analyses per member per 24 h, default 20), `INTEL_CHART_MODEL` (default `claude-opus-5-5`; a cheaper model such as `claude-sonnet-5-5` also works), `INTEL_CHART_EFFORT` (`low`|`medium`|`high`, default `medium`).
+
+Privacy: the image is resized in the browser, sent to Anthropic for that one request and not stored. Only (user, time) is kept for the cap. Each analysis costs API credits, so keep the daily cap sensible.
