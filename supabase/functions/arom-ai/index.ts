@@ -145,7 +145,7 @@ async function analyze(b, ctx) {
   const when = new Date().toISOString();
   if (a.bias == null) { const r = buildReport(a, sanitiseAnalyst(fallbackText(a)), { status: "bias_withheld", generated_at: when, lang }); return json({ ok: true, report: r }); }   // stale or thin data: no AI, no direction
   const rs = await reserve(ctx.userId, "analyst"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
-  const compact = compactAnalysis(a), allowed = numbersIn(compact), tol = toleranceFor(a), prompt = `Write the technical analyst report for ${a.symbol} on ${a.timeframe}. Language: ${langName(lang)}.\nUse ONLY this verified data. Do not change the engine bias (${a.bias}); explain it, the structure, momentum, volatility, calculated liquidity and what would invalidate the reading. Bullish and bearish scenarios must be conditional ("if ... then ...") and use only levels from the data.\n\nDATA:\n${JSON.stringify(compact)}`;
+  const compact = compactAnalysis(a), allowed = numbersIn(compact), tol = toleranceFor(a), prompt = `Write the technical analyst report for ${a.symbol} on ${a.timeframe}. Language: ${langName(lang)}.\nUse ONLY this verified data. Do not change the engine bias (${a.bias}); explain it, the structure, momentum, volatility, calculated liquidity and what would invalidate the reading. Bullish and bearish scenarios must be conditional ("if ... then ...") and use only levels from the data. The invalidation is invalidation_reference.level. Describe distances with price_context (ATR units).\n\nDATA:\n${JSON.stringify(compact)}`;
   let usage = { input: 0, output: 0 }, ai = null, bad = [];
   try {
     for (let attempt = 0; attempt < 2 && !ai; attempt++) {
