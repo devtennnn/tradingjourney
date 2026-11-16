@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AROM Intelligence — AI Market Analysis Engine</title>
+<meta name="description" content="AROM Intelligence combines market structure, liquidity, ICT/SMC, technical indicators, order flow, the economic calendar and multi-timeframe alignment into one transparent score. Analysis for education, not financial advice.">
+<link rel="canonical" href="https://aromx.trade/intelligence">
+<meta property="og:type" content="website"><meta property="og:site_name" content="AROM TRADE">
+<meta property="og:url" content="https://aromx.trade/intelligence">
+<meta property="og:title" content="AROM Intelligence — AI Market Analysis Engine">
+<meta property="og:description" content="Eight analysis modules, one transparent score. Structure, liquidity, ICT/SMC, indicators, order flow, news and multi-timeframe alignment.">
+<meta property="og:image" content="https://aromx.trade/icons/icon-512.png">
+<meta name="twitter:card" content="summary"><meta name="theme-color" content="#07110c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07110c;--bg2:#0b1813;--panel:#13261f;--panel2:#183027;--line:#2a4636;--lime:#b9f25a;--lime2:#d6ff86;--text:#eef6f0;--muted:#93ab9c;--dim:#6f8a7a;--green:#34d399;--red:#f05b78;--amber:#f5b942;--blue:#8ba8ff;--r:16px}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:radial-gradient(900px 600px at 85% -10%,rgba(150,210,60,.14),transparent 60%),radial-gradient(700px 500px at -10% 30%,rgba(60,140,90,.12),transparent 60%),var(--bg);color:var(--text);font:15px/1.55 Inter,'Kantumruy Pro',system-ui,sans-serif;min-height:100vh}
+body.km{font-family:'Kantumruy Pro',Inter,system-ui,sans-serif;line-height:1.75}
+a{color:var(--lime);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 56px}
+/* top bar */
+.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:10px 16px;margin:0 -16px 18px;background:rgba(7,17,12,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:2.5px;font-size:14px;color:var(--text);white-space:nowrap}
+.brand img{width:30px;height:30px;border-radius:8px}.brand b{color:var(--lime)}
+.top nav{display:flex;gap:4px;margin-left:8px;flex-wrap:wrap}
+.top nav a{padding:6px 11px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted)}
+.top nav a.on{background:rgba(185,242,90,.12);color:var(--lime)}.top nav a:hover{text-decoration:none;color:var(--text)}
+.sp{flex:1}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{background:none;border:0;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--lime);color:#0b1813}.seg button:hover:not(.on){color:var(--text)}
+/* hero */
+h1{font-size:clamp(24px,4.2vw,36px);line-height:1.15;margin:6px 0 6px;font-weight:900;letter-spacing:-.5px}h1 span{color:var(--lime)}
+.sub{color:var(--muted);margin:0 0 16px;max-width:760px}
+.ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.ctl .meta{color:var(--dim);font-size:12.5px;margin-left:auto}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);font:inherit;font-weight:700;font-size:13px;padding:8px 14px;border-radius:10px;cursor:pointer}.btn:hover{border-color:var(--lime)}.btn[disabled]{opacity:.5;cursor:default}
+.grid{display:grid;gap:14px}
+.g-hero{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.g-mod{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.card{background:linear-gradient(160deg,var(--panel),#102119);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:relative;min-width:0}
+.card h2,.card h3{margin:0 0 10px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--lime);font-weight:800}
+body.km .card h2,body.km .card h3{letter-spacing:.5px}
+.gauge{display:block;margin:0 auto;max-width:300px;width:100%}
+.act{text-align:center;margin-top:-4px}
+.chip{display:inline-block;padding:5px 12px;border-radius:999px;font-weight:800;font-size:12.5px;letter-spacing:.5px}
+.chip.long{background:rgba(52,211,153,.15);color:var(--green)}.chip.short{background:rgba(240,91,120,.15);color:var(--red)}.chip.wait{background:rgba(245,185,66,.15);color:var(--amber)}
+.chip.na{background:rgba(147,171,156,.12);color:var(--muted)}.chip.gate{background:rgba(139,168,255,.14);color:var(--blue)}
+.big{font-size:30px;font-weight:900;margin:2px 0}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(42,70,54,.55);font-size:13.5px}.kv:last-child{border:0}.kv span:first-child{color:var(--muted)}.kv b{font-variant-numeric:tabular-nums;text-align:right}
+.pos{color:var(--green)}.neg{color:var(--red)}.neu{color:var(--amber)}
+ul.pts{margin:6px 0 0;padding:0;list-style:none}ul.pts li{position:relative;padding:5px 0 5px 22px;font-size:13.5px;color:#cfe0d5}
+ul.pts li:before{content:'';position:absolute;left:4px;top:12px;width:8px;height:8px;border-radius:50%;background:var(--green)}
+ul.pts.con li:before{background:var(--red)}ul.pts.wt li:before{background:var(--amber)}
+.hl{font-size:16px;font-weight:700;margin:0 0 6px}
+.warn{background:rgba(245,185,66,.1);border:1px solid rgba(245,185,66,.35);color:#f3d79a;border-radius:11px;padding:9px 12px;font-size:12.5px;margin-top:10px}
+.err{background:rgba(240,91,120,.1);border:1px solid rgba(240,91,120,.4);color:#ffc2cd;border-radius:12px;padding:14px;margin:14px 0}
+/* chart */
+.chart{width:100%;height:auto;display:block}
+.chart text{font:10px Inter,sans-serif;fill:var(--muted)}
+/* modules */
+.mod .top2{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mod .no{width:26px;height:26px;border-radius:8px;background:rgba(185,242,90,.12);color:var(--lime);display:grid;place-items:center;font-weight:800;font-size:12px;flex:none}
+.mod .nm{font-weight:800;font-size:14.5px;line-height:1.2}.mod .tfc{font-size:11px;color:var(--dim);font-weight:600}
+.mod .w{margin-left:auto;font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap}
+.bar{position:relative;height:8px;border-radius:99px;background:#0c1a14;border:1px solid var(--line);margin:8px 0 4px;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0}.bar:after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--dim)}
+.mod .sc{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+.mod ul{margin:8px 0 0;padding:0;list-style:none;font-size:12.8px;color:#cfe0d5}.mod li{padding:3px 0;border-top:1px dashed rgba(42,70,54,.6)}.mod li:first-child{border-top:0}
+.mod .desc{font-size:12px;color:var(--dim);margin-top:8px}
+.mod.off{opacity:.62}
+table.t{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+table.t th{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+table.t td{padding:7px 8px;border-bottom:1px solid rgba(42,70,54,.5)}table.t td.r,table.t th.r{text-align:right}
+.scroll{overflow-x:auto}
+.legal{margin-top:22px;color:var(--dim);font-size:12.5px;line-height:1.7}
+.skel{height:120px;border-radius:12px;background:linear-gradient(90deg,#102119 25%,#16302a 50%,#102119 75%);background-size:200% 100%;animation:sk 1.2s infinite}
+@keyframes sk{to{background-position:-200% 0}}
+@media(max-width:900px){.g-hero{grid-template-columns:1fr}.top nav{display:none}}
+@media(max-width:520px){.wrap{padding:0 12px 48px}.top{margin:0 -12px 14px;padding:8px 12px}.brand span.t{display:none}.card{padding:14px}.seg button{padding:6px 9px}}
+@media(prefers-reduced-motion:reduce){.skel{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/"><img src="/icons/icon-192.png" alt="AROM TRADE" width="30" height="30"><span class="t">AROM <b>TRADE</b></span></a>
+    <nav aria-label="Pages"><a href="/" data-i="navJournal">Journal</a><a href="/analysis" data-i="navDesk">AI Desk</a><a href="/intelligence" class="on" data-i="navIntel">AROM Intelligence</a><a href="/pricing" data-i="navPricing">Pricing</a></nav>
+    <span class="sp"></span>
+    <div class="seg" id="langSeg" role="group" aria-label="Language"><button type="button" data-l="en" class="on">EN</button><button type="button" data-l="km">ខ្មែរ</button></div>
+  </header>
+
+  <h1><span>AROM</span> Intelligence</h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="ctl">
+    <div class="seg" id="symSeg" role="group" aria-label="Market"></div>
+    <div class="seg" id="styleSeg" role="group" aria-label="Style"></div>
+    <button class="btn" id="refresh" type="button"></button>
+    <span class="meta" id="meta"></span>
+  </div>
+
+  <div id="out"><div class="skel"></div></div>
+
+  <p class="legal" id="legal"></p>
+</div>
+<script src="/intelligence-engine.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const SYMS = ['XAUUSD','BTCUSD','XAGUSD','EURUSD','GBPUSD','USDJPY','NQ','OIL'];
+const STYLES = ['scalp','intraday','swing'];
+const MODS = ['structure','liquidity','smc','ema_rsi','fib','orderflow','fundamental','mtf'];
+const NO = {structure:'01',liquidity:'02',smc:'03',ema_rsi:'04',fib:'04',orderflow:'05',fundamental:'06',mtf:'07'};
+const S = {sym:'XAUUSD', style:'intraday', lang:'en', data:null, loading:false, status:{}, news:null, at:0};
+try{ const sv = JSON.parse(localStorage.getItem('arom_intel') || '{}'); if(SYMS.includes(sv.sym)) S.sym = sv.sym; if(STYLES.includes(sv.style)) S.style = sv.style; if(sv.lang === 'km' || sv.lang === 'en') S.lang = sv.lang; }catch(e){}
+try{ const q = new URLSearchParams(location.search); if(SYMS.includes((q.get('symbol')||'').toUpperCase())) S.sym = q.get('symbol').toUpperCase(); if(STYLES.includes(q.get('style'))) S.style = q.get('style'); }catch(e){}
+const save = () => { try{ localStorage.setItem('arom_intel', JSON.stringify({sym:S.sym, style:S.style, lang:S.lang})); }catch(e){} };
+
+/* ---------------- text ---------------- */
+const L = {
+ en:{navJournal:'Journal',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'Pricing',
+  sub:'The brain of AROM TRADE: eight independent analysis modules combined into one transparent score. Every number below comes from the candles and the economic calendar; modules without data are shown as unavailable instead of being guessed.',
+  scalp:'Scalp',intraday:'Intraday',swing:'Swing',refresh:'Refresh',updated:'Updated',loading:'Analysing…',
+  decision:'Decision',score:'Combined score',coverage:'Data coverage',grade:'Grade',action:{LONG:'LONG',SHORT:'SHORT',WAIT:'WAIT'},
+  plan:'Trade plan',entry:'Entry',stop:'Stop loss',tp:'Target',rr:'Reward : risk',noPlan:'No trade plan: the engine recommends waiting.',zone:'Entry zone',limit:'limit in zone',market:'near market',
+  why:'AI reasoning',pros:'Supports the idea',cons:'Against / risks',waitWhy:'Why WAIT',conflicts:'Conflicting evidence',
+  chart:'Price and key levels',modules:'Analysis modules',breakdown:'Score breakdown',weight:'Weight',mscore:'Module score',points:'Points',module:'Module',
+  bull:'Bullish',bear:'Bearish',neutral:'Neutral',na:'Unavailable',gate:'Risk gate',
+  dataErr:'Could not load market data.',retry:'Try again',tfs:'Timeframe ladder',
+  weights:'Weights are an engineering hypothesis, not a proven profitable formula. They are shown openly so you can judge them.',
+  legal:'AROM Intelligence is an analysis tool for education. It is not financial advice and not a signal service. Markets carry risk of loss; always use your own judgement and risk limits. Gold, FX and index candles come from public data providers and may be delayed. There is no order-book feed, so bid/ask imbalance is not available; volume-based measures need real traded volume (crypto and futures), not spot FX.',
+  d:{structure:'BOS, CHoCH, MSS, HH/HL/LH/LL, internal and external structure.',liquidity:'Buy-side / sell-side liquidity, equal highs and lows, sweeps and stop hunts.',smc:'Order blocks, fair value gaps, inversion FVG, premium / discount, displacement, dealing range.',ema_rsi:'EMA 20 / 50 / 200, RSI 14, ATR volatility, trend and momentum filters.',fib:'Fibonacci retracement of the latest swing leg.',orderflow:'VWAP, volume profile, estimated volume delta, absorption and exhaustion.',fundamental:'Economic calendar (CPI, NFP, FOMC, rates). Used as a risk gate: the feed has no actual-vs-forecast.',mtf:'Higher-timeframe bias, structure, setup and entry rungs must agree.'},
+  n:{structure:'Market Structure',liquidity:'Liquidity',smc:'ICT / SMC',ema_rsi:'EMA / RSI',fib:'Fibonacci',orderflow:'Order Flow',fundamental:'Fundamental',mtf:'Multi-Timeframe'},
+  rungs:['Macro bias','Structure','Setup','Entry'],
+ },
+ km:{navJournal:'កំណត់ហេតុ',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'តម្លៃ',
+  sub:'ខួរក្បាលរបស់ AROM TRADE៖ ម៉ូឌុលវិភាគឯករាជ្យចំនួនប្រាំបីបូកបញ្ចូលគ្នាជាពិន្ទុតែមួយដែលមានតម្លាភាព។ លេខទាំងអស់មកពីទិន្នន័យទៀន និងប្រតិទិនសេដ្ឋកិច្ច។ ម៉ូឌុលដែលគ្មានទិន្នន័យនឹងបង្ហាញថា «គ្មាន» ជំនួសឱ្យការទាយ។',
+  scalp:'ស្កាល់ពីង',intraday:'ក្នុងថ្ងៃ',swing:'ស្វីង',refresh:'ផ្ទុកឡើងវិញ',updated:'បានអាប់ដេត',loading:'កំពុងវិភាគ…',
+  decision:'ការសម្រេចចិត្ត',score:'ពិន្ទុរួម',coverage:'ការគ្របដណ្តប់ទិន្នន័យ',grade:'ថ្នាក់',action:{LONG:'ទិញ',SHORT:'លក់',WAIT:'រង់ចាំ'},
+  plan:'ផែនការជួញដូរ',entry:'ចូល',stop:'ឈប់ខាត',tp:'គោលដៅ',rr:'ចំណេញ : ហានិភ័យ',noPlan:'គ្មានផែនការជួញដូរ៖ ប្រព័ន្ធណែនាំឱ្យរង់ចាំ។',zone:'តំបន់ចូល',limit:'ដាក់បញ្ជាក្នុងតំបន់',market:'ជិតតម្លៃទីផ្សារ',
+  why:'ហេតុផលរបស់ AI',pros:'គាំទ្រគំនិតនេះ',cons:'ប្រឆាំង / ហានិភ័យ',waitWhy:'ហេតុអ្វីរង់ចាំ',conflicts:'ភស្តុតាងប៉ះទង្គិច',
+  chart:'តម្លៃ និងកម្រិតសំខាន់ៗ',modules:'ម៉ូឌុលវិភាគ',breakdown:'ការបែងចែកពិន្ទុ',weight:'ទម្ងន់',mscore:'ពិន្ទុម៉ូឌុល',points:'ពិន្ទុរួមចំណែក',module:'ម៉ូឌុល',
+  bull:'ឡើង',bear:'ចុះ',neutral:'អព្យាក្រឹត',na:'គ្មាន',gate:'ច្រកហានិភ័យ',
+  dataErr:'មិនអាចផ្ទុកទិន្នន័យទីផ្សារបានទេ។',retry:'ព្យាយាមម្តងទៀត',tfs:'ជណ្តើរស៊ុមពេលវេលា',
+  weights:'ទម្ងន់ជាសម្មតិកម្មវិស្វកម្ម មិនមែនរូបមន្តដែលបានបង្ហាញថាចំណេញទេ។ យើងបង្ហាញជាសាធារណៈដើម្បីឱ្យអ្នកវិនិច្ឆ័យ។',
+  legal:'AROM Intelligence ជាឧបករណ៍វិភាគសម្រាប់ការអប់រំ។ វាមិនមែនជាដំបូន្មានហិរញ្ញវត្ថុ ឬសេវាកម្មសញ្ញាទេ។ ទីផ្សារមានហានិភ័យខាតបង់ ចូរប្រើការវិនិច្ឆ័យ និងដែនកំណត់ហានិភ័យរបស់អ្នកផ្ទាល់។ ទិន្នន័យទៀនមកពីអ្នកផ្តល់ទិន្នន័យសាធារណៈ ហើយអាចយឺត។ គ្មានទិន្នន័យ order book ដូច្នេះ bid/ask imbalance មិនអាចប្រើបាន។ រង្វាស់បរិមាណត្រូវការបរិមាណជួញដូរពិត (គ្រីបតូ និង futures) មិនមែន spot FX ទេ។',
+  d:{structure:'BOS, CHoCH, MSS, HH/HL/LH/LL រចនាសម្ព័ន្ធខាងក្នុង និងខាងក្រៅ។',liquidity:'សន្ទនីយភាពទិញ/លក់ កំពូល/បាតស្មើគ្នា ការបោស និង stop hunt។',smc:'Order block, Fair Value Gap, Inversion FVG, premium/discount, displacement, dealing range។',ema_rsi:'EMA 20/50/200, RSI 14, ភាពប្រែប្រួល ATR តម្រងនិន្នាការ និងសន្ទុះ។',fib:'Fibonacci retracement នៃរលកចុងក្រោយ។',orderflow:'VWAP, volume profile, volume delta ប៉ាន់ស្មាន absorption និង exhaustion។',fundamental:'ប្រតិទិនសេដ្ឋកិច្ច (CPI, NFP, FOMC, អត្រាការប្រាក់)។ ប្រើជាច្រកហានិភ័យ ព្រោះទិន្នន័យគ្មានលទ្ធផលពិត។',mtf:'ទិសដៅធំ រចនាសម្ព័ន្ធ ការរៀបចំ និងការចូល ត្រូវឯកភាពគ្នា។'},
+  n:{structure:'រចនាសម្ព័ន្ធទីផ្សារ',liquidity:'សន្ទនីយភាព',smc:'ICT / SMC',ema_rsi:'EMA / RSI',fib:'Fibonacci',orderflow:'លំហូរបញ្ជា',fundamental:'មូលដ្ឋាន',mtf:'ពហុស៊ុមពេល'},
+  rungs:['ទិសដៅធំ','រចនាសម្ព័ន្ធ','ការរៀបចំ','ការចូល'],
+ }};
+const t = k => (L[S.lang][k] != null ? L[S.lang][k] : L.en[k]);
+const T = k => t(k);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dec = p => (p >= 1000 ? 1 : p >= 100 ? 2 : p >= 10 ? 3 : 5);
+const fp = (p, ref) => (p == null || !isFinite(p) ? '—' : Number(p).toLocaleString('en-US', {minimumFractionDigits:dec(ref || p), maximumFractionDigits:dec(ref || p)}));
+const sgn = x => x > 0 ? 1 : x < 0 ? -1 : 0;
+const km = () => S.lang === 'km';
+const barsAgo = n => n + (n === 1 ? ' bar' : ' bars') + ' ago';
+const dirW = d => d > 0 ? (km() ? 'ឡើង' : 'bullish') : d < 0 ? (km() ? 'ចុះ' : 'bearish') : (km() ? 'អព្យាក្រឹត' : 'neutral');
+
+/* ---------------- fact lines (each one is rendered from module output, never invented) ---------------- */
+function fact(m, f, ref){
+  const K = km(), P = x => fp(x, ref);
+  switch(f.k){
+    case 'trend': return K ? `និន្នាការខាងក្រៅ៖ ${dirW(f.ext)} · ខាងក្នុង៖ ${dirW(f.int)}` : `External trend: ${dirW(f.ext)} · internal: ${dirW(f.int)}`;
+    case 'last_break': return K ? `បំបែកចុងក្រោយ៖ ${f.type}${f.mss?' (MSS)':''} ${dirW(f.dir)} @ ${P(f.level)} · ${f.ago} ដើមទៀនមុន` : `Last break: ${f.type}${f.mss?' (MSS)':''} ${dirW(f.dir)} @ ${P(f.level)} · ${barsAgo(f.ago)}`;
+    case 'int_choch': return K ? `CHoCH ខាងក្នុងទៅ ${dirW(f.dir)} (ព្រមានដំបូង)` : `Internal CHoCH ${dirW(f.dir)} (early warning)`;
+    case 'sweep': return K ? `${f.dir>0?'បោសសន្ទនីយភាពលក់':'បោសសន្ទនីយភាពទិញ'} @ ${P(f.level)} · ${f.ago} ដើមទៀនមុន${f.hunt?' · stop hunt':''}` : `${f.dir>0?'Sell-side':'Buy-side'} liquidity swept @ ${P(f.level)} · ${barsAgo(f.ago)}${f.hunt?' · stop hunt':''}`;
+    case 'bsl': return `BSL${f.eq?' (EQH)':''}: ${P(f.level)}`;
+    case 'ssl': return `SSL${f.eq?' (EQL)':''}: ${P(f.level)}`;
+    case 'pd': return K ? `តំបន់៖ ${f.zone==='premium'?'ថ្លៃ (premium)':f.zone==='discount'?'បញ្ចុះតម្លៃ (discount)':f.zone==='below'?'ក្រោមជួរ (ជួរត្រូវបានបំបែក)':f.zone==='above'?'លើជួរ (ជួរត្រូវបានបំបែក)':'កណ្តាល'}${f.zone==='below'||f.zone==='above'?'':' · '+Math.round(f.pos*100)+'% នៃជួរ'}` : (f.zone==='below'||f.zone==='above') ? `Price is ${f.zone} the dealing range (range broken): premium/discount does not apply` : `Zone: ${f.zone} · ${Math.round(f.pos*100)}% of the dealing range`;
+    case 'disp': return K ? `Displacement ${dirW(f.dir)} · ${f.ago} ដើមទៀនមុន` : `Displacement ${dirW(f.dir)} · ${barsAgo(f.ago)}`;
+    case 'zones': return K ? `តំបន់ត្រូវការ ${f.sup} · តំបន់ផ្គត់ផ្គង់ ${f.res} ជិតតម្លៃ` : `${f.sup} demand / ${f.res} supply zone(s) near price`;
+    case 'ifvg': return `IFVG: ${f.n}`;
+    case 'ema': return `EMA 20/50/200: ${P(f.e20)} / ${P(f.e50)} / ${f.e200 == null ? '—' : P(f.e200)}`;
+    case 'rsi': return `RSI 14: ${f.v}${f.over==='ob'?(K?' (ទិញលើស)':' (overbought)'):f.over==='os'?(K?' (លក់លើស)':' (oversold)'):''}`;
+    case 'atr': return K ? `ATR ${P(f.v)} (${f.pct}%) · ភាពប្រែប្រួល ${f.regime==='high'?'ខ្ពស់':f.regime==='low'?'ទាប':'ធម្មតា'}` : `ATR ${P(f.v)} (${f.pct}%) · volatility ${f.regime}`;
+    case 'fib': return K ? `រលក ${f.up?'ឡើង':'ចុះ'} · ត្រឡប់ ${Math.round(f.retrace*100)}%${f.ote?' · តំបន់ OTE':''} · 0.618 @ ${P(f.levels[0.618])}` : `${f.up?'Up':'Down'} leg · retraced ${Math.round(f.retrace*100)}%${f.ote?' · in OTE zone':''} · 0.618 @ ${P(f.levels[0.618])}`;
+    case 'vwap': return K ? `VWAP ${P(f.v)} · តម្លៃ${f.side>0?'នៅលើ':'នៅក្រោម'}` : `VWAP ${P(f.v)} · price ${f.side>0?'above':'below'}`;
+    case 'poc': return `POC ${P(f.poc)} · VAL ${P(f.val)} · VAH ${P(f.vah)}`;
+    case 'delta': return K ? `Delta (ប៉ាន់ស្មាន)៖ ${f.pct>0?'+':''}${f.pct}% ${dirW(f.dir)}` : `Estimated delta: ${f.pct>0?'+':''}${f.pct}% ${dirW(f.dir)}`;
+    case 'absorption': return K ? `Absorption ${dirW(f.dir)} · បរិមាណ ${f.vol}× · ${f.ago} ដើមទៀនមុន` : `Absorption ${dirW(f.dir)} · volume ${f.vol}× avg · ${barsAgo(f.ago)}`;
+    case 'exhaustion': return K ? `Exhaustion → ${dirW(f.dir)} · បរិមាណ ${f.vol}×` : `Exhaustion → ${dirW(f.dir)} · volume ${f.vol}× avg`;
+    case 'risk': return K ? `ហានិភ័យព័ត៌មាន៖ ${f.level==='high'?'ខ្ពស់':f.level==='elevated'?'កើនឡើង':'ស្រាល'}` : `News risk: ${f.level}`;
+    case 'next': return K ? `បន្ទាប់៖ ${f.cur} ${f.title} (${f.impact}) ក្នុង ${f.in} នាទី` : `Next: ${f.cur} ${f.title} (${f.impact}) in ${f.in} min`;
+    case 'ladder': return f.rungs.map((r, i) => `${(L[S.lang].rungs || L.en.rungs)[i]} ${String(r.tf).toUpperCase()}: ${r.dir == null ? '—' : r.dir > 0 ? '▲' : r.dir < 0 ? '▼' : '■'}`).join(' · ');
+  }
+  return '';
+}
+function modBias(m){
+  if(!m.available) return ['na', t('na')];
+  if(!m.directional) return ['gate', t('gate')];
+  const s = m.score; return Math.abs(s) < 0.15 ? ['wait', t('neutral')] : s > 0 ? ['long', t('bull')] : ['short', t('bear')];
+}
+
+/* ---------------- rendering ---------------- */
+function gauge(score){
+  const cx = 150, cy = 140, r = 110, a = v => Math.PI * (1 - (v + 100) / 200);
+  const pt = (v, rr) => [cx + rr * Math.cos(a(v)), cy - rr * Math.sin(a(v))];
+  const arc = (v0, v1, col) => { const p0 = pt(v0, r), p1 = pt(v1, r); return `<path d="M${p0[0].toFixed(1)} ${p0[1].toFixed(1)} A${r} ${r} 0 0 1 ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}" stroke="${col}" stroke-width="16" fill="none" stroke-linecap="butt"/>`; };
+  const nd = pt(Math.max(-100, Math.min(100, score)), r - 24), col = score > 25 ? '#34d399' : score < -25 ? '#f05b78' : '#f5b942';
+  return `<svg class="gauge" viewBox="0 0 300 170" role="img" aria-label="${esc(t('score'))} ${score.toFixed(0)}">
+    ${arc(-100,-25,'#7a2b3b')}${arc(-25,25,'#6b5a24')}${arc(25,100,'#1f6a52')}
+    <line x1="${cx}" y1="${cy}" x2="${nd[0].toFixed(1)}" y2="${nd[1].toFixed(1)}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="8" fill="${col}"/>
+    <text x="22" y="162" fill="#93ab9c" font-size="11">−100</text><text x="150" y="26" fill="#93ab9c" font-size="11" text-anchor="middle">0</text><text x="278" y="162" fill="#93ab9c" font-size="11" text-anchor="end">+100</text></svg>`;
+}
+function bar(score, on){
+  const w = Math.abs(score) * 50, col = score >= 0 ? 'var(--green)' : 'var(--red)';
+  return `<div class="bar" role="img" aria-label="${(score*100).toFixed(0)}"><i style="${score>=0?'left:50%':'right:50%'};width:${on?w:0}%;background:${col}"></i></div>`;
+}
+function chartSVG(o){
+  const bars = o.bars.slice(-80), W = 820, H = 320, padR = 74, padT = 10, padB = 18, n = bars.length;
+  const lv = o.levels.filter(l => l.type !== 'vwap' || true);
+  let hi = Math.max(...bars.map(b => b.h)), lo = Math.min(...bars.map(b => b.l)); const rg = hi - lo || 1; hi += rg * .06; lo -= rg * .06;
+  // keep only levels near the visible range so the scale stays readable
+  const near = v => v >= lo - rg * .25 && v <= hi + rg * .25;
+  const Y = p => padT + (hi - p) / (hi - lo) * (H - padT - padB), bw = (W - padR - 6) / n, X = i => 4 + i * bw + bw / 2;
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t('chart'))}">`;
+  for(let i = 0; i <= 4; i++){ const p = lo + (hi - lo) * i / 4, y = Y(p); s += `<line x1="0" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#1d3a2c" stroke-width="1"/><text x="${W-padR+6}" y="${(y+3).toFixed(1)}">${fp(p, o.price)}</text>`; }
+  lv.filter(l => l.lo != null).forEach(l => { if(!near(l.lo) && !near(l.hi)) return; const y1 = Y(Math.min(hi, l.hi)), y2 = Y(Math.max(lo, l.lo)); s += `<rect x="0" y="${y1.toFixed(1)}" width="${W-padR}" height="${Math.max(2, y2-y1).toFixed(1)}" fill="${l.type==='ob'?(l.dir>0?'rgba(52,211,153,.16)':'rgba(240,91,120,.16)'):(l.dir>0?'rgba(139,168,255,.13)':'rgba(245,185,66,.13)')}" stroke="${l.type==='ob'?'rgba(214,255,134,.25)':'rgba(255,255,255,.08)'}"/><text x="6" y="${(y1+10).toFixed(1)}" fill="#c9d8cf">${l.label}${l.dir>0?' ▲':' ▼'}</text>`; });
+  bars.forEach((b, i) => { const up = b.c >= b.o, c = up ? '#34d399' : '#f05b78', x = X(i), yo = Y(b.o), yc = Y(b.c); s += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${Y(b.h).toFixed(1)}" y2="${Y(b.l).toFixed(1)}" stroke="${c}" stroke-width="1"/><rect x="${(x-bw*.32).toFixed(1)}" y="${Math.min(yo,yc).toFixed(1)}" width="${(bw*.64).toFixed(1)}" height="${Math.max(1, Math.abs(yo-yc)).toFixed(1)}" fill="${c}"/>`; });
+  const col = {bsl:'#f5b942', ssl:'#8ba8ff', eq:'#6f8a7a', vwap:'#d6ff86', entry:'#ffffff', stop:'#f05b78', tp:'#34d399'};
+  lv.filter(l => l.price != null && near(l.price)).forEach(l => { const y = Y(l.price), c = col[l.type] || '#93ab9c'; s += `<line x1="0" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${c}" stroke-width="1" stroke-dasharray="${l.type==='entry'||l.type==='stop'||l.type==='tp'?'':'5 4'}"/><text x="${W-padR+6}" y="${(y-2).toFixed(1)}" fill="${c}">${l.label}</text>`; });
+  return s + '</svg>';
+}
+function moduleCard(key, m, o){
+  const [cls, lbl] = modBias(m), name = L[S.lang].n[key] || L.en.n[key], on = m.available && m.directional;
+  const facts = (m.facts || []).map(f => fact(m, f, o.price)).filter(Boolean).slice(0, 6);
+  let extra = '';
+  if(!m.available && m.data && m.data.reason) extra = `<div class="desc">${esc(m.data.reason)}</div>`;
+  if(key === 'orderflow' && m.data && m.data.bidAsk) extra += `<div class="desc">${km() ? 'Bid/ask imbalance៖ មិនអាចប្រើបាន (ត្រូវការ order book)' : 'Bid/ask imbalance: unavailable (needs a level-2 order-book feed)'}</div>`;
+  if(key === 'fundamental' && m.data && m.data.upcoming && m.data.upcoming.length) extra += `<ul>${m.data.upcoming.slice(0, 4).map(e => `<li>${esc(e.country)} ${esc(e.title)} <span style="color:var(--dim)">· ${e.in} min · ${esc(e.impact)}</span></li>`).join('')}</ul>`;
+  return `<div class="card mod ${m.available ? '' : 'off'}">
+    <div class="top2"><span class="no">${NO[key]}</span><div><div class="nm">${esc(name)}</div><div class="tfc">${esc(m.tf || '')}</div></div><span class="w">${t('weight')} ${m.weight}</span></div>
+    <div class="sc"><span class="chip ${cls}">${esc(lbl)}</span><b class="${m.score>0.15?'pos':m.score<-0.15?'neg':'neu'}">${on ? (m.score>0?'+':'') + Math.round(m.score*100) : '—'}</b></div>
+    ${bar(m.score, on)}
+    ${facts.length ? `<ul>${facts.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${extra}
+    <div class="desc">${esc(L[S.lang].d[key] || L.en.d[key])}</div></div>`;
+}
+function render(){
+  const out = $('out'), o = S.data;
+  if(!o){ out.innerHTML = `<div class="skel"></div>`; return; }
+  if(o.error){ out.innerHTML = `<div class="err"><b>${esc(t('dataErr'))}</b><br>${esc(o.error)}<div style="margin-top:8px"><button class="btn" id="retry" type="button">${esc(t('retry'))}</button></div><div style="margin-top:8px;font-size:12px">${tfStatus()}</div></div>`; const rb = $('retry'); if(rb) rb.onclick = () => load(true); return; }
+  const R = o.reasoning[S.lang], D = o.decision, act = D.action, ch = act === 'LONG' ? 'long' : act === 'SHORT' ? 'short' : 'wait';
+  const sc = o.composite, plan = o.plan, cov = Math.round(o.coverage * 100);
+  const planHtml = plan && plan.valid ? `
+    <div class="kv"><span>${t('entry')} ${plan.entryType==='zone'||plan.entryType==='fib'?'('+t('limit')+')':'('+t('market')+')'}</span><b>${fp(plan.entry, o.price)}</b></div>
+    ${plan.zone ? `<div class="kv"><span>${t('zone')}</span><b>${fp(plan.zone.lo, o.price)} – ${fp(plan.zone.hi, o.price)}</b></div>` : ''}
+    <div class="kv"><span>${t('stop')}</span><b class="neg">${fp(plan.stop, o.price)}</b></div>
+    ${plan.targets.map((x, i) => `<div class="kv"><span>${t('tp')} ${i+1}</span><b class="pos">${fp(x, o.price)}</b></div>`).join('')}
+    <div class="kv"><span>${t('rr')}</span><b>1 : ${plan.rr}</b></div>` : `<div style="color:var(--muted);font-size:13.5px">${t('noPlan')}${plan && plan.reason ? `<br><span style="color:var(--dim);font-size:12.5px">${esc(plan.reason)}</span>` : ''}</div>`;
+  const list = (arr, cls) => arr.length ? `<ul class="pts ${cls}">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  const warn = [];
+  Object.values(o.modules).forEach(m => { if(!m.available && m.data && m.data.reason) warn.push((L[S.lang].n[m.id] || m.id) + ': ' + m.data.reason); });
+  const rows = o.contrib.map(c => { const m = o.modules[c.id]; return `<tr><td>${esc(L[S.lang].n[c.id])}</td><td class="r">${c.weight}</td><td class="r">${c.available && c.directional ? (c.score>0?'+':'') + Math.round(c.score*100) : '—'}</td><td class="r ${c.points>0?'pos':c.points<0?'neg':''}">${c.available && c.directional ? (c.points>0?'+':'') + c.points.toFixed(1) : (c.available ? t('gate') : t('na'))}</td></tr>`; }).join('');
+  out.innerHTML = `
+  <div class="grid g-hero">
+    <div class="card"><h2>${t('decision')} · ${esc(S.sym)} · ${esc(o.primary)}</h2>
+      ${gauge(sc)}
+      <div class="act"><span class="chip ${ch}" style="font-size:15px;padding:7px 18px">${esc(L[S.lang].action[act])}${D.grade ? ' · ' + esc(D.grade) : ''}</span>
+        <div class="big ${sc>25?'pos':sc<-25?'neg':'neu'}">${sc>0?'+':''}${sc.toFixed(1)}</div>
+        <div style="color:var(--muted);font-size:12.5px">${t('score')} · ${t('coverage')} ${cov}%</div></div>
+      <div style="margin-top:12px"><div class="kv"><span>${km()?'តម្លៃ':'Price'}</span><b>${fp(o.price, o.price)}</b></div>
+        <div class="kv"><span>${t('tfs')}</span><b style="font-size:12px">${o.ladder.join(' › ')}</b></div></div>
+      ${warn.length ? `<div class="warn">${warn.map(esc).join('<br>')}</div>` : ''}
+    </div>
+    <div class="grid" style="gap:14px">
+      <div class="card"><h2>${t('why')}</h2><p class="hl">${esc(R.headline)}</p>
+        ${R.waits.length ? `<h3 style="margin-top:12px">${t('waitWhy')}</h3>${list(R.waits, 'wt')}` : ''}
+        ${R.pros.length ? `<h3 style="margin-top:12px">${t('pros')}</h3>${list(R.pros, '')}` : ''}
+        ${R.cons.length ? `<h3 style="margin-top:12px">${t('cons')}</h3>${list(R.cons, 'con')}` : ''}
+        ${R.conflicts.length ? `<h3 style="margin-top:12px">${t('conflicts')}</h3><div style="font-size:13px;color:#cfe0d5">${esc(R.conflicts[0])}</div>` : ''}
+      </div>
+      <div class="card"><h2>${t('plan')}</h2>${planHtml}</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>${t('chart')} · ${esc(o.primary)}</h2>${chartSVG(o)}</div>
+  <h2 style="margin:22px 0 10px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--lime)">${t('modules')}</h2>
+  <div class="grid g-mod">${MODS.map(k => moduleCard(k, o.modules[k], o)).join('')}</div>
+  <div class="card" style="margin-top:14px"><h2>${t('breakdown')}</h2><div class="scroll"><table class="t"><thead><tr><th>${t('module')}</th><th class="r">${t('weight')}</th><th class="r">${t('mscore')}</th><th class="r">${t('points')}</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td><b>${t('score')}</b></td><td class="r"></td><td class="r"></td><td class="r"><b class="${sc>0?'pos':sc<0?'neg':''}">${sc>0?'+':''}${sc.toFixed(1)}</b></td></tr></tfoot></table></div>
+    <p style="color:var(--dim);font-size:12.5px;margin:10px 0 0">${t('weights')}</p></div>`;
+}
+const tfStatus = () => [['60','H1'],['15','M15'],['5','M5'],['1','M1']].map(([k, n]) => n + ': ' + (S.status[k] ? esc(S.status[k]) : '…')).join(' · ');
+
+/* ---------------- data ---------------- */
+async function getJSON(url, ms){
+  const c = new AbortController(), id = setTimeout(() => c.abort(), ms || 15000);
+  try{ const r = await fetch(url, {signal:c.signal}); const j = await r.json().catch(() => null); if(!r.ok || !j) throw new Error((j && j.error) || ('HTTP ' + r.status)); return j; }
+  finally{ clearTimeout(id); }
+}
+let seq = 0;
+async function load(force){
+  const my = ++seq; S.loading = true; $('refresh').disabled = true; $('refresh').textContent = t('loading');
+  if(force || !S.data) { S.data = null; render(); }
+  S.status = {};
+  const sym = S.sym, tf = {};
+  const job = (k, name) => getJSON(`/api/candles?symbol=${sym}&tf=${k}`).then(j => { tf[name] = j.candles; S.status[k] = '✓ ' + j.candles.length; S.src = j.source; S.delayed = j.delayed; }).catch(e => { S.status[k] = '✗'; });
+  const jobs = [job('60', 'h1'), job('15', 'm15'), job('5', 'm5'), job('1', 'm1')];
+  const newsJob = Promise.all(['this', 'next'].map(w => getJSON('/api/market-news?week=' + w, 10000).then(j => j.events || []).catch(() => null))).then(a => { S.news = a.every(x => x == null) ? null : [].concat(a[0] || [], a[1] || []); });
+  await Promise.all(jobs.concat([newsJob]));
+  if(my !== seq) return;
+  S.loading = false; $('refresh').disabled = false; $('refresh').textContent = t('refresh');
+  try{
+    S.data = window.AromIntel.analyze({symbol:sym, style:S.style, tf, news:S.news, now:Date.now()});
+    if(S.data.error) S.data.error += ' · ' + tfStatus().replace(/<[^>]+>/g, '');
+  }catch(e){ S.data = {error:String(e && e.message || e)}; }
+  S.at = Date.now(); render(); meta();
+}
+function meta(){ const el = $('meta'); if(!S.at){ el.textContent = ''; return; } const d = new Date(S.at); el.textContent = `${t('updated')} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${S.src ? ' · ' + S.src : ''}${S.delayed ? (km() ? ' (យឺត)' : ' (delayed)') : ''}`; }
+
+/* ---------------- controls ---------------- */
+function drawControls(){
+  $('symSeg').innerHTML = SYMS.map(s => `<button type="button" data-s="${s}" class="${s === S.sym ? 'on' : ''}">${s}</button>`).join('');
+  $('styleSeg').innerHTML = STYLES.map(s => `<button type="button" data-st="${s}" class="${s === S.style ? 'on' : ''}">${t(s)}</button>`).join('');
+  document.querySelectorAll('[data-i]').forEach(a => { a.textContent = t(a.dataset.i); });
+  $('sub').textContent = t('sub'); $('legal').textContent = t('legal'); $('refresh').textContent = S.loading ? t('loading') : t('refresh');
+  document.body.classList.toggle('km', km()); document.documentElement.lang = S.lang;
+  $('langSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.l === S.lang));
+}
+$('symSeg').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if(!b || b.dataset.s === S.sym) return; S.sym = b.dataset.s; save(); drawControls(); load(true); });
+$('styleSeg').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if(!b || b.dataset.st === S.style) return; S.style = b.dataset.st; save(); drawControls(); load(true); });
+$('langSeg').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if(!b) return; S.lang = b.dataset.l; save(); drawControls(); render(); meta(); });
+$('refresh').onclick = () => load(true);
+drawControls(); load(true);
+setInterval(() => { if(!document.hidden && !S.loading && Date.now() - S.at > 55000) load(false); }, 20000);
+window.__intel = S;
+})();
+</script>
+</body>
+</html>
