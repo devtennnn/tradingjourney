@@ -139,25 +139,64 @@ const CURRENCY = "USD" as const;
 const BAKONG_DEFAULT = "https://api-bakong.nbc.gov.kh";
 const BAKONG_API = env("BAKONG_API_URL", BAKONG_DEFAULT);
 
-// Token renewal (Bakong guide section 3): with BAKONG_EMAIL set, a fresh token is requested from /v1/renew_token when there is no BAKONG_TOKEN,
-// when the cached one is within 5 minutes of its expiry, or when Bakong rejects the current one. Kept only in this instance's memory.
+// Token renewal (Bakong guide section 3). Bakong allows only ~100 renew_token calls a day, so renewing is rationed:
+//   - the token lives in memory AND in the table public.bakong_token (shared by every instance, survives cold starts), so one renewal serves everyone;
+//   - a renewal is only asked for when there is no usable token, the cached one is within 5 minutes of its exp, or Bakong rejected the current one
+//     (and nobody renewed it meanwhile);
+//   - at most one attempt every 10 minutes (success or failure) and DAILY_CAP attempts per UTC day.
+// Needs BAKONG_EMAIL. Without the table it still works from memory only, with the same limits per instance.
+const MIN_GAP_MS = 10 * 60_000, MANUAL_GAP_MS = 60_000, DAILY_CAP = 40;
 let renewed: { token: string; exp: number } | null = null;
-async function renewToken(force = false): Promise<string> {
+let lastAttemptMem = 0;
+type TokRow = { token: string | null; exp: string | null; renewed_at: string | null; day: string | null; renews_today: number | null; last_attempt: string | null; last_error: string | null };
+async function loadTok(db: any): Promise<TokRow | null> {
+  try { const { data } = await db.from("bakong_token").select("*").eq("id", 1).maybeSingle(); return (data as TokRow) ?? null; } catch { return null; }
+}
+async function saveTok(db: any, patch: Record<string, unknown>) {
+  try {
+    const { data } = await db.from("bakong_token").select("id").eq("id", 1).maybeSingle();
+    if (data) await db.from("bakong_token").update(patch).eq("id", 1); else await db.from("bakong_token").insert({ id: 1, ...patch });
+  } catch (e) { console.error("bakong_token not saved (run supabase/sql/bakong-token.sql):", String(e)); }
+}
+const tokExp = (t: string, fallback: number) => {
+  try { return JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp * 1000 || fallback; } catch { return fallback; }
+};
+/** Get a usable token. `bad` = the token Bakong just rejected (renew even if the cached one looks valid). `manual` = an admin asked (shorter wait). Never throws. */
+async function renewToken(db: any, bad = "", manual = false): Promise<string> {
   const email = env("BAKONG_EMAIL").trim();
   if (!email) return "";
-  if (!force && renewed && Date.now() < renewed.exp - 300_000) return renewed.token;
+  const now = Date.now();
+  const fresh = (t: string | null, exp: number) => !!t && t !== bad && now < exp - 300_000;
+  if (!manual && renewed && fresh(renewed.token, renewed.exp)) return renewed.token;
+  const row = await loadTok(db);
+  if (!manual && row?.token && row.exp && fresh(row.token, Date.parse(row.exp))) { renewed = { token: row.token, exp: Date.parse(row.exp) }; return row.token; }   // another instance already renewed
+  const gap = manual ? MANUAL_GAP_MS : MIN_GAP_MS, last = Math.max(lastAttemptMem, row?.last_attempt ? Date.parse(row.last_attempt) : 0);
+  const day = new Date(now).toISOString().slice(0, 10), used = row?.day === day ? Number(row?.renews_today ?? 0) : 0;
+  if (now - last < gap) { console.error("Bakong renew skipped: last attempt was", Math.round((now - last) / 1000), "s ago"); return ""; }
+  if (used >= DAILY_CAP) { console.error("Bakong renew skipped: daily cap", DAILY_CAP, "reached"); return ""; }
+  lastAttemptMem = now;
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
     if (env("BAKONG_RELAY_KEY")) headers["x-relay-key"] = env("BAKONG_RELAY_KEY");
     const res = await fetch(`${BAKONG_API}/v1/renew_token`, { method: "POST", headers, body: JSON.stringify({ email }) });
     const j: any = await res.json().catch(() => null);
     const t = j && j.responseCode === 0 ? String(j.data?.token ?? "") : "";
-    if (!t) { console.error("Bakong renew_token failed: http", res.status, String(j?.responseMessage ?? "").slice(0, 120)); return ""; }
-    let exp = Date.now() + 3600_000;
-    try { exp = JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp * 1000 || exp; } catch { /* keep the 1 hour guess */ }
+    const stamp = { last_attempt: new Date(now).toISOString(), day, renews_today: used + 1 };
+    if (!t) {
+      const why = res.status === 403 && !j ? "geo_blocked (Bakong refuses this server's location)" : `http ${res.status} ${String(j?.responseMessage ?? "").slice(0, 100)}`;
+      console.error("Bakong renew_token failed:", why);
+      await saveTok(db, { ...stamp, last_error: why });
+      return "";
+    }
+    const exp = tokExp(t, now + 3600_000);
     renewed = { token: t, exp };
+    await saveTok(db, { ...stamp, token: t, exp: new Date(exp).toISOString(), renewed_at: new Date(now).toISOString(), last_error: null });
     return t;
-  } catch (e) { console.error("Bakong renew_token request failed", String(e)); return ""; }
+  } catch (e) {
+    console.error("Bakong renew_token request failed", String(e));
+    await saveTok(db, { last_attempt: new Date(now).toISOString(), day, renews_today: used + 1, last_error: String(e).slice(0, 150) });
+    return "";
+  }
 }
 
 // Anajak Pay (KHQRPay) hosted checkout. The request hash is sha1(secret + transaction_id + amount + success_url + remark), exactly as in their PHP sample.
@@ -323,7 +362,7 @@ Deno.serve(async (req) => {
 
     /** Ask Bakong about one MD5. Never throws. */
     const bakongLookup = async (md5: string, retried = false): Promise<any> => {
-      const token = bakongToken() || (await renewToken());
+      const token = bakongToken() || (await renewToken(admin));
       if (!token) return { tx: null, blocked: "no_token" as Blocked, http: 0, raw: null as unknown };
       try {
         const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${token}` };
@@ -338,7 +377,7 @@ Deno.serve(async (req) => {
         else if (res.status >= 500 || (!j && !res.ok)) blocked = "unreachable";          // server error, or a non-JSON error page
         else if (res.status === 401 || res.status === 403 || (j && j.responseCode === 401)) blocked = "rejected";
         else if (j && j.responseCode === undefined && !res.ok) blocked = "unreachable";   // the relay's own JSON error (wrong path / bad request), not an answer from Bakong
-        if (blocked === "rejected" && !retried && env("BAKONG_EMAIL").trim() && (await renewToken(true))) return bakongLookup(md5, true);   // expired token: renew once and ask again
+        if (blocked === "rejected" && !retried && env("BAKONG_EMAIL").trim() && (await renewToken(admin, token))) return bakongLookup(md5, true);   // expired token: renew (rationed) and ask again
         if (blocked) console.error("Bakong not usable:", blocked, "http", res.status, "body", text.slice(0, 200));
         return { tx: j && j.responseCode === 0 ? j.data : null, blocked, http: res.status, raw: j ?? text.slice(0, 200) };
       } catch (e) {
@@ -408,6 +447,19 @@ Deno.serve(async (req) => {
       const unpaid = (rows ?? []).filter((p: any) => p.status !== "claimed")
         .map((p: any) => ({ id: p.id, bill: p.bill_number, plan: p.plan ?? "premium", amount: Number(p.amount), currency: p.currency, created_at: p.created_at }));
       return json({ status: anyClaimed ? "claimed" : "none", bakong: last.bakong, unpaid });
+    }
+
+    /* ---------- token / renew_token: admins only. "token" = status of the stored Bakong token, "renew_token" = renew it now (rationed) ---------- */
+    if (body.action === "token" || body.action === "renew_token") {
+      const { data: prof } = await admin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+      if (!(prof as any)?.is_admin) return json({ error: "forbidden" }, 403);
+      if (body.action === "renew_token") await renewToken(admin, "", true);
+      const row = await loadTok(admin), left = row?.exp ? Date.parse(row.exp) - Date.now() : null;
+      return json({
+        emailSet: !!env("BAKONG_EMAIL").trim(), tokenSecretSet: !!env("BAKONG_TOKEN").trim(), hasStoredToken: !!row?.token,
+        expiresAt: row?.exp ?? null, hoursLeft: left == null ? null : Math.round(left / 360000) / 10, renewedAt: row?.renewed_at ?? null,
+        renewalsToday: row?.day === new Date().toISOString().slice(0, 10) ? Number(row?.renews_today ?? 0) : 0, dailyCap: DAILY_CAP, lastAttempt: row?.last_attempt ?? null, lastError: row?.last_error ?? null,
+      });
     }
 
     /* ---------- diag: self-test for admins (reveals no secrets) ---------- */
