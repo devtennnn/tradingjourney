@@ -2295,6 +2295,24 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
 #hero .cc-trades li{height:40px}
 #hero .cc-kpi-lbl,#hero .cc-kpis{display:none!important}
 @media(max-width:560px){#hero .cc-big{font-size:32px}#hero .cc-bars{height:56px}}
+
+/* ================= Navbar v3: five page links, quiet chrome, one lime action ================= */
+header.nav2 .nav-links > a,header.nav2 .nl-tools-btn{height:36px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;color:#a9bcb0;transition:color .15s cubic-bezier(.22,1,.36,1),background-color .15s cubic-bezier(.22,1,.36,1)}
+header.nav2 .nav-links > a:hover,header.nav2 .nl-tools-btn:hover,header.nav2 .nl-tools.open .nl-tools-btn{color:#eef6f0;background:rgba(238,246,240,.05)}
+header.nav2 .nav-links > a.on{color:#eef6f0;background:rgba(238,246,240,.06)}
+header.nav2 .nav-links > a:focus-visible,header.nav2 .nl-tools-btn:focus-visible,header.nav2 .nav-signin:focus-visible,header.nav2 #addTop:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+header.nav2 .nl-ind{bottom:-4px;height:2px;box-shadow:none}
+header.nav2 .nl-dot{box-shadow:none}
+header.nav2 .nav-signin{font-size:14px;font-weight:500;color:#cfe0d5}
+header.nav2 .nav-signin:hover{color:#eef6f0}
+header.nav2 #addTop{height:36px;padding:0 14px;border-radius:8px;font-size:14px;font-weight:600;gap:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important}
+header.nav2 #addTop .arr{display:none}
+header.nav2 .lang-pill,header.nav2 .workspace-pill{border-color:rgba(238,246,240,.08);background:rgba(238,246,240,.03)}
+header.top-nav.nav2.scrolled{box-shadow:0 8px 24px rgba(0,0,0,.28);border-color:rgba(238,246,240,.08)}
+header.nav2 .tools-menu{background:#13241c!important;border:1px solid rgba(238,246,240,.08)!important;box-shadow:0 16px 36px rgba(0,0,0,.45);border-radius:12px}
+header.nav2 .tools-menu .util-btn{font-weight:500;color:#cfe0d5;border-radius:8px}
+header.nav2.nav-burger-mode .nav-links > a.on{background:rgba(238,246,240,.06);color:#eef6f0}
+header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
 </style>
 </head>
 <body data-page="pricing">
@@ -2328,13 +2346,11 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
 
   <!-- Section links with a sliding active indicator (scroll-spy) -->
   <nav class="nav-links" id="navLinks" aria-label="Sections">
-    <a href="/" data-sec="hero" data-i18n="nlOverview">Overview</a>
-    <a href="/news" data-sec="newsPanel" data-i18n="nlNews">News</a>
-    <a href="/news#alertPanel" data-sec="alertPanel" data-i18n="nlAlerts">Alerts</a>
-    <a href="/analysis" class="nl-ext" data-i18n="nlDesk">AI Desk</a>
-    <a href="/journey" data-sec="secJournal" data-i18n="nlJournal">Journey</a>
-    <a href="/journey#secPerf" data-sec="secPerf" data-i18n="nlPerf">Performance</a>
-    <a href="/pricing" class="nl-ext" data-i18n="nlPricing">Pricing</a>
+    <a href="/" data-sec="hero" data-pg="main" data-i18n="nlOverview">Overview</a>
+    <a href="/journey" data-sec="secJournal" data-pg="journey" data-i18n="nlJournal">Journey</a>
+    <a href="/news" data-sec="newsPanel" data-pg="news" data-i18n="nlNews">News</a>
+    <a href="/analysis" data-sec="anHero" data-pg="analysis" data-i18n="nlDesk">AI Desk</a>
+    <a href="/pricing" data-sec="prPlans" data-pg="pricing" data-i18n="nlPricing">Pricing</a>
     <div class="nl-tools">
       <button type="button" class="nl-tools-btn" id="toolsBtn" aria-haspopup="menu" aria-expanded="false"><span data-i18n="nlTools">Tools</span><span class="nl-dot" id="toolsDot" hidden></span><svg class="svg-ico sm chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="tools-menu utility-group" id="toolsMenu" role="menu" aria-label="Trading tools">
@@ -2397,7 +2413,6 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
     <button type="button" class="btn small" id="addTop" data-i18n-title="tipAdd">
       <svg class="svg-ico sm" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span data-i18n="addTrade">Add Trade</span>
-      <svg class="svg-ico sm arr" viewBox="0 0 24 24" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
       <kbd class="kbd" aria-hidden="true">N</kbd>
     </button>
     <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
@@ -9182,9 +9197,11 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape'){ toolsClose()
 /* Section links: smooth scroll below the sticky bar */
 $('navLinks').addEventListener('click', e => {
   const a = e.target.closest('a[data-sec]'); if(!a) return;
+  if(a.dataset.pg && a.dataset.pg !== PAGE) return;   // another page: let the link navigate
   const el = document.getElementById(a.dataset.sec); if(!el) return;
   e.preventDefault();
   if(el.offsetParent === null){ navClose(); goSection(a.dataset.sec); return; }
+  if(a.dataset.pg){ window.scrollTo({top:0, behavior: REDUCED() ? 'auto' : 'smooth'}); navClose(); return; }
   const y = el.getBoundingClientRect().top + window.scrollY - ($('topNav').offsetHeight + 18);
   window.scrollTo({top: (a.dataset.sec === 'hero' || a.dataset.sec === 'anHero') ? 0 : y, behavior: REDUCED() ? 'auto' : 'smooth'});
   navClose();
@@ -9339,7 +9356,7 @@ $('mtxList') && $('mtxList').addEventListener('click', async e => {
 });
 (function deskFlags(){ const b = document.body; Object.entries(DESK).forEach(([k, v]) => b.classList.toggle('dk-' + (k === 'tabs' ? 'tabs-on' : k), v)); b.classList.toggle('dk-any', Object.values(DESK).some(Boolean)); })();
 (function pageSetup(){
-  if(PAGE === 'analysis'){
+  if(PAGE === 'analysis' && false){
     const nav = $('navLinks'), tools = nav.querySelector('.nl-tools');
     nav.querySelectorAll(':scope > a').forEach(a => a.remove());
     const links = [
@@ -9349,9 +9366,11 @@ $('mtxList') && $('mtxList').addEventListener('click', async e => {
     NavSpy.cur = 'anHero';
     document.title = 'AROM TRADE — AI Desk · Signals & Market Analysis';
   }
+  if(PAGE === 'analysis'){ NavSpy.cur = 'anHero'; document.title = 'AROM TRADE — AI Desk · Signals & Market Analysis'; }
+  if(PAGE === 'pricing'){ NavSpy.cur = 'prPlans'; document.title = 'AROM TRADE — Pricing · Free, Premium & Elite'; }
   if(PAGE === 'journey'){ NavSpy.cur = 'secJournal'; document.title = 'AROM TRADE — Journey · Trade Journal & Performance'; }
   if(PAGE === 'news'){ NavSpy.cur = 'newsPanel'; document.title = 'AROM TRADE — USD News & Alerts'; }
-  if(PAGE === 'pricing'){
+  if(PAGE === 'pricing' && false){
     const nav = $('navLinks'), tools = nav.querySelector('.nl-tools');
     nav.querySelectorAll(':scope > a').forEach(a => a.remove());
     [['/', 'nlHome', null], ['/analysis', 'nlDesk', null], ['#prPlans', 'nlPlans', 'prPlans'], ['#prCompare', 'nlCompare', 'prCompare'], ['#prFaq', 'nlFaq', 'prFaq']]
@@ -9366,13 +9385,14 @@ $('mtxList') && $('mtxList').addEventListener('click', async e => {
 })();
 function navSpyPaint(){
   const links = [...document.querySelectorAll('#navLinks > a[data-sec]')], ind = $('navInd');
-  links.forEach(a => a.classList.toggle('on', a.dataset.sec === NavSpy.cur));
+  links.forEach(a => { const on = a.dataset.sec === NavSpy.cur; a.classList.toggle('on', on); if(on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   const on = links.find(a => a.dataset.sec === NavSpy.cur);
   if(!on || $('topNav').classList.contains('nav-burger-mode')){ ind.classList.remove('show'); return; }
   const nr = $('navLinks').getBoundingClientRect(), r = on.getBoundingClientRect();
   ind.style.left = (r.left - nr.left + 10) + 'px'; ind.style.width = Math.max(0, r.width - 20) + 'px'; ind.classList.add('show');
 }
 function navSpy(){
+  if(document.querySelector('#navLinks > a[data-pg]')){ const cur = ({main:'hero', journey:'secJournal', news:'newsPanel', analysis:'anHero', pricing:'prPlans'})[PAGE] || 'hero'; if(cur !== NavSpy.cur){ NavSpy.cur = cur; navSpyPaint(); } return; }
   const ids = [...document.querySelectorAll('#navLinks > a[data-sec]')].map(a => a.dataset.sec);
   const line = $('topNav').offsetHeight + 60;
   let cur = ({analysis:'anHero', pricing:'prPlans', journey:'secJournal', news:'newsPanel'})[PAGE] || 'hero', best = -Infinity;
