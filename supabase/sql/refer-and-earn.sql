@@ -1,0 +1,8 @@
+-- Refer & Earn (applied as migrations refer_and_earn_tables, refer_and_earn_functions, refer_and_earn_privileges,
+-- refer_bonus_signal_feed, refer_unlock_checks_signal).
+-- Tables: referrals (referrer, referred, confirmed_at, qualified_at), ref_rewards (elite30 per 15 / bonus10 per paid plan),
+--         signal_unlocks (user, ai_signals.id); profiles.ref_code, profiles.bonus_signals.
+-- RPCs (authenticated): ref_touch() on every signed-in visit, my_referral(), my_signal_feed(), use_signal_unlock(p_key),
+--         my_signal_unlocks(). Internal: ref_award(uuid), ref_new_code(), trigger payments_ref_bonus -> ref_on_paid().
+-- Rules: a referral counts once the referred user confirmed their email and is back >= 1 day after sign-up.
+--        Every 15 counted referrals = +30 days elite_until. Each paid payment of a referred user = +10 bonus_signals.
