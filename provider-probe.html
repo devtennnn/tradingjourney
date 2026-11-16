@@ -25,7 +25,8 @@ textarea{width:100%;height:120px;background:#0c1a14;color:var(--text);border:1px
 <p>Admin only. Runs on the server with the keys stored in Vercel and shows which symbols each provider really serves, how fresh the data is and any plan or rate-limit errors. Nothing is saved.</p>
 <div id="st">Checking sign-in…</div>
 <div class="row" id="btns" hidden>
-  <button class="pri" data-p="siftingio">SiftingIO</button>
+  <button class="pri" data-p="siftingio" data-q="&symbols=NAS100,US30,SPX500,GER40">SiftingIO indices (slow, ~2 min)</button>
+  <button class="pri" data-p="siftingio">SiftingIO all</button>
   <button class="pri" data-p="finnhub">Finnhub</button>
   <button class="pri" data-p="twelvedata">Twelve Data</button>
   <button class="pri" data-p="alphavantage">Alpha Vantage</button>
@@ -46,15 +47,15 @@ const ALL = {}; let token = '';
   if(!session){ $('st').innerHTML = 'You are not signed in. Open <a href="/" style="color:var(--lime)">aromx.trade</a>, sign in with your admin account, then come back to this page.'; return; }
   token = session.access_token; $('st').textContent = 'Signed in. Tap a provider to test it (each takes up to about a minute).'; $('btns').hidden = false;
 })();
-async function run(p, btn){
+async function run(p, btn, q){
   btn.disabled = true; $('st').textContent = 'Testing ' + p + '… please wait, do not close the page.';
   try{
-    const r = await fetch('/api/provider-probe?providers=' + p, {headers:{Authorization:'Bearer ' + token}});
+    const r = await fetch('/api/provider-probe?providers=' + p + (q || ''), {headers:{Authorization:'Bearer ' + token}});
     const j = await r.json().catch(() => ({}));
     if(r.status === 403){ $('st').textContent = 'This account is not an admin (or the session expired). Sign in again as admin.'; btn.disabled = false; return; }
     if(r.status === 404){ $('st').textContent = 'The test endpoint is not deployed yet. Merge the pull request and wait for the Vercel deploy.'; btn.disabled = false; return; }
     if(!r.ok){ $('st').textContent = 'Test failed (HTTP ' + r.status + '). It may have timed out; try again.'; btn.disabled = false; return; }
-    ALL[p] = j; show(); $('st').textContent = j.skipped_no_key && j.skipped_no_key.length ? p + ': no API key is set in Vercel for this provider.' : 'Done: ' + p + '.';
+    ALL[p + (q ? ' (indices)' : '')] = j; show(); $('st').textContent = j.skipped_no_key && j.skipped_no_key.length ? p + ': no API key is set in Vercel for this provider.' : 'Done: ' + p + '.';
   }catch(e){ $('st').textContent = 'Could not reach the server. Check your connection and try again.'; }
   btn.disabled = false;
 }
@@ -69,7 +70,7 @@ function show(){
   }
   $('out').innerHTML = html; $('ta').value = plain.join('\n\n'); $('cp').hidden = !plain.length;
 }
-$('btns').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if(b) run(b.dataset.p, b); });
+$('btns').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if(b) run(b.dataset.p, b, b.dataset.q); });
 $('copy').onclick = async () => { try{ await navigator.clipboard.writeText($('ta').value); $('copy').textContent = 'Copied'; }catch(e){ $('ta').select(); $('copy').textContent = 'Select and copy manually'; } };
 })();
 </script>
