@@ -35,13 +35,14 @@ export function macd(c, f = 12, s = 26, sig = 9) {
   return { line, signal, hist };
 }
 /** day-anchored VWAP (UTC day of the last candle) from typical price; only when EVERY candle that day has real volume */
-export function vwapOfDay(cs) {
+export function vwapOfDay(cs, cls) {
   if (!cs.length) return { value: null, reason: "no_candles" };
   const day = cs[cs.length - 1].timestamp.slice(0, 10), d = cs.filter((b) => b.timestamp.slice(0, 10) === day);
   if (d.length < 2) return { value: null, reason: "fewer_than_2_candles_today" };
   if (!d.every((b) => b.volume != null && b.volume > 0)) return { value: null, reason: "no_real_volume" };
   let pv = 0, v = 0; for (const b of d) { pv += ((b.high + b.low + b.close) / 3) * b.volume; v += b.volume; }
-  return { value: r6(pv / v), reason: null, candles: d.length };
+  const real = cls === "crypto" || cls === "equity" || cls === "etf";
+  return { value: r6(pv / v), reason: null, candles: d.length, volume_kind: real ? "exchange_or_aggregated_traded_volume" : "provider_activity_count", note: real ? null : "spot FX / metals / CFD-style feeds report quote or tick activity, not traded volume: treat this VWAP as indicative only" };
 }
 
 // ---------------- swings, structure, levels ----------------
@@ -73,10 +74,11 @@ export function structure(cs, k = CONFIG.swingK) {
 /** clusters of swing highs/lows within `tol` of each other become zones; touches = number of swings in the zone */
 export function zones(cs, pv, tol, price) {
   const pts = [...pv.hs.map((p) => ({ ...p, kind: "h" })), ...pv.ls.map((p) => ({ ...p, kind: "l" }))].sort((a, b) => a.p - b.p), groups = [];
-  for (const p of pts) { const g = groups[groups.length - 1]; if (g && p.p - g.hi <= tol) { g.hi = p.p; g.pts.push(p); } else groups.push({ lo: p.p, hi: p.p, pts: [p] }); }
+  // a zone is never wider than 2*tol (= 1 ATR): without this cap, neighbouring swings chain together and a whole stretch of price becomes one "zone"
+  for (const p of pts) { const g = groups[groups.length - 1]; if (g && p.p - g.hi <= tol && p.p - g.lo <= 2 * tol) { g.hi = p.p; g.pts.push(p); } else groups.push({ lo: p.p, hi: p.p, pts: [p] }); }
   const z = groups.map((g) => ({ lo: r6(g.lo), hi: r6(g.hi), touches: g.pts.length, last_touch: g.pts.reduce((m, p) => (p.t > m ? p.t : m), ""), strength: g.pts.length >= 3 ? "strong" : g.pts.length === 2 ? "medium" : "weak" }));
   const sup = z.filter((x) => x.hi < price).sort((a, b) => b.hi - a.hi).slice(0, 3), res = z.filter((x) => x.lo > price).sort((a, b) => a.lo - b.lo).slice(0, 3), inside = z.filter((x) => x.lo <= price && x.hi >= price);
-  return { support: sup, resistance: res, price_inside: inside, methodology: "clusters of confirmed swing highs/lows within " + CONFIG.zoneTolAtr + " ATR (calculated; not order-flow or institutional data)" };
+  return { support: sup, resistance: res, price_inside: inside, methodology: "clusters of confirmed swing highs/lows, each at most " + 2 * CONFIG.zoneTolAtr + " ATR wide (calculated; not order-flow or institutional data)" };
 }
 export function liquidity(cs, pv, a) {
   const obs = [], tol = CONFIG.equalTolAtr * a, n = cs.length, from = n - CONFIG.sweepLookback;
@@ -118,7 +120,7 @@ export function analyseTimeframe(tf, candles, opts = {}) {
   const closes = cs.map((b) => b.close), price = closes[n - 1], A = atr(cs, CONFIG.atr), a = A[n - 1];
   const E = {}; for (const p of CONFIG.ema) { const arr = ema(closes, p); E[p] = arr[n - 1] == null ? null : r6(arr[n - 1]); if (E[p] == null) unavailable.push("ema" + p + " (needs " + p + " candles)"); }
   const R = rsi(closes, CONFIG.rsi), M = macd(closes, ...CONFIG.macd), rv = R[n - 1], mh = M.hist[n - 1], mh3 = M.hist[n - 4];
-  const st = structure(cs), pv = st.pivots, Z = zones(cs, pv, CONFIG.zoneTolAtr * a, price), L = liquidity(cs, pv, a), V = vwapOfDay(cs);
+  const st = structure(cs), pv = st.pivots, Z = zones(cs, pv, CONFIG.zoneTolAtr * a, price), L = liquidity(cs, pv, a), V = vwapOfDay(cs, cls);
   if (V.value == null) unavailable.push("vwap (" + V.reason + ")");
   const aMed = (() => { const x = A.slice(-100).filter((v) => v != null).sort((p, q) => p - q); return x.length ? x[Math.floor(x.length / 2)] : null; })();
   const stack = [9, 20, 50, 100, 200].map((p) => E[p]); const stackOk = stack.every((x) => x != null);
@@ -178,7 +180,7 @@ export function analyse({ symbol, timeframe, instrument, feeds, now = Date.now()
   if (conflicts.length) caveats.push("timeframes conflict: " + conflicts[0]);
   if (out.instrument && out.instrument.is_proxy) caveats.push("prices are for an ETF that tracks " + out.instrument.tracks + ", not the index level");
   if (out.instrument && out.instrument.delayed) caveats.push("price feed is delayed futures data");
-  return { ...out, available: true, bias, evidence_score: r6(lean), evidence: ev, confidence: null, confidence_note: "no statistically validated model backs a probability; evidence_score is a transparent heuristic from -1 to +1",
+  return { ...out, available: true, price: p.price, bias, evidence_score: r6(lean), evidence: ev, confidence: null, confidence_note: "no statistically validated model backs a probability; evidence_score is a transparent heuristic from -1 to +1",
     last_candle_at: p.last_candle_at, last_complete_candle_at: p.last_complete_candle_at, freshness: p.freshness, session: p.session, trend: p.trend, momentum: p.momentum, volatility: p.volatility, structure: p.structure, levels: p.levels, liquidity: p.liquidity, indicators: p.indicators,
     data: { candles_used: p.candles_used, forming_candle_excluded: p.forming_candle_excluded, sufficient_for_ema200: p.sufficient, unavailable: p.unavailable }, multi_timeframe: { alignment, higher_timeframe_bias: htf ? htf.direction : null, ladder, conflicts }, caveats };
 }
