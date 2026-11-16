@@ -1,0 +1,230 @@
+// @ts-nocheck
+// Supabase Edge Function: arom-ai  (JWT required; Ultra members and admins)
+// AROM AI = OpenAI (Responses API, server side only) explaining VERIFIED data. It never fetches prices itself and never invents facts.
+//   POST { action: "analyze", symbol, timeframe, lang, variant? }     -> technical analyst report (bias / levels / liquidity from the deterministic engine; the model only writes the explanation)
+//   POST { action: "chat", message, conversation_id?, symbol?, lang } -> answer built from approved read-only tools (quote, candles, analysis, economic events, news, the member's OWN journal summary)
+//   POST { action: "conversations" } / { action: "messages", conversation_id } -> the member's own saved chats
+// Secrets: OPENAI_API_KEY, OPENAI_MODEL (never hard-coded). Optional: OPENAI_MAX_OUTPUT_TOKENS (3000), OPENAI_REQUEST_TIMEOUT (seconds, 60), AI_DAILY_USAGE_LIMIT (40 OpenAI requests per member per 24 h),
+// AI_REPORT_CACHE_S (600), MARKETAUX_API_KEY (news headlines), SITE_URL.
+import { createClient } from "jsr:@supabase/supabase-js@2";
+import OpenAI from "npm:openai@5.23.2";
+import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats } from "./lib.mjs";
+
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+const env = (k, d = "") => Deno.env.get(k) || d;
+const intEnv = (k, d) => { const n = parseInt(env(k), 10); return n > 0 ? n : d; };
+const SITE = () => env("SITE_URL", "https://aromx.trade").replace(/\/$/, "");
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+
+// ---- per-member limits ----
+const hits = new Map();   // 6 requests a minute per member
+const limited = (id) => { const now = Date.now(), a = (hits.get(id) || []).filter((t) => now - t < 60_000); a.push(now); hits.set(id, a); if (hits.size > 2000) hits.clear(); return a.length > 6; };
+async function reserve(userId, kind) {
+  const since = new Date(Date.now() - 24 * 3600_000).toISOString(), limit = intEnv("AI_DAILY_USAGE_LIMIT", 40);
+  const c = await db.from("ai_usage_log").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("ok", true).gte("created_at", since);
+  if (c.error) { console.error("arom-ai usage table:", c.error.message); return { error: "setup_needed" }; }
+  if ((c.count || 0) >= limit) return { error: "daily_limit", limit };
+  const r = await db.from("ai_usage_log").insert({ user_id: userId, kind }).select("id").single();
+  if (r.error) return { error: "setup_needed" };
+  return { id: r.data.id, remaining: Math.max(0, limit - (c.count || 0) - 1) };
+}
+const finish = (id, model, usage) => db.from("ai_usage_log").update({ model, input_tokens: usage.input, output_tokens: usage.output }).eq("id", id);
+const refund = (id) => db.from("ai_usage_log").delete().eq("id", id);
+
+// ---- integration health (shown to admins by the market-data "health" action) ----
+async function health(ok, err) {
+  try {
+    const { data: h } = await db.from("integration_health").select("*").eq("provider", "openai").maybeSingle();
+    const cur = h || { provider: "openai", calls_today: 0, errors_today: 0, calls_total: 0, errors_total: 0 }, d = new Date().toISOString().slice(0, 10), same = cur.calls_day === d;
+    const row = { ...cur, calls_day: d, calls_today: (same ? cur.calls_today : 0) + 1, errors_today: (same ? cur.errors_today : 0) + (ok ? 0 : 1), calls_total: (cur.calls_total || 0) + 1, errors_total: (cur.errors_total || 0) + (ok ? 0 : 1), status: ok ? "ok" : "error", updated_at: new Date().toISOString() };
+    if (ok) row.last_success_at = new Date().toISOString(); else { row.last_error = String(err || "").slice(0, 200); row.last_error_at = new Date().toISOString(); }
+    await db.from("integration_health").upsert(row, { onConflict: "provider" });
+  } catch (_) { /* best effort */ }
+}
+
+// ---- calls to the other AROM functions with the member's own token ----
+async function fn(name, body, auth, ms = 45_000) {
+  try {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ms);
+    const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/${name}`, { method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/json", Authorization: auth, apikey: env("SUPABASE_ANON_KEY") }, body: JSON.stringify(body) });
+    clearTimeout(to); const j = await r.json().catch(() => null);
+    if (!r.ok || !j) return { error: (j && j.error) || "http_" + r.status };
+    return j;
+  } catch (_) { return { error: "timeout_or_network" }; }
+}
+
+// ---- OpenAI ----
+let client = null;
+const getClient = () => client || (client = new OpenAI({ apiKey: env("OPENAI_API_KEY"), timeout: intEnv("OPENAI_REQUEST_TIMEOUT", 60) * 1000, maxRetries: 1 }));
+const reasoningLike = (m) => /^(o\d|gpt-5)/i.test(m);
+/** one Responses API call; returns { text, calls, output, usage, refusal } */
+async function ask(params) {
+  const model = env("OPENAI_MODEL"), base = { model, store: false, max_output_tokens: intEnv("OPENAI_MAX_OUTPUT_TOKENS", 3000), ...params };
+  let resp;
+  try { resp = await getClient().responses.create(reasoningLike(model) ? { ...base, include: ["reasoning.encrypted_content"] } : base); }
+  catch (e) {
+    if (e instanceof OpenAI.BadRequestError && /include|encrypted/i.test(String(e.message))) resp = await getClient().responses.create(base);   // the model does not support the extra include: retry without it
+    else throw e;
+  }
+  const out = resp.output || [], calls = out.filter((x) => x.type === "function_call");
+  const msg = out.filter((x) => x.type === "message").flatMap((x) => x.content || []);
+  return { text: msg.filter((c) => c.type === "output_text").map((c) => c.text).join(""), refusal: msg.some((c) => c.type === "refusal"), calls, output: out, status: resp.status, usage: { input: resp.usage?.input_tokens || 0, output: resp.usage?.output_tokens || 0 } };
+}
+function mapError(e) {
+  if (e instanceof OpenAI.AuthenticationError || e instanceof OpenAI.PermissionDeniedError) return ["not_configured", 503];
+  if (e instanceof OpenAI.RateLimitError) return ["busy", 503];
+  if (e instanceof OpenAI.BadRequestError) return ["ai_bad_request", 502];
+  return ["ai_failed", 502];
+}
+const langName = (l) => (l === "km" ? "Khmer (ភាសាខ្មែរ)" : "English");
+
+// ---- approved read-only tools ----
+let calendarCache = { at: 0, events: null };
+async function calendar() {
+  if (calendarCache.events && Date.now() - calendarCache.at < 300_000) return calendarCache.events;
+  const parts = await Promise.all(["this", "next"].map(async (w) => { try { const r = await fetch(`${SITE()}/api/market-news?week=${w}`); const j = await r.json(); return r.ok ? j.events || [] : null; } catch { return null; } }));
+  if (parts.every((x) => x == null)) return null;
+  const seen = new Set(), all = [].concat(parts[0] || [], parts[1] || []).filter((e) => { const k = e.key || `${e.country}|${e.title}|${e.ms}`; if (seen.has(k)) return false; seen.add(k); return true; });   // this week and next week can overlap
+  calendarCache = { at: Date.now(), events: all }; return all;
+}
+const ppTime = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 16).replace("T", " ") + " (Cambodia, UTC+7)";
+async function runTool(name, args, ctx) {
+  const sym = String(args.symbol || "").toUpperCase();
+  if (["get_market_quote", "get_market_candles", "get_market_analysis", "get_market_news"].includes(name) && !SYMBOL_RE.test(sym)) return { error: "bad_symbol" };
+  if (name === "get_market_quote") { const r = await fn("market-data", { action: "quote", symbol: sym }, ctx.auth); return r.ok ? { quote: r.quote, meta: r.meta } : { error: r.error }; }
+  if (name === "get_market_candles") {
+    const tf = String(args.timeframe || ""), n = Math.min(40, Math.max(5, parseInt(args.limit, 10) || 20)); if (!TFS.includes(tf)) return { error: "bad_timeframe" };
+    const r = await fn("market-data", { action: "candles", symbol: sym, timeframe: tf, limit: n }, ctx.auth); if (!r.ok) return { error: r.error };
+    return { symbol: r.instrument.symbol, asset_class: r.instrument.asset_class, tracks: r.instrument.tracks, timeframe: tf, source: r.meta.source, delayed: r.meta.is_delayed === true, last_candle_at: r.meta.last_candle_at, served_stale: r.meta.served_stale,
+      candles: r.candles.slice(-n).map((c) => ({ time: c.timestamp, open: c.open, high: c.high, low: c.low, close: c.close, complete: c.complete })) };
+  }
+  if (name === "get_market_analysis") {
+    const tf = String(args.timeframe || ""); if (!TFS.includes(tf)) return { error: "bad_timeframe" };
+    const a = await fn("market-intelligence", { symbol: sym, timeframe: tf }, ctx.auth); if (a.error) return { error: a.error };
+    if (!a.available) return { available: false, reason: a.reason };
+    ctx.tol = Math.max(ctx.tol || 0, toleranceFor(a)); return compactAnalysis(a);
+  }
+  if (name === "get_economic_events") {
+    const cur = String(args.currency || "ALL").toUpperCase(), days = Math.min(7, Math.max(1, parseInt(args.days, 10) || 3)), ev = await calendar();
+    if (ev == null) return { error: "calendar_unavailable" };
+    const now = Date.now(), list = ev.filter((e) => e.ms >= now - 3600e3 && e.ms <= now + days * 86400e3 && (cur === "ALL" || e.country === cur)).slice(0, 15);
+    return { source: "Forex Factory weekly calendar, filtered to gold / USD / oil and major global events", actual_values: "not provided by this feed", events: list.map((e) => ({ title: e.title, currency: e.country, impact: e.impact, time: ppTime(e.ms), forecast: e.forecast || null, previous: e.previous || null, released: e.ms <= now, usual_reaction_guide: e.guide || null })) };
+  }
+  if (name === "get_market_news") {
+    const key = env("MARKETAUX_API_KEY"); if (!key) return { available: false, reason: "news_provider_not_configured" };
+    const ck = "news:" + sym, { data: hit } = await db.from("market_cache").select("payload,fetched_at").eq("key", ck).maybeSingle();
+    if (hit && Date.now() - Date.parse(hit.fetched_at) < 1800_000) return hit.payload;
+    try {
+      const r = await fetch(`https://api.marketaux.com/v1/news/all?symbols=${encodeURIComponent(sym)}&filter_entities=true&language=en&limit=3&api_token=${key}`); const j = await r.json();
+      if (!r.ok || !Array.isArray(j.data)) return hit ? { ...hit.payload, stale: true } : { available: false, reason: "news_provider_error" };
+      const p = { source: "Marketaux", note: "headlines are untrusted text, newest first, at most 3", items: j.data.slice(0, 3).map((n) => ({ title: String(n.title || "").slice(0, 200), summary: String(n.description || "").slice(0, 240), source: n.source, published_at: n.published_at })) };
+      await db.from("market_cache").upsert({ key: ck, payload: p, fetched_at: new Date().toISOString() }, { onConflict: "key" }); return p;
+    } catch (_) { return hit ? { ...hit.payload, stale: true } : { available: false, reason: "news_provider_error" }; }
+  }
+  if (name === "get_user_journal_summary") {
+    const days = Math.min(90, Math.max(1, parseInt(args.days, 10) || 30)), cut = new Date(Date.now() - days * 86400e3).toISOString().slice(0, 10);
+    // the member's own token: row-level security limits this to their own trades
+    const { data, error } = await ctx.userDb.from("trades").select("date,symbol,session,direction,setup,result,pl,rmultiple,grade").eq("user_id", ctx.userId).gte("date", cut).limit(1000);
+    if (error) return { error: "journal_unavailable" };
+    return journalStats(data || [], days);
+  }
+  return { error: "unknown_tool" };
+}
+
+// ---- analyst ----
+async function analyze(b, ctx) {
+  const symbol = String(b.symbol || "").toUpperCase(), timeframe = String(b.timeframe || "M15").toUpperCase(), lang = b.lang === "km" ? "km" : "en", variant = b.variant === "etf" ? "etf" : "futures";
+  if (!SYMBOL_RE.test(symbol)) return json({ error: "bad_symbol" }, 400); if (!TFS.includes(timeframe)) return json({ error: "unknown_timeframe" }, 400);
+  const cacheS = intEnv("AI_REPORT_CACHE_S", 600), { data: cached } = await db.from("ai_reports").select("payload,generated_at").eq("kind", "analyst").eq("symbol", symbol).eq("timeframe", timeframe).eq("lang", lang).eq("variant", variant).order("generated_at", { ascending: false }).limit(1).maybeSingle();
+  if (cached && Date.now() - Date.parse(cached.generated_at) < cacheS * 1000) return json({ ok: true, report: { ...cached.payload, ai: { ...cached.payload.ai, from_cache: true, generated_at: cached.generated_at } } });
+  const a = await fn("market-intelligence", { symbol, timeframe, variant }, ctx.auth);
+  if (a.error === "unknown_symbol") return json({ error: "unknown_symbol" }, 400); if (a.error) return json({ error: a.error === "slow_down" ? "slow_down" : "data_unavailable", detail: a.error }, 502);
+  if (!a.available) return json({ ok: true, available: false, symbol, timeframe, reason: a.reason, note: "No analysis is produced when required market data is incomplete." });
+  const when = new Date().toISOString();
+  if (a.bias == null) { const r = buildReport(a, sanitiseAnalyst(fallbackText(a)), { status: "bias_withheld", generated_at: when, lang }); return json({ ok: true, report: r }); }   // stale or thin data: no AI, no direction
+  const rs = await reserve(ctx.userId, "analyst"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
+  const compact = compactAnalysis(a), allowed = numbersIn(compact), tol = toleranceFor(a), prompt = `Write the technical analyst report for ${a.symbol} on ${a.timeframe}. Language: ${langName(lang)}.\nUse ONLY this verified data. Do not change the engine bias (${a.bias}); explain it, the structure, momentum, volatility, calculated liquidity and what would invalidate the reading. Bullish and bearish scenarios must be conditional ("if ... then ...") and use only levels from the data.\n\nDATA:\n${JSON.stringify(compact)}`;
+  let usage = { input: 0, output: 0 }, ai = null, bad = [];
+  try {
+    for (let attempt = 0; attempt < 2 && !ai; attempt++) {
+      const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: attempt ? prompt + `\n\nYour previous text contained numbers that are not in the data: ${bad.join(", ")}. Rewrite it using only numbers from the data.` : prompt }], text: { format: { type: "json_schema", name: "arom_analyst", schema: ANALYST_SCHEMA, strict: true } } });
+      usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
+      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
+      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      let parsed = null; try { parsed = sanitiseAnalyst(JSON.parse(r.text)); } catch { parsed = null; }
+      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      bad = ungroundedNumbers(analystText(parsed), allowed, tol); if (!bad.length) ai = parsed;
+    }
+  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai analyze:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
+  const status = ai ? "ok" : "rejected_ungrounded", report = buildReport(a, ai || sanitiseAnalyst(fallbackText(a)), { status, model: env("OPENAI_MODEL"), generated_at: when, lang });
+  await db.from("ai_reports").insert({ kind: "analyst", symbol, timeframe, lang, variant, payload: report, data_snapshot: { sources: a.sources, last_candle_at: a.last_candle_at, calculated_at: a.calculated_at, engine: a.engine }, model: env("OPENAI_MODEL"), last_candle_at: a.last_candle_at });
+  return json({ ok: true, report, remaining: rs.remaining });
+}
+
+// ---- chat ----
+async function chat(b, ctx) {
+  const message = String(b.message || "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim(), lang = b.lang === "km" ? "km" : "en";
+  if (!message) return json({ error: "empty_message" }, 400); if (message.length > 1200) return json({ error: "message_too_long" }, 400);
+  let convId = null;
+  if (b.conversation_id) { if (!UUID.test(String(b.conversation_id))) return json({ error: "bad_conversation" }, 400); const { data: c } = await db.from("ai_conversations").select("id,user_id").eq("id", b.conversation_id).maybeSingle(); if (!c || c.user_id !== ctx.userId) return json({ error: "conversation_not_found" }, 404); convId = c.id; }
+  const rs = await reserve(ctx.userId, "chat"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
+  let history = []; if (convId) { const { data } = await db.from("ai_messages").select("role,content").eq("conversation_id", convId).order("id", { ascending: false }).limit(8); history = (data || []).reverse().map((m) => ({ role: m.role, content: m.content })); }
+  const hint = b.symbol && SYMBOL_RE.test(String(b.symbol)) ? ` The member is currently looking at ${String(b.symbol).toUpperCase()}.` : "";
+  let input = [...history, { role: "user", content: `${message}\n\n[context: now ${new Date().toISOString()} UTC; answer in ${langName(lang)};${hint} use the tools for any market fact; do not guess]` }];
+  const allowed = numbersIn(message), calls = [], tctx = { ...ctx, tol: 0 }; let usage = { input: 0, output: 0 }, final = null, bad = [], retried = false;
+  try {
+    for (let step = 0; step < 6 && !final; step++) {
+      const r = await ask({ instructions: SYSTEM, input, tools: CHAT_TOOLS, text: { format: { type: "json_schema", name: "arom_chat", schema: CHAT_SCHEMA, strict: true } } });
+      usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
+      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
+      if (r.calls.length) {
+        input = [...input, ...r.output];
+        for (const c of r.calls.slice(0, 4)) {
+          let args = {}; try { args = JSON.parse(c.arguments || "{}"); } catch { args = {}; }
+          const result = await runTool(c.name, args, tctx); allowed.push(...numbersIn(result)); calls.push({ tool: c.name, args, at: new Date().toISOString(), ok: !result.error });
+          input.push({ type: "function_call_output", call_id: c.call_id, output: JSON.stringify(result).slice(0, 24000) });
+        }
+        continue;
+      }
+      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      let parsed = null; try { parsed = JSON.parse(r.text); } catch { parsed = null; }
+      if (!parsed || typeof parsed.answer !== "string") { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      bad = ungroundedNumbers(parsed.answer, allowed, Math.max(tctx.tol || 0, 1e-6));
+      if (bad.length && !retried) { retried = true; input = [...input, ...r.output, { role: "user", content: `Your answer contained numbers that are not in the data you retrieved: ${bad.join(", ")}. Rewrite the answer using only numbers from the tool results, or say the value is not available.` }]; continue; }
+      final = parsed;
+    }
+  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai chat:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  if (!final) { await refund(rs.id); await health(false, "no_final"); return json({ error: "ai_failed" }, 502); }
+  await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
+  const rejected = bad.length > 0, answer = rejected ? "I could not verify every number in my answer against the data I retrieved, so I am not showing it. Please ask again, or ask for a specific symbol and timeframe." : String(final.answer).slice(0, 4000);
+  const refs = { tools: calls, data_used: Array.isArray(final.data_used) ? final.data_used.slice(0, 8).map((x) => String(x).slice(0, 200)) : [], caveats: Array.isArray(final.caveats) ? final.caveats.slice(0, 6).map((x) => String(x).slice(0, 300)) : [], status: rejected ? "rejected_ungrounded" : "ok" };
+  if (!convId) { const t = await db.from("ai_conversations").insert({ user_id: ctx.userId, title: message.slice(0, 60), symbol: b.symbol && SYMBOL_RE.test(String(b.symbol)) ? String(b.symbol).toUpperCase() : null }).select("id").single(); if (t.error) { console.error("arom-ai conversation:", t.error.message); return json({ error: "setup_needed" }, 503); } convId = t.data.id; }
+  await db.from("ai_messages").insert([{ conversation_id: convId, user_id: ctx.userId, role: "user", content: message }, { conversation_id: convId, user_id: ctx.userId, role: "assistant", content: answer, data_refs: refs }]);
+  await db.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
+  return json({ ok: true, conversation_id: convId, answer, caveats: refs.caveats, data_used: refs.data_used, tools_called: calls, ai: { status: refs.status, model: env("OPENAI_MODEL"), language: lang }, remaining: rs.remaining });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  try {
+    const url = Deno.env.get("SUPABASE_URL"), anon = Deno.env.get("SUPABASE_ANON_KEY"), auth = req.headers.get("Authorization") ?? "";
+    const userDb = createClient(url, anon, { global: { headers: { Authorization: auth } } });
+    const { data: { user } } = await userDb.auth.getUser();
+    if (!user) return json({ error: "unauthorized" }, 401);
+    const { data: p } = await db.from("profiles").select("is_admin,ultra_until").eq("id", user.id).maybeSingle();
+    if (!(p && (p.is_admin === true || (p.ultra_until && new Date(p.ultra_until) > new Date())))) return json({ error: "ultra_required" }, 403);
+    const b = await req.json().catch(() => ({})), action = String(b.action || ""), ctx = { auth, userId: user.id, userDb };
+    if (action === "conversations") { const { data } = await userDb.from("ai_conversations").select("id,title,symbol,updated_at").order("updated_at", { ascending: false }).limit(30); return json({ ok: true, conversations: data || [] }); }
+    if (action === "messages") { if (!UUID.test(String(b.conversation_id || ""))) return json({ error: "bad_conversation" }, 400); const { data } = await userDb.from("ai_messages").select("role,content,data_refs,created_at").eq("conversation_id", b.conversation_id).order("id", { ascending: true }).limit(100); return json({ ok: true, messages: data || [] }); }
+    if (action !== "analyze" && action !== "chat") return json({ error: "unknown_action" }, 400);
+    if (!env("OPENAI_API_KEY") || !env("OPENAI_MODEL")) return json({ error: "not_configured" }, 503);
+    if (limited(user.id)) return json({ error: "slow_down" }, 429);
+    return action === "analyze" ? await analyze(b, ctx) : await chat(b, ctx);
+  } catch (e) {
+    console.error("arom-ai:", String(e?.message ?? e));
+    return json({ error: "server_error" }, 500);
+  }
+});

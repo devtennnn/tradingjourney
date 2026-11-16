@@ -180,7 +180,7 @@ export function analyse({ symbol, timeframe, instrument, feeds, now = Date.now()
   if (conflicts.length) caveats.push("timeframes conflict: " + conflicts[0]);
   if (out.instrument && out.instrument.is_proxy) caveats.push("prices are for an ETF that tracks " + out.instrument.tracks + ", not the index level");
   if (out.instrument && out.instrument.delayed) caveats.push("price feed is delayed futures data");
-  return { ...out, available: true, bias, evidence_score: r6(lean), evidence: ev, confidence: null, confidence_note: "no statistically validated model backs a probability; evidence_score is a transparent heuristic from -1 to +1",
+  return { ...out, available: true, price: p.price, bias, evidence_score: r6(lean), evidence: ev, confidence: null, confidence_note: "no statistically validated model backs a probability; evidence_score is a transparent heuristic from -1 to +1",
     last_candle_at: p.last_candle_at, last_complete_candle_at: p.last_complete_candle_at, freshness: p.freshness, session: p.session, trend: p.trend, momentum: p.momentum, volatility: p.volatility, structure: p.structure, levels: p.levels, liquidity: p.liquidity, indicators: p.indicators,
     data: { candles_used: p.candles_used, forming_candle_excluded: p.forming_candle_excluded, sufficient_for_ema200: p.sufficient, unavailable: p.unavailable }, multi_timeframe: { alignment, higher_timeframe_bias: htf ? htf.direction : null, ladder, conflicts }, caveats };
 }

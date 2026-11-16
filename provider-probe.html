@@ -37,6 +37,8 @@ textarea{width:100%;height:120px;background:#0c1a14;color:var(--text);border:1px
   <button id="mdHealth">Show quota and health</button>
   <button class="pri" id="miRun">Analyse XAUUSD M15 (indicators, structure, levels)</button>
   <button class="pri" id="miRun2">Analyse BTCUSD H1</button>
+  <button class="pri" id="aiRun">AROM AI: analyst report XAUUSD M15</button>
+  <button class="pri" id="aiChat">AROM AI: ask "What is the current gold bias?"</button>
 </div>
 <div id="out"></div>
 <div id="cp" hidden><h2>Copy and paste this to Claude</h2><textarea id="ta" readonly></textarea><div class="row"><button id="copy">Copy results</button></div></div>
@@ -124,6 +126,28 @@ async function miAnalyse(sym, tf){
 for(const [id, sym, tf] of [['miRun','XAUUSD','M15'], ['miRun2','BTCUSD','H1']]){
   $(id).onclick = async () => { const b = $(id); b.disabled = true; $('st').textContent = 'Analysing ' + sym + ' ' + tf + '… (uses cached data where possible)'; try{ mdShow('market-intelligence ' + sym + ' ' + tf, await miAnalyse(sym, tf)); $('st').textContent = 'Done.'; }catch(e){ $('st').textContent = 'Could not reach the function.'; } b.disabled = false; };
 }
+
+async function aiCall(body){
+  const {data, error} = await sb.functions.invoke('arom-ai', {body});
+  if(error){ let code = '', extra = ''; try{ const j = await error.context.json(); code = j && j.error || ''; extra = j && j.limit ? ' (limit ' + j.limit + ')' : ''; }catch(e){} return {error: (code || 'http_error') + extra}; }
+  return data;
+}
+$('aiRun').onclick = async () => {
+  const b = $('aiRun'); b.disabled = true; $('st').textContent = 'AROM AI is writing the report… (can take up to a minute)';
+  const d = await aiCall({action:'analyze', symbol:'XAUUSD', timeframe:'M15', lang:'en'}), L = [];
+  if(d.error) L.push('ERROR ' + d.error);
+  else if(d.available === false) L.push('NOT AVAILABLE: ' + d.reason);
+  else { const r = d.report; L.push('AI status: ' + r.ai.status + ' · model ' + r.ai.model + ' · from cache ' + r.ai.from_cache + ' · generated ' + r.ai.generated_at, 'engine bias: ' + r.bias + ' · confidence ' + r.confidence + ' · data ' + r.data_timestamp, 'SUMMARY: ' + r.summary, 'STRUCTURE: ' + r.market_structure, 'TREND: ' + r.trend, 'MOMENTUM: ' + r.momentum, 'VOLATILITY: ' + r.volatility, 'BULLISH: ' + r.bullish_scenario, 'BEARISH: ' + r.bearish_scenario, 'INVALIDATION: ' + r.invalidation, 'RISKS: ' + r.risk_notes.join(' | '), 'DATA QUALITY: ' + r.data_quality_notes.join(' | '), 'support: ' + r.support_levels.map(z => z.low + '-' + z.high).join(' | ') + ' · resistance: ' + r.resistance_levels.map(z => z.low + '-' + z.high).join(' | '), 'remaining today: ' + d.remaining); }
+  mdShow('AROM AI analyst', L); $('st').textContent = 'Done.'; b.disabled = false;
+};
+let aiConv = null;
+$('aiChat').onclick = async () => {
+  const b = $('aiChat'); b.disabled = true; $('st').textContent = 'AROM AI is checking the data… (can take up to a minute)';
+  const d = await aiCall({action:'chat', message:'What is the current gold bias?', lang:'en', conversation_id: aiConv || undefined}), L = [];
+  if(d.error) L.push('ERROR ' + d.error);
+  else { aiConv = d.conversation_id; L.push('ANSWER: ' + d.answer, 'status ' + d.ai.status + ' · model ' + d.ai.model, 'tools used: ' + d.tools_called.map(t => t.tool + '(' + JSON.stringify(t.args) + ')' + (t.ok ? '' : ' FAILED')).join(', '), 'data used: ' + d.data_used.join(' | '), 'caveats: ' + d.caveats.join(' | '), 'remaining today: ' + d.remaining); }
+  mdShow('AROM AI chat', L); $('st').textContent = 'Done.'; b.disabled = false;
+};
 $('btns').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if(b) run(b.dataset.p, b, b.dataset.q); });
 $('copy').onclick = async () => { try{ await navigator.clipboard.writeText($('ta').value); $('copy').textContent = 'Copied'; }catch(e){ $('ta').select(); $('copy').textContent = 'Select and copy manually'; } };
 })();
