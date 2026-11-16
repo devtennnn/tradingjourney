@@ -82,6 +82,9 @@ table.t td{padding:7px 8px;border-bottom:1px solid rgba(42,70,54,.5)}table.t td.
 .legal{margin-top:22px;color:var(--dim);font-size:12.5px;line-height:1.7}
 .skel{height:120px;border-radius:12px;background:linear-gradient(90deg,#102119 25%,#16302a 50%,#102119 75%);background-size:200% 100%;animation:sk 1.2s infinite}
 @keyframes sk{to{background-position:-200% 0}}
+.gate{max-width:560px;margin:30px auto;text-align:center;padding:30px 22px}.gate .lock{font-size:34px;margin-bottom:6px}.gate h2{font-size:18px;letter-spacing:0;text-transform:none;color:var(--text);margin:0 0 8px}
+.gate p{color:var(--muted);margin:0 0 14px}.gmods{list-style:none;margin:0 auto 14px;padding:0;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.gmods li{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:4px 11px;font-size:12px;color:#cfe0d5}
+.gprice{font-size:15px;color:var(--muted);margin-bottom:14px}.gprice b{font-size:28px;color:var(--lime);font-weight:900}.gate-b{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.btn.pri{background:var(--lime);color:#0b1813;border-color:var(--lime)}a.btn{display:inline-block;text-decoration:none}a.btn:hover{text-decoration:none}.gnote{font-size:12.5px;margin:14px 0 0!important;color:var(--dim)!important}
 @media(max-width:900px){.g-hero{grid-template-columns:1fr}.top nav{display:none}}
 @media(max-width:520px){.wrap{padding:0 12px 48px}.top{margin:0 -12px 14px;padding:8px 12px}.brand span.t{display:none}.card{padding:14px}.seg button{padding:6px 9px}}
 @media(prefers-reduced-motion:reduce){.skel{animation:none}}
@@ -110,7 +113,7 @@ table.t td{padding:7px 8px;border-bottom:1px solid rgba(42,70,54,.5)}table.t td.
 
   <p class="legal" id="legal"></p>
 </div>
-<script src="/intelligence-engine.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
 'use strict';
@@ -119,7 +122,7 @@ const SYMS = ['XAUUSD','BTCUSD','XAGUSD','EURUSD','GBPUSD','USDJPY','NQ','OIL'];
 const STYLES = ['scalp','intraday','swing'];
 const MODS = ['structure','liquidity','smc','ema_rsi','fib','orderflow','fundamental','mtf'];
 const NO = {structure:'01',liquidity:'02',smc:'03',ema_rsi:'04',fib:'04',orderflow:'05',fundamental:'06',mtf:'07'};
-const S = {sym:'XAUUSD', style:'intraday', lang:'en', data:null, loading:false, status:{}, news:null, at:0};
+const S = {sym:'XAUUSD', style:'intraday', lang:'en', data:null, gate:'', loading:false, at:0};
 try{ const sv = JSON.parse(localStorage.getItem('arom_intel') || '{}'); if(SYMS.includes(sv.sym)) S.sym = sv.sym; if(STYLES.includes(sv.style)) S.style = sv.style; if(sv.lang === 'km' || sv.lang === 'en') S.lang = sv.lang; }catch(e){}
 try{ const q = new URLSearchParams(location.search); if(SYMS.includes((q.get('symbol')||'').toUpperCase())) S.sym = q.get('symbol').toUpperCase(); if(STYLES.includes(q.get('style'))) S.style = q.get('style'); }catch(e){}
 const save = () => { try{ localStorage.setItem('arom_intel', JSON.stringify({sym:S.sym, style:S.style, lang:S.lang})); }catch(e){} };
@@ -134,7 +137,9 @@ const L = {
   why:'AI reasoning',pros:'Supports the idea',cons:'Against / risks',waitWhy:'Why WAIT',conflicts:'Conflicting evidence',
   chart:'Price and key levels',modules:'Analysis modules',breakdown:'Score breakdown',weight:'Weight',mscore:'Module score',points:'Points',module:'Module',
   bull:'Bullish',bear:'Bearish',neutral:'Neutral',na:'Unavailable',gate:'Risk gate',
-  dataErr:'Could not load market data.',retry:'Try again',tfs:'Timeframe ladder',
+  dataErr:'Could not load market data.',retry:'Try again',tfs:'Timeframe ladder',authErr:'Sign-in could not be loaded. Reload the page.',slow:'Too many requests. Wait a moment and refresh.',
+  gateSignT:'Sign in to open AROM Intelligence',gateSignP:'AROM Intelligence is available to Ultra members. Sign in with your AROM TRADE account to continue.',gateSignBtn:'Sign in',gatePlans:'See plans',
+  gateUpT:'AROM Intelligence is part of the Ultra plan',gateUpP:'The 8-module AI analysis engine runs on the AROM TRADE server and is included with Ultra, together with everything in Elite and Premium.',gatePer:'/ 30 days',gateUpBtn:'Get Ultra',gateNote:'Already Ultra? Make sure you are signed in with that account.',
   weights:'Weights are an engineering hypothesis, not a proven profitable formula. They are shown openly so you can judge them.',
   legal:'AROM Intelligence is an analysis tool for education. It is not financial advice and not a signal service. Markets carry risk of loss; always use your own judgement and risk limits. Gold, FX and index candles come from public data providers and may be delayed. There is no order-book feed, so bid/ask imbalance is not available; volume-based measures need real traded volume (crypto and futures), not spot FX.',
   d:{structure:'BOS, CHoCH, MSS, HH/HL/LH/LL, internal and external structure.',liquidity:'Buy-side / sell-side liquidity, equal highs and lows, sweeps and stop hunts.',smc:'Order blocks, fair value gaps, inversion FVG, premium / discount, displacement, dealing range.',ema_rsi:'EMA 20 / 50 / 200, RSI 14, ATR volatility, trend and momentum filters.',fib:'Fibonacci retracement of the latest swing leg.',orderflow:'VWAP, volume profile, estimated volume delta, absorption and exhaustion.',fundamental:'Economic calendar (CPI, NFP, FOMC, rates). Used as a risk gate: the feed has no actual-vs-forecast.',mtf:'Higher-timeframe bias, structure, setup and entry rungs must agree.'},
@@ -149,7 +154,9 @@ const L = {
   why:'ហេតុផលរបស់ AI',pros:'គាំទ្រគំនិតនេះ',cons:'ប្រឆាំង / ហានិភ័យ',waitWhy:'ហេតុអ្វីរង់ចាំ',conflicts:'ភស្តុតាងប៉ះទង្គិច',
   chart:'តម្លៃ និងកម្រិតសំខាន់ៗ',modules:'ម៉ូឌុលវិភាគ',breakdown:'ការបែងចែកពិន្ទុ',weight:'ទម្ងន់',mscore:'ពិន្ទុម៉ូឌុល',points:'ពិន្ទុរួមចំណែក',module:'ម៉ូឌុល',
   bull:'ឡើង',bear:'ចុះ',neutral:'អព្យាក្រឹត',na:'គ្មាន',gate:'ច្រកហានិភ័យ',
-  dataErr:'មិនអាចផ្ទុកទិន្នន័យទីផ្សារបានទេ។',retry:'ព្យាយាមម្តងទៀត',tfs:'ជណ្តើរស៊ុមពេលវេលា',
+  dataErr:'មិនអាចផ្ទុកទិន្នន័យទីផ្សារបានទេ។',retry:'ព្យាយាមម្តងទៀត',tfs:'ជណ្តើរស៊ុមពេលវេលា',authErr:'មិនអាចផ្ទុកការចូលគណនីបានទេ។ សូមផ្ទុកទំព័រឡើងវិញ។',slow:'សំណើច្រើនពេក។ សូមរង់ចាំបន្តិច រួចផ្ទុកឡើងវិញ។',
+  gateSignT:'ចូលគណនីដើម្បីបើក AROM Intelligence',gateSignP:'AROM Intelligence សម្រាប់សមាជិក Ultra។ សូមចូលគណនី AROM TRADE របស់អ្នកដើម្បីបន្ត។',gateSignBtn:'ចូលគណនី',gatePlans:'មើលគម្រោង',
+  gateUpT:'AROM Intelligence ជាផ្នែកមួយនៃគម្រោង Ultra',gateUpP:'ម៉ាស៊ីនវិភាគ AI ៨ម៉ូឌុលដំណើរការលើម៉ាស៊ីនមេរបស់ AROM TRADE ហើយរួមបញ្ចូលក្នុង Ultra ជាមួយអ្វីៗទាំងអស់ក្នុង Elite និង Premium។',gatePer:'/ ៣០ ថ្ងៃ',gateUpBtn:'យក Ultra',gateNote:'មាន Ultra រួចហើយមែនទេ? សូមប្រាកដថាអ្នកបានចូលគណនីនោះ។',
   weights:'ទម្ងន់ជាសម្មតិកម្មវិស្វកម្ម មិនមែនរូបមន្តដែលបានបង្ហាញថាចំណេញទេ។ យើងបង្ហាញជាសាធារណៈដើម្បីឱ្យអ្នកវិនិច្ឆ័យ។',
   legal:'AROM Intelligence ជាឧបករណ៍វិភាគសម្រាប់ការអប់រំ។ វាមិនមែនជាដំបូន្មានហិរញ្ញវត្ថុ ឬសេវាកម្មសញ្ញាទេ។ ទីផ្សារមានហានិភ័យខាតបង់ ចូរប្រើការវិនិច្ឆ័យ និងដែនកំណត់ហានិភ័យរបស់អ្នកផ្ទាល់។ ទិន្នន័យទៀនមកពីអ្នកផ្តល់ទិន្នន័យសាធារណៈ ហើយអាចយឺត។ គ្មានទិន្នន័យ order book ដូច្នេះ bid/ask imbalance មិនអាចប្រើបាន។ រង្វាស់បរិមាណត្រូវការបរិមាណជួញដូរពិត (គ្រីបតូ និង futures) មិនមែន spot FX ទេ។',
   d:{structure:'BOS, CHoCH, MSS, HH/HL/LH/LL រចនាសម្ព័ន្ធខាងក្នុង និងខាងក្រៅ។',liquidity:'សន្ទនីយភាពទិញ/លក់ កំពូល/បាតស្មើគ្នា ការបោស និង stop hunt។',smc:'Order block, Fair Value Gap, Inversion FVG, premium/discount, displacement, dealing range។',ema_rsi:'EMA 20/50/200, RSI 14, ភាពប្រែប្រួល ATR តម្រងនិន្នាការ និងសន្ទុះ។',fib:'Fibonacci retracement នៃរលកចុងក្រោយ។',orderflow:'VWAP, volume profile, volume delta ប៉ាន់ស្មាន absorption និង exhaustion។',fundamental:'ប្រតិទិនសេដ្ឋកិច្ច (CPI, NFP, FOMC, អត្រាការប្រាក់)។ ប្រើជាច្រកហានិភ័យ ព្រោះទិន្នន័យគ្មានលទ្ធផលពិត។',mtf:'ទិសដៅធំ រចនាសម្ព័ន្ធ ការរៀបចំ និងការចូល ត្រូវឯកភាពគ្នា។'},
@@ -246,10 +253,26 @@ function moduleCard(key, m, o){
     ${facts.length ? `<ul>${facts.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${extra}
     <div class="desc">${esc(L[S.lang].d[key] || L.en.d[key])}</div></div>`;
 }
+function renderGate(kind){
+  const out = $('out'), ctl = document.querySelector('.ctl');
+  if(ctl) ctl.style.display = 'none';
+  const mods = MODS.filter(k => k !== 'fib').map((k, i) => `<li>${esc(L[S.lang].n[k] || L.en.n[k])}</li>`).join('');
+  if(kind === 'signin'){
+    out.innerHTML = `<div class="card gate"><div class="lock" aria-hidden="true">🔒</div><h2>${esc(t('gateSignT'))}</h2><p>${esc(t('gateSignP'))}</p><div class="gate-b"><a class="btn pri" id="gSign" href="/?signin=1">${esc(t('gateSignBtn'))}</a><a class="btn" href="/pricing">${esc(t('gatePlans'))}</a></div></div>`;
+    return;
+  }
+  out.innerHTML = `<div class="card gate"><div class="lock" aria-hidden="true">🔒</div><h2>${esc(t('gateUpT'))}</h2><p>${esc(t('gateUpP'))}</p>
+    <ul class="gmods">${mods}</ul>
+    <div class="gprice"><b>$50.99</b> <span>${esc(t('gatePer'))}</span></div>
+    <div class="gate-b"><a class="btn pri" id="gUpgrade" href="/pricing?plan=ultra">${esc(t('gateUpBtn'))}</a><a class="btn" href="/pricing">${esc(t('gatePlans'))}</a></div>
+    <p class="gnote">${esc(t('gateNote'))}</p></div>`;
+}
 function render(){
-  const out = $('out'), o = S.data;
+  const out = $('out'), o = S.data, ctl = document.querySelector('.ctl');
+  if(S.gate){ renderGate(S.gate); return; }
+  if(ctl) ctl.style.display = '';
   if(!o){ out.innerHTML = `<div class="skel"></div>`; return; }
-  if(o.error){ out.innerHTML = `<div class="err"><b>${esc(t('dataErr'))}</b><br>${esc(o.error)}<div style="margin-top:8px"><button class="btn" id="retry" type="button">${esc(t('retry'))}</button></div><div style="margin-top:8px;font-size:12px">${tfStatus()}</div></div>`; const rb = $('retry'); if(rb) rb.onclick = () => load(true); return; }
+  if(o.error){ out.innerHTML = `<div class="err"><b>${esc(t('dataErr'))}</b><br>${esc(o.error)}<div style="margin-top:8px"><button class="btn" id="retry" type="button">${esc(t('retry'))}</button></div></div>`; const rb = $('retry'); if(rb) rb.onclick = () => load(true); return; }
   const R = o.reasoning[S.lang], D = o.decision, act = D.action, ch = act === 'LONG' ? 'long' : act === 'SHORT' ? 'short' : 'wait';
   const sc = o.composite, plan = o.plan, cov = Math.round(o.coverage * 100);
   const planHtml = plan && plan.valid ? `
@@ -290,33 +313,41 @@ function render(){
     <tfoot><tr><td><b>${t('score')}</b></td><td class="r"></td><td class="r"></td><td class="r"><b class="${sc>0?'pos':sc<0?'neg':''}">${sc>0?'+':''}${sc.toFixed(1)}</b></td></tr></tfoot></table></div>
     <p style="color:var(--dim);font-size:12.5px;margin:10px 0 0">${t('weights')}</p></div>`;
 }
-const tfStatus = () => [['60','H1'],['15','M15'],['5','M5'],['1','M1']].map(([k, n]) => n + ': ' + (S.status[k] ? esc(S.status[k]) : '…')).join(' · ');
 
-/* ---------------- data ---------------- */
-async function getJSON(url, ms){
-  const c = new AbortController(), id = setTimeout(() => c.abort(), ms || 15000);
-  try{ const r = await fetch(url, {signal:c.signal}); const j = await r.json().catch(() => null); if(!r.ok || !j) throw new Error((j && j.error) || ('HTTP ' + r.status)); return j; }
-  finally{ clearTimeout(id); }
-}
+/* ---------------- data: the analysis runs on the server (edge function "intelligence") and only answers Ultra members ---------------- */
+const SUPABASE_URL = 'https://sksvwikfyrdhgjngekqp.supabase.co', SUPABASE_ANON_KEY = 'sb_publishable_9HxgkobAgQtKb2Jx8dkX-A_DxWy_m6e';
+let sb = null; try{ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }catch(e){}
 let seq = 0;
+async function errCode(err){
+  let status = 0, code = '';
+  try{ status = err && err.context && err.context.status || 0; const j = await err.context.json(); code = j && j.error || ''; }catch(e){}
+  return {status, code};
+}
 async function load(force){
   const my = ++seq; S.loading = true; $('refresh').disabled = true; $('refresh').textContent = t('loading');
-  if(force || !S.data) { S.data = null; render(); }
-  S.status = {};
-  const sym = S.sym, tf = {};
-  const job = (k, name) => getJSON(`/api/candles?symbol=${sym}&tf=${k}`).then(j => { tf[name] = j.candles; S.status[k] = '✓ ' + j.candles.length; S.src = j.source; S.delayed = j.delayed; }).catch(e => { S.status[k] = '✗'; });
-  const jobs = [job('60', 'h1'), job('15', 'm15'), job('5', 'm5'), job('1', 'm1')];
-  const newsJob = Promise.all(['this', 'next'].map(w => getJSON('/api/market-news?week=' + w, 10000).then(j => j.events || []).catch(() => null))).then(a => { S.news = a.every(x => x == null) ? null : [].concat(a[0] || [], a[1] || []); });
-  await Promise.all(jobs.concat([newsJob]));
+  if(force || !S.data){ S.data = null; S.gate = ''; render(); }
+  let data = null, gate = '';
+  try{
+    if(!sb) throw new Error(t('authErr'));
+    const {data:{session}} = await sb.auth.getSession();
+    if(!session) gate = 'signin';
+    else {
+      const res = await sb.functions.invoke('intelligence', {body:{symbol:S.sym, style:S.style}});
+      if(res.error){
+        const {status, code} = await errCode(res.error);
+        if(status === 401 || code === 'unauthorized') gate = 'signin';
+        else if(status === 403 || code === 'ultra_required') gate = 'upsell';
+        else data = {error: status === 429 ? t('slow') : t('dataErr') + (code ? ' (' + code + ')' : '')};
+      } else data = res.data && !res.data.error ? res.data : {error: (res.data && res.data.error) || t('dataErr')};
+    }
+  }catch(e){ data = {error: String(e && e.message || e)}; }
   if(my !== seq) return;
   S.loading = false; $('refresh').disabled = false; $('refresh').textContent = t('refresh');
-  try{
-    S.data = window.AromIntel.analyze({symbol:sym, style:S.style, tf, news:S.news, now:Date.now()});
-    if(S.data.error) S.data.error += ' · ' + tfStatus().replace(/<[^>]+>/g, '');
-  }catch(e){ S.data = {error:String(e && e.message || e)}; }
-  S.at = Date.now(); render(); meta();
+  S.gate = gate; S.data = gate ? null : data; S.at = Date.now();
+  if(data && data.error && data.meta == null && !gate) S.data = data;
+  render(); meta();
 }
-function meta(){ const el = $('meta'); if(!S.at){ el.textContent = ''; return; } const d = new Date(S.at); el.textContent = `${t('updated')} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${S.src ? ' · ' + S.src : ''}${S.delayed ? (km() ? ' (យឺត)' : ' (delayed)') : ''}`; }
+function meta(){ const el = $('meta'); const m = S.data && S.data.meta; if(!S.at || S.gate || !m){ el.textContent = ''; return; } const d = new Date(S.at); el.textContent = `${t('updated')} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${m.source ? ' · ' + m.source : ''}${m.delayed ? (km() ? ' (យឺត)' : ' (delayed)') : ''}`; }
 
 /* ---------------- controls ---------------- */
 function drawControls(){

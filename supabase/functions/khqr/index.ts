@@ -3,7 +3,7 @@
 //   ANAJAK PAY (hosted checkout, confirmed from inside Cambodia by a signed webhook, so no Bakong geo-block): set ANAJAK_SECRET and ANAJAK_PROFILE_ID.
 //   OWN KHQR + Bakong check (fallback when the Anajak secrets are not set): BAKONG_TOKEN and/or BAKONG_EMAIL (token renewed via /v1/renew_token).
 // The merchant details below are public (they are printed inside every own-KHQR) and are used as defaults when no secret overrides them.
-// Optional secrets: PLAN_PRICE (default 2.5), PLAN_PRICE_ELITE (default 14.99), PLAN_DAYS (default 30), QR_TTL_MIN (default 15),
+// Optional secrets: PLAN_PRICE (default 2.5), PLAN_PRICE_ELITE (default 14.99), PLAN_PRICE_ULTRA (default 50.99), PLAN_DAYS (default 30), QR_TTL_MIN (default 15),
 //   BAKONG_ACCOUNT_ID, BAKONG_ACCOUNT_TYPE (individual | merchant), BAKONG_MERCHANT_ID, BAKONG_ACQUIRING_BANK, MERCHANT_NAME, MERCHANT_CITY,
 //   BAKONG_API_URL (default https://api-bakong.nbc.gov.kh; use https://sit-api-bakong.nbc.gov.kh to test, or the URL of a relay in Cambodia), BAKONG_RELAY_KEY
 //
@@ -127,12 +127,13 @@ const DEFAULTS = {
 } as const;
 const cfg = (k: keyof typeof DEFAULTS) => env(k, DEFAULTS[k]);
 
-// Plans: Premium = chart uploads. Elite = chart uploads + Market News Analysis + Signal Provider.
+// Plans: Premium = chart uploads. Elite = chart uploads + Market News Analysis + Signal Provider. Ultra = everything + the AROM Intelligence page.
 const PLANS: Record<string, { price: number; col: string; label: string }> = {
   premium: { price: Number(env("PLAN_PRICE", "2.5")), col: "premium_until", label: "Premium" },
   elite:   { price: Number(env("PLAN_PRICE_ELITE", "14.99")), col: "elite_until", label: "Elite" },
+  ultra:   { price: Number(env("PLAN_PRICE_ULTRA", "50.99")), col: "ultra_until", label: "Ultra" },   // Ultra = Elite + Premium + AROM Intelligence
 };
-const planOf = (v: unknown) => (v === "elite" ? "elite" : "premium");
+const planOf = (v: unknown) => (v === "ultra" ? "ultra" : v === "elite" ? "elite" : "premium");
 const DAYS = Number(env("PLAN_DAYS", "30"));
 const TTL_MS = Number(env("QR_TTL_MIN", "15")) * 60_000;
 const CURRENCY = "USD" as const;

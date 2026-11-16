@@ -32,9 +32,9 @@ Deno.serve(async (req) => {
   if (!p) return json({ error: "payment not found" }, 404);
   if (p.status !== "paid") return json({ ok: true, skipped: "payment is " + p.status });
 
-  const { data: prof } = await db.from("profiles").select("username,display_name,premium_until,elite_until").eq("id", p.user_id).maybeSingle();
+  const { data: prof } = await db.from("profiles").select("username,display_name,premium_until,elite_until,ultra_until").eq("id", p.user_id).maybeSingle();
   let email = ""; try { email = (await db.auth.admin.getUserById(p.user_id)).data.user?.email || ""; } catch { /* optional */ }
-  const plan = p.plan === "elite" ? "ELITE" : "PREMIUM", until = p.plan === "elite" ? prof?.elite_until : prof?.premium_until;
+  const plan = p.plan === "ultra" ? "ULTRA" : p.plan === "elite" ? "ELITE" : "PREMIUM", until = p.plan === "ultra" ? prof?.ultra_until : p.plan === "elite" ? prof?.elite_until : prof?.premium_until;
   const via = p.approved_by ? "admin approval" : /^https:\/\//.test(String(p.payload || "")) ? "Anajak Pay" : "KHQR (Bakong)";
   const who = prof?.username ? "@" + prof.username : prof?.display_name || "user";
   const promo = p.promo_code ? ` · promo <b>${esc(p.promo_code)}</b> (−${money(Number(p.list_price ?? p.amount) - Number(p.amount))})` : "";
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
   if (link?.chat_id) {
     const site = (Deno.env.get("SITE_URL") || "https://aromx.trade").replace(/\/$/, "");
     const when = until ? esc(ict.format(new Date(until))) : "";
-    const kh = plan === "ELITE" ? "Elite" : "Premium";
+    const kh = plan === "ULTRA" ? "Ultra" : plan === "ELITE" ? "Elite" : "Premium";
     const userText = [
       `✅ <b>Payment successful · ${plan} · ${money(p.amount)}</b>`,
       when ? `Your plan is active until <b>${when}</b> (ICT).` : "Your plan is now active.",
