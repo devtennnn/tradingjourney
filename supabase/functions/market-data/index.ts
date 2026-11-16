@@ -6,7 +6,8 @@
 //   POST { action: "candles", symbol, timeframe, limit? }    -> { ok, instrument, candles, meta }     timeframe: M1 M5 M15 M30 H1 H4 D1  (H4 is built from H1)
 //   POST { action: "health" }  (admin)                       -> { ok, providers: [...] }
 // Rules: nothing is invented. Missing values stay null. When the quota guard or the provider fails, cached data is returned marked stale, else an error.
-// Index symbols (NAS100, US30, SPX500, GER40) are NOT offered by SiftingIO: they resolve to ETF proxies (QQQ, DIA, SPY, EWG) and the answer says so (asset_class "etf", tracks "NAS100").
+// Index symbols are NOT offered by SiftingIO. NAS100 defaults to the NQ futures from the site's own feed (Yahoo, DELAYED, labelled; M1 M5 M15 H1 H4 only); { variant: "etf" } gives the QQQ ETF proxy.
+// US30, SPX500 and GER40 resolve to ETF proxies (DIA, SPY, EWG) and the answer says so (asset_class "etf", tracks "US30"). ETF prices are NOT index levels.
 // Secret: SIFTINGIO_API_KEY. Optional: MARKET_QUOTA_RESERVE (default 800 calls kept for admin/diagnostics), MARKET_STALE_THRESHOLD (seconds, default 900).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -20,11 +21,15 @@ const FX = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD"
 const SYMBOLS: Record<string, any> = {
   XAUUSD: { cls: "metal", kind: "commodities", id: "XAUUSD", cur: "USD" }, XAGUSD: { cls: "metal", kind: "commodities", id: "XAGUSD", cur: "USD" },
   BTCUSD: { cls: "crypto", kind: "crypto", id: "BTCUSD", cur: "USD" }, ETHUSD: { cls: "crypto", kind: "crypto", id: "ETHUSD", cur: "USD" },
-  NAS100: { cls: "etf", kind: "stocks", id: "QQQ", cur: "USD", tracks: "NAS100" }, US30: { cls: "etf", kind: "stocks", id: "DIA", cur: "USD", tracks: "US30" },
+  NAS100: { cls: "etf", kind: "stocks", id: "QQQ", cur: "USD", tracks: "NAS100", fut: { site: "NQ", id: "NQ", name: "Nasdaq 100 E-mini futures (NQ=F)" } }, US30: { cls: "etf", kind: "stocks", id: "DIA", cur: "USD", tracks: "US30" },
   SPX500: { cls: "etf", kind: "stocks", id: "SPY", cur: "USD", tracks: "SPX500" }, GER40: { cls: "etf", kind: "stocks", id: "EWG", cur: "USD", tracks: "GER40" },
 };
 for (const p of FX) SYMBOLS[p] = { cls: "forex", kind: "forex", id: p, cur: p.slice(3) };
 for (const e of (Deno.env.get("MARKET_EQUITIES") || "AAPL,MSFT,NVDA,TSLA,AMZN,GOOGL,META").split(",").map((x) => x.trim().toUpperCase()).filter(Boolean)) SYMBOLS[e] = { cls: "equity", kind: "stocks", id: e, cur: "USD" };
+
+// Index futures come from the site's own feed (/api/candles: Yahoo Finance, delayed up to ~10 min). Only these timeframes exist there; H4 is built from H1, M30 from M15 is not offered.
+const SITE_TF = { M1: "1", M5: "5", M15: "15", H1: "60", H4: "60" };
+const SITE = () => (Deno.env.get("SITE_URL") || "https://aromx.trade").replace(/\/$/, "");
 
 // ---- timeframes. ttl = how long a cached answer is reused (seconds). H4 is derived from H1.
 const TF: Record<string, any> = {
@@ -62,7 +67,7 @@ export function toH4(h1, symbol, source, nowMs = Date.now()) {
 }
 export function normaliseQuote(q, sym, cfg, source, nowMs = Date.now()) {
   const d = q && (q.data || q), bid = num(d.b ?? d.bid), ask = num(d.a ?? d.ask), last = num(d.p ?? d.price ?? d.last), ts = toMs(d.t ?? d.ts ?? d.timestamp);
-  const price = bid != null && ask != null && ask >= bid ? (bid + ask) / 2 : last;
+  const price = bid != null && ask != null && ask >= bid ? Math.round(((bid + ask) / 2) * 1e8) / 1e8 : last;
   const age = ts != null ? Math.max(0, Math.round((nowMs - ts) / 1000)) : null;
   return { symbol: cfg.id, requested: sym, tracks: cfg.tracks ?? null, asset_class: cfg.cls, price, bid, ask, change: null, change_percent: null, currency: cfg.cur, source, timestamp: ts != null ? new Date(ts).toISOString() : null,
     received_at: new Date(nowMs).toISOString(), is_delayed: null, is_stale: age == null ? null : age > STALE_S() };
@@ -111,16 +116,39 @@ async function cacheGet(key) { const { data } = await db.from("market_cache").se
 async function cachePut(key, payload) { await db.from("market_cache").upsert({ key, payload, fetched_at: new Date().toISOString() }, { onConflict: "key" }); }
 const ageS = (iso) => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
 
+async function getFuturesCandles(sym, tf, limit) {
+  const cfg = SYMBOLS[sym], T = TF[tf], ck = `c:fut:${cfg.fut.id}:${tf}`, hit = await cacheGet(ck);
+  if (hit && ageS(hit.fetched_at) < T.ttl) return { payload: hit.payload, from_cache: true, stale: false, fetched_at: hit.fetched_at };
+  const old = (why) => (hit ? { payload: hit.payload, from_cache: true, stale: true, fetched_at: hit.fetched_at, why } : { error: why });
+  if (!SITE_TF[tf]) return { error: "timeframe_unavailable" };
+  try {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 15000);
+    const r = await fetch(`${SITE()}/api/candles?symbol=${cfg.fut.site}&tf=${SITE_TF[tf]}`, { signal: ctl.signal, headers: { "User-Agent": "arom-market/1.0" } }); clearTimeout(to);
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || !Array.isArray(j.candles)) return old("provider_error");
+    const raw = j.candles.map((c) => ({ t: c.t, o: c.o, h: c.h, l: c.l, c: c.c, v: c.v })), source = "yahoo_futures";
+    let { candles, dropped } = normaliseBars(raw, cfg.fut.id, T.derive ? "H1" : tf, source);
+    if (T.derive) candles = toH4(candles, cfg.fut.id, source);
+    if (!candles.length) return old("no_data");
+    const payload = { candles: candles.slice(-Math.max(limit, 50)), dropped, derived: !!T.derive, truncated: false, source, delayed: true, feed: j.source || null };
+    await cachePut(ck, payload);
+    return { payload, from_cache: false, stale: false, fetched_at: new Date().toISOString() };
+  } catch (_) { return old("provider_error"); }
+}
 async function getCandles(sym, tf, limit, key) {
   const cfg = SYMBOLS[sym], T = TF[tf], ck = `c:${cfg.id}:${tf}`, hit = await cacheGet(ck);
   if (hit && ageS(hit.fetched_at) < T.ttl) return { payload: hit.payload, from_cache: true, stale: false, fetched_at: hit.fetched_at };
   const al = await allowance(), source = "siftingio";
   const serveOld = (why) => (hit ? { payload: hit.payload, from_cache: true, stale: true, fetched_at: hit.fetched_at, why } : { error: why });
   if (!al.ok) return serveOld("quota_guard");
-  // window: enough bars for `limit` plus weekends/closures, never more than one page (1000 bars) so one request = one call
-  const need = Math.min(1000, Math.max(60, limit) * (T.derive ? 4 : 1)), span = Math.ceil(need * (T.derive ? 3600 : T.sec) * (cfg.cls === "crypto" ? 1.1 : 1.7));
+  // window: enough bars for `limit` plus weekends/closures. The provider returns the OLDEST bars first and stops at `limit`, so the page size must be
+  // at least the number of bars the whole window can hold, otherwise the newest bars are cut off. One request = one call.
+  const need = Math.min(1000, Math.max(60, limit) * (T.derive ? 4 : 1)), barSec = T.derive ? 3600 : T.sec;
+  const factor = cfg.cls === "crypto" ? 1.15 : cfg.cls === "etf" || cfg.cls === "equity" ? 6.5 : 1.8;   // forex/metals ~24x5, stocks ~6.5 h a day
+  const cap = 1990;                                                                                         // provider page maximum is 2000
+  const span = Math.ceil(Math.min(need * barSec * factor, cap * barSec * 0.99)), pageSize = Math.min(2000, Math.ceil(span / barSec) + 10);
   const end = new Date(), start = new Date(Date.now() - span * 1000);
-  const r = await sift(`/hist/${cfg.kind}/${encodeURIComponent(cfg.id)}/bars?start=${start.toISOString()}&end=${end.toISOString()}&interval=${T.iv}&limit=${need}`, key);
+  const r = await sift(`/hist/${cfg.kind}/${encodeURIComponent(cfg.id)}/bars?start=${start.toISOString()}&end=${end.toISOString()}&interval=${T.iv}&limit=${pageSize}`, key);
   if (r.status === 404) return serveOld("symbol_not_found");
   if (r.status === 401 || r.status === 403) return serveOld("provider_auth");
   if (r.status === 429) return serveOld("rate_limited");
@@ -129,7 +157,8 @@ async function getCandles(sym, tf, limit, key) {
   let { candles, dropped } = normaliseBars(arr, cfg.id, T.derive ? "H1" : tf, source);
   if (T.derive) candles = toH4(candles, cfg.id, source);
   if (!candles.length) return serveOld("no_data");
-  const payload = { candles: candles.slice(-Math.max(limit, 50)), dropped, derived: !!T.derive };
+  const truncated = arr.length >= pageSize;   // the page was full: the newest bars may be missing
+  const payload = { candles: candles.slice(-Math.max(limit, 50)), dropped, derived: !!T.derive, truncated, source };
   await cachePut(ck, payload);
   return { payload, from_cache: false, stale: false, fetched_at: new Date().toISOString() };
 }
@@ -169,8 +198,15 @@ export async function handler(req) {
     if (limited(user.id)) return json({ error: "slow_down" }, 429);
     const key = Deno.env.get("SIFTINGIO_API_KEY"); if (!key) return json({ error: "not_configured" }, 503);
     const sym = String(b.symbol || "").toUpperCase(); if (!SYMBOLS[sym]) return json({ error: "unknown_symbol", symbols: Object.keys(SYMBOLS) }, 400);
-    const cfg = SYMBOLS[sym], inst = { requested: sym, symbol: cfg.id, asset_class: cfg.cls, tracks: cfg.tracks ?? null, is_proxy: cfg.cls === "etf", currency: cfg.cur };
+    const cfg = SYMBOLS[sym], fut = !!cfg.fut && String(b.variant || "futures") !== "etf";      // NAS100: futures (default) or the QQQ ETF proxy
+    const inst = fut ? { requested: sym, symbol: cfg.fut.id, asset_class: "futures", tracks: null, is_proxy: false, currency: "USD", description: cfg.fut.name, delayed: true }
+      : { requested: sym, symbol: cfg.id, asset_class: cfg.cls, tracks: cfg.tracks ?? null, is_proxy: cfg.cls === "etf", currency: cfg.cur };
     if (action === "quote") {
+      if (fut) {   // no quote feed for the futures: the price is the last M5 candle close and says so
+        const f = await getFuturesCandles(sym, "M5", 60); if (f.error) return json({ error: f.error }, 502);
+        const c = f.payload.candles[f.payload.candles.length - 1];
+        return json({ ok: true, quote: { symbol: cfg.fut.id, requested: sym, tracks: null, asset_class: "futures", price: c.close, bid: null, ask: null, change: null, change_percent: null, currency: "USD", source: "yahoo_futures", timestamp: c.timestamp, received_at: new Date().toISOString(), is_delayed: true, is_stale: ageS(c.timestamp) > STALE_S(), price_basis: "last_m5_candle_close" }, meta: { from_cache: f.from_cache, fetched_at: f.fetched_at, served_stale: f.stale, reason: f.why ?? null } });
+      }
       const r = await getQuote(sym, key); if (r.error) return json({ error: r.error }, r.error === "symbol_not_found" ? 404 : 502);
       const q = { ...r.payload, is_stale: r.stale || r.payload.is_stale || (ageS(r.payload.received_at) > STALE_S()) };
       return json({ ok: true, quote: q, meta: { from_cache: r.from_cache, fetched_at: r.fetched_at, served_stale: r.stale, reason: r.why ?? null } });
@@ -178,10 +214,10 @@ export async function handler(req) {
     if (action === "candles") {
       const tf = String(b.timeframe || "M15").toUpperCase(); if (!TF[tf]) return json({ error: "unknown_timeframe", timeframes: Object.keys(TF) }, 400);
       const limit = Math.min(500, Math.max(20, parseInt(b.limit, 10) || 200));
-      const r = await getCandles(sym, tf, limit, key); if (r.error) return json({ error: r.error }, r.error === "symbol_not_found" ? 404 : 502);
+      const r = fut ? await getFuturesCandles(sym, tf, limit) : await getCandles(sym, tf, limit, key); if (r.error) return json({ error: r.error }, r.error === "symbol_not_found" ? 404 : 502);
       const c = r.payload.candles.slice(-limit), last = c[c.length - 1], age = last ? Math.round((Date.now() - Date.parse(last.timestamp)) / 1000) : null;
-      return json({ ok: true, instrument: inst, timeframe: tf, candles: c, meta: { from_cache: r.from_cache, fetched_at: r.fetched_at, served_stale: r.stale, reason: r.why ?? null, count: c.length, dropped_invalid: r.payload.dropped, derived: r.payload.derived,
-        last_candle_at: last ? last.timestamp : null, last_candle_age_s: age, last_candle_complete: last ? last.complete : null, source: "siftingio", is_delayed: null, enough_for_indicators: c.length >= 200 } });
+      return json({ ok: true, instrument: inst, timeframe: tf, candles: c, meta: { from_cache: r.from_cache, fetched_at: r.fetched_at, served_stale: r.stale, reason: r.why ?? null, count: c.length, dropped_invalid: r.payload.dropped, derived: r.payload.derived, truncated: !!r.payload.truncated,
+        last_candle_at: last ? last.timestamp : null, last_candle_age_s: age, last_candle_complete: last ? last.complete : null, source: r.payload.source || "siftingio", is_delayed: r.payload.delayed === true ? true : null, enough_for_indicators: c.length >= 200 } });
     }
     return json({ error: "unknown_action" }, 400);
   } catch (e) {
