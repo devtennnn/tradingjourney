@@ -3,7 +3,7 @@
 // Private copies of AI signals. Who gets them: members who connected Telegram (Profile → Telegram) AND have an ACTIVE Elite or Ultra plan (admins too).
 // Free / Premium members and members whose plan has run out never receive signals. The plan is checked at send time.
 //   POST ?key=<ai_bot_config.cron_secret>   body: { id, kind: "new" | "update", old_hits, old_status }   (sent by the trigger on public.ai_signals)
-//   new    -> the signal message the channel just got is COPIED to each member (same picture, same caption: Telegram copyMessage)
+//   new    -> the full signal as ONE TEXT message (entry, SL, TP1-TP3, window, time stop); never a picture card
 //   update -> a short text for each follow-up (TP hit / SL / expired / closed), same wording as the channel
 // ai_bot_config dm_signals = off switches it off. A member who blocked the bot is unlinked automatically.
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -68,13 +68,19 @@ Deno.serve(async (req) => {
   const sym = row.symbol, mk = row.mode || "scalp", M = MODE[mk] || MODE.scalp;
 
   if (kind === "new") {
-    const text = [`${row.side === "BUY" ? "🟢" : "🔴"} <b>${row.side} · ${sym}</b> — A+ ${MLABEL[mk] || mk}`, `Entry <code>${fx(row.entry, sym)}</code> · SL <code>${fx(row.sl, sym)}</code>`,
-      `TP1 <code>${fx(row.tp1, sym)}</code> · TP2 <code>${fx(row.tp2, sym)}</code>${Number(row.tp3) > 0 ? ` · TP3 <code>${fx(row.tp3, sym)}</code>` : ""}`,
-      `⌛ Entry window until <b>${hm.format(new Date((Number(row.t) + M.valid) * 1000))}</b> ICT`, `<a href="${SITE}/analysis#wfPanel">AROM TRADE · Trade Finder</a>`].join("\n");
-    const res = await fan(chats, async (chat) => {
-      const j = await post(token, "copyMessage", { chat_id: chat, from_chat_id: c.chat_id, message_id: Number(row.tg_message_id) });
-      return j.ok || j.error_code === 403 ? j : await post(token, "sendMessage", { chat_id: chat, text, parse_mode: "HTML", disable_web_page_preview: true });   // copy failed (e.g. message deleted): plain text instead
-    });
+    // text only (no picture card): the full signal in one readable message
+    const rr = M.rr, buy = row.side === "BUY", n3 = Number(row.tp3) > 0;
+    const text = [`${buy ? "🟢" : "🔴"} <b>${row.side} · ${sym}</b> — A+ ${MLABEL[mk] || mk}`, `<i>${esc(NAME[sym] || sym)}</i>`, "",
+      `➡️ Enter now near <code>${fx(row.entry, sym)}</code>`,
+      `⌛ Entry window until <b>${hm.format(new Date((Number(row.t) + M.valid) * 1000))}</b> ICT · skip if price already passed TP1`, "",
+      `🛑 SL   <code>${fx(row.sl, sym)}</code>`,
+      `1️⃣ TP1 <code>${fx(row.tp1, sym)}</code>  ${rr[0]}R → move SL to entry`,
+      `2️⃣ TP2 <code>${fx(row.tp2, sym)}</code>  ${rr[1]}R${n3 ? "" : " → final target"}`,
+      ...(n3 ? [`3️⃣ TP3 <code>${fx(row.tp3, sym)}</code>  ${rr[2]}R → runner`] : []),
+      `⏳ Time stop: exit if no TP or SL within ${dur(M.maxBars * M.base)}`, "",
+      `<a href="${SITE}/analysis#wfPanel">AROM TRADE · Trade Finder</a>`,
+      `<i>Algorithmic analysis, not financial advice. Risk only what you can afford to lose.</i>`].join("\n");
+    const res = await fan(chats, (chat) => post(token, "sendMessage", { chat_id: chat, text, parse_mode: "HTML", disable_web_page_preview: true }));
     return json({ ok: true, kind, eligible: chats.length, ...res });
   }
 

@@ -91,7 +91,7 @@ New signals, TP / SL / expiry follow-ups, "Get ready" and "Entry window closed" 
 Members who connected Telegram (Profile → Telegram) and have an ACTIVE Elite or Ultra plan (admins too) get every AI signal as a private message, and its TP / SL / expiry updates.
 Free and Premium members never receive signals; a plan that has run out stops immediately (the plan is read at send time).
 - `supabase/sql/signal-dm.sql` (run once): a trigger on `public.ai_signals` calls the function `signal-dm`. The bot function `ai-telegram` is not changed.
-- New signal: the channel post is copied to each member (`copyMessage`: same picture and caption). Follow-ups: a short text with the same wording as the channel.
+- New signal: ONE text message (entry, SL, TP1-TP3, entry window, time stop). Never a picture card. Follow-ups: a short text with the same wording as the channel.
 - Turn it off: `insert into public.ai_bot_config (key, value) values ('dm_signals', 'off') on conflict (key) do update set value = 'off';` (use `'on'` to turn it back on).
 - A member who blocked the bot is unlinked automatically and can connect again from the profile.
 - "Get ready" and "entry window closed" notices stay channel-only.

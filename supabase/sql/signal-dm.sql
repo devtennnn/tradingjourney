@@ -1,7 +1,7 @@
 -- Private copies of AI signals to Elite / Ultra members who connected Telegram (Profile -> Telegram).
 -- Run once in Supabase -> SQL Editor. Safe to re-run. Needs the edge function "signal-dm" (deployed) and supabase/sql/telegram-link.sql (already run).
 -- How it works: the bot (ai-telegram) is NOT changed. When it saves a posted signal (tg_message_id) or a follow-up (hits / status) on public.ai_signals,
--- this trigger calls signal-dm, which copies the channel post to each eligible member (new signal) or sends the TP / SL text (follow-up).
+-- this trigger calls signal-dm, which sends each eligible member the signal as a TEXT message (new signal) or the TP / SL text (follow-up). No picture cards.
 -- Switch off any time:  insert into public.ai_bot_config (key, value) values ('dm_signals', 'off') on conflict (key) do update set value = 'off';
 create extension if not exists pg_net;
 
