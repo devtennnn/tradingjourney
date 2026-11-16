@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Provider test · AROM TRADE</title>
+<meta name="theme-color" content="#07110c">
+<style>
+:root{--bg:#07110c;--panel:#13261f;--line:#2a4636;--lime:#b9f25a;--text:#eef6f0;--muted:#93ab9c;--red:#f05b78;--green:#34d399;--amber:#f5b942}
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px 16px 48px;max-width:760px;margin:0 auto}
+h1{font-size:20px;margin:6px 0 4px}p{color:var(--muted);margin:0 0 12px;font-size:13.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button{background:var(--panel);border:1px solid var(--line);color:var(--text);font:inherit;font-weight:700;padding:11px 14px;border-radius:11px;min-height:44px}
+button.pri{background:var(--lime);color:#0b1813;border-color:var(--lime)}button:disabled{opacity:.5}
+#st{padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);font-size:13.5px;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0 14px}th,td{padding:6px 6px;border-bottom:1px solid rgba(42,70,54,.6);text-align:left;vertical-align:top}th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}.note{color:var(--muted);word-break:break-word}
+h2{font-size:14px;color:var(--lime);margin:16px 0 4px}.sc{overflow-x:auto}
+textarea{width:100%;height:120px;background:#0c1a14;color:var(--text);border:1px solid var(--line);border-radius:10px;font:12px monospace;padding:8px}
+</style>
+</head>
+<body>
+<h1>Market-data provider test</h1>
+<p>Admin only. Runs on the server with the keys stored in Vercel and shows which symbols each provider really serves, how fresh the data is and any plan or rate-limit errors. Nothing is saved.</p>
+<div id="st">Checking sign-in…</div>
+<div class="row" id="btns" hidden>
+  <button class="pri" data-p="siftingio">SiftingIO</button>
+  <button class="pri" data-p="finnhub">Finnhub</button>
+  <button class="pri" data-p="twelvedata">Twelve Data</button>
+  <button class="pri" data-p="alphavantage">Alpha Vantage</button>
+  <button class="pri" data-p="marketaux">Marketaux</button>
+</div>
+<div id="out"></div>
+<div id="cp" hidden><h2>Copy and paste this to Claude</h2><textarea id="ta" readonly></textarea><div class="row"><button id="copy">Copy results</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sb = window.supabase.createClient('https://sksvwikfyrdhgjngekqp.supabase.co', 'sb_publishable_9HxgkobAgQtKb2Jx8dkX-A_DxWy_m6e');
+const ALL = {}; let token = '';
+(async () => {
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ $('st').innerHTML = 'You are not signed in. Open <a href="/" style="color:var(--lime)">aromx.trade</a>, sign in with your admin account, then come back to this page.'; return; }
+  token = session.access_token; $('st').textContent = 'Signed in. Tap a provider to test it (each takes up to about a minute).'; $('btns').hidden = false;
+})();
+async function run(p, btn){
+  btn.disabled = true; $('st').textContent = 'Testing ' + p + '… please wait, do not close the page.';
+  try{
+    const r = await fetch('/api/provider-probe?providers=' + p, {headers:{Authorization:'Bearer ' + token}});
+    const j = await r.json().catch(() => ({}));
+    if(r.status === 403){ $('st').textContent = 'This account is not an admin (or the session expired). Sign in again as admin.'; btn.disabled = false; return; }
+    if(r.status === 404){ $('st').textContent = 'The test endpoint is not deployed yet. Merge the pull request and wait for the Vercel deploy.'; btn.disabled = false; return; }
+    if(!r.ok){ $('st').textContent = 'Test failed (HTTP ' + r.status + '). It may have timed out; try again.'; btn.disabled = false; return; }
+    ALL[p] = j; show(); $('st').textContent = j.skipped_no_key && j.skipped_no_key.length ? p + ': no API key is set in Vercel for this provider.' : 'Done: ' + p + '.';
+  }catch(e){ $('st').textContent = 'Could not reach the server. Check your connection and try again.'; }
+  btn.disabled = false;
+}
+function show(){
+  let html = '', plain = [];
+  for(const [p, j] of Object.entries(ALL)){
+    html += '<h2>' + esc(p) + '</h2>';
+    if(j.skipped_no_key && j.skipped_no_key.length){ html += '<p>No key configured.</p>'; plain.push(p + ': no key'); continue; }
+    html += '<div class="sc"><table><tr><th>Symbol</th><th>OK</th><th>Fresh</th><th>Price</th><th>Candles</th><th>ms</th><th>Note</th></tr>' + j.rows.map(r =>
+      '<tr><td>' + esc(r.symbol) + '</td><td class="' + (r.ok ? 'ok' : 'bad') + '">' + (r.ok ? 'yes' : 'no') + '</td><td>' + esc(r.freshness || '') + (r.age_s != null ? ' (' + r.age_s + 's)' : '') + '</td><td>' + esc(r.price == null ? '' : r.price) + '</td><td>' + esc(r.n == null ? '' : r.n) + '</td><td>' + esc(r.ms == null ? '' : r.ms) + '</td><td class="note">' + esc(r.note || '') + '</td></tr>').join('') + '</table></div>';
+    plain.push(p + ' | ' + j.rows.map(r => [r.symbol, r.ok ? 'OK' : 'NO', r.freshness || '', r.age_s != null ? r.age_s + 's' : '', r.n != null ? r.n + ' candles' : '', r.ms != null ? r.ms + 'ms' : '', r.note || ''].filter(Boolean).join(' ')).join(' ; '));
+  }
+  $('out').innerHTML = html; $('ta').value = plain.join('\n\n'); $('cp').hidden = !plain.length;
+}
+$('btns').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if(b) run(b.dataset.p, b); });
+$('copy').onclick = async () => { try{ await navigator.clipboard.writeText($('ta').value); $('copy').textContent = 'Copied'; }catch(e){ $('ta').select(); $('copy').textContent = 'Select and copy manually'; } };
+})();
+</script>
+</body>
+</html>

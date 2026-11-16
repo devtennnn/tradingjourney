@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Supabase Edge Function: signal-dm  (deploy with verify_jwt = FALSE; called by a database trigger, protected by the cron key)
-// Private copies of AI signals. Who gets them: members who connected Telegram (Profile → Telegram) AND have an ACTIVE Elite or Ultra plan (admins too).
-// Free / Premium members and members whose plan has run out never receive signals. The plan is checked at send time.
+// Private copies of AI signals. Who gets them: members who connected Telegram (Profile → Telegram) AND have an ACTIVE Elite or Ultra plan (admins too): every signal.
+// FREE plan (also Premium and expired plans): 1 signal a day = the first signal the bot posted that day (Phnom Penh day), plus its follow-ups. The plan is checked at send time.
 // Each member also picks the markets they want (telegram_links.pairs, set in Alerts -> settings): a market they unticked is never sent to them.
 //   POST ?key=<ai_bot_config.cron_secret>   body: { id, kind: "new" | "update", old_hits, old_status }   (sent by the trigger on public.ai_signals)
 //   new    -> the full signal as ONE TEXT message (entry, SL, TP1-TP3, window, time stop); never a picture card
@@ -23,7 +23,7 @@ const pl = (n, u) => n + " " + u + (n === 1 ? "" : "s");
 const dur = (sec) => sec >= 86400 ? pl(Math.round(sec / 86400), "day") : sec >= 3600 ? pl(Math.round(sec / 3600), "hour") : Math.round(sec / 60) + " min";
 const UPD = (k, rr) => ({ 1: `✅ <b>TP1 hit</b> (+${rr[0]}R) — move SL to entry`, 2: rr.length < 3 ? `🏆 <b>TP2 hit</b> (+${rr[1]}R) — target complete` : `✅✅ <b>TP2 hit</b> (+${rr[1]}R)`, 3: `🏆 <b>TP3 hit</b> (+${rr[2]}R) — target complete` })[k];
 
-async function members(sym) {
+async function members(sym, firstOfDay) {
   let lr = await db.from("telegram_links").select("user_id,chat_id,pairs");
   if (lr.error) lr = await db.from("telegram_links").select("user_id,chat_id");   // pairs column not created yet: everyone gets every market
   const links = lr.error ? null : lr.data;
@@ -33,7 +33,8 @@ async function members(sym) {
   if (r.error) r = await db.from("profiles").select("id,is_admin,elite_until").in("id", ids);   // Ultra column not created yet
   const now = Date.now(), ok = new Set((r.data || []).filter((p) => p.is_admin === true || (p.elite_until && Date.parse(p.elite_until) > now) || (p.ultra_until && Date.parse(p.ultra_until) > now)).map((p) => p.id));
   // each member chooses the markets they want (null = all); a market they unticked never reaches them
-  return links.filter((l) => ok.has(l.user_id) && (!Array.isArray(l.pairs) || l.pairs.includes(sym)));
+  // Elite / Ultra: every signal in the markets they ticked. Everyone else: only the day's first signal (they cannot choose markets)
+  return links.filter((l) => ok.has(l.user_id) ? (!Array.isArray(l.pairs) || l.pairs.includes(sym)) : firstOfDay).map((l) => ({ ...l, free: !ok.has(l.user_id) }));
 }
 const post = async (token, method, body) => { const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return await r.json().catch(() => ({})); };
 /** sends to every member, 20 at a time (Telegram allows ~30 a second); `fn(chat)` returns the Telegram answer. */
@@ -41,7 +42,7 @@ async function fan(chats, fn) {
   let sent = 0, failed = 0, removed = 0;
   const one = async (c) => {
     try {
-      const j = await fn(c.chat_id);
+      const j = await fn(c.chat_id, c);
       if (j.ok) { sent++; return; }
       failed++;
       if (j.error_code === 403 || /chat not found|bot was blocked|user is deactivated/i.test(j.description || "")) { await db.from("telegram_links").delete().eq("chat_id", c.chat_id); removed++; }
@@ -68,7 +69,11 @@ Deno.serve(async (req) => {
   if (!row) return json({ error: "signal not found" }, 404);
   if (!row.tg_message_id) return json({ ok: true, skipped: "never posted to the channel (shadow mode)" });
   const sym = row.symbol, mk = row.mode || "scalp", M = MODE[mk] || MODE.scalp;
-  const chats = await members(sym);
+  // is this the first signal the bot posted today (Phnom Penh, UTC+7)? That one is the free plan's daily signal
+  const dayStart = Math.floor((Number(row.t) + 25200) / 86400) * 86400 - 25200;
+  const { data: first } = await db.from("ai_signals").select("id").not("tg_message_id", "is", null).gte("t", dayStart).lt("t", dayStart + 86400).order("t", { ascending: true }).limit(1);
+  const firstOfDay = !!(first && first[0] && String(first[0].id) === String(row.id));
+  const chats = await members(sym, firstOfDay);
   if (!chats.length) return json({ ok: true, eligible: 0, sent: 0 });
 
   if (kind === "new") {
@@ -84,7 +89,8 @@ Deno.serve(async (req) => {
       `⏳ Time stop: exit if no TP or SL within ${dur(M.maxBars * M.base)}`, "",
       `<a href="${SITE}/analysis#wfPanel">AROM TRADE · Trade Finder</a>`,
       `<i>Algorithmic analysis, not financial advice. Risk only what you can afford to lose.</i>`].join("\n");
-    const res = await fan(chats, (chat) => post(token, "sendMessage", { chat_id: chat, text, parse_mode: "HTML", disable_web_page_preview: true }));
+    const freeNote = `\n\n🎁 <b>Free plan: 1 signal a day.</b> Elite gets every signal: <a href="${SITE}/pricing">aromx.trade/pricing</a>`;
+    const res = await fan(chats, (chat, c) => post(token, "sendMessage", { chat_id: chat, text: c && c.free ? text + freeNote : text, parse_mode: "HTML", disable_web_page_preview: true }));
     return json({ ok: true, kind, eligible: chats.length, ...res });
   }
 
