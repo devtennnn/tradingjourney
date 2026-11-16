@@ -94,7 +94,7 @@ async function sift(path, key, attempt = 0) {
     const r = await fetch(BASE + path, { headers: { "X-API-Key": key, Accept: "application/json", "User-Agent": "arom-market/1.0" }, signal: ctl.signal });
     const j = await r.json().catch(() => null), h = (n) => num(r.headers.get(n));
     const quota = { quota_limit: h("x-quota-limit"), quota_remaining: h("x-quota-remaining"), rate_limit: h("x-ratelimit-limit") };
-    if (r.status === 429 && attempt < 1) { const w = Math.min(5, num(r.headers.get("retry-after")) || 2); await new Promise((res) => setTimeout(res, w * 1000)); return sift(path, key, attempt + 1); }
+    if (r.status === 429 && attempt < 3) { const w = Math.min(6, num(r.headers.get("retry-after")) || attempt + 1); await new Promise((res) => setTimeout(res, w * 1000)); return sift(path, key, attempt + 1); }   // up to 3 retries with a growing pause
     const ok = r.ok && j != null;
     await health(Object.fromEntries(Object.entries(quota).filter(([, v]) => v != null)), ok, ok ? "" : `HTTP ${r.status}`);
     return { status: r.status, j, quota };

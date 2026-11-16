@@ -169,7 +169,7 @@ export function compactBrief(requested, a) {
   return {
     symbol: requested, market_type: MARKET_TYPE[a.instrument && a.instrument.asset_class] || "unknown", available: true, timeframe: a.timeframe, price: a.price, price_basis: "close of the last COMPLETED " + a.timeframe + " candle, not the live price",
     last_candle_at: a.last_candle_at, freshness: a.freshness && a.freshness.status, market_open: a.session && a.session.market_open, delayed: !!(a.instrument && a.instrument.delayed),
-    engine_bias: a.bias, alignment: a.multi_timeframe && a.multi_timeframe.alignment, higher_timeframes: ladder, conflicts: (a.multi_timeframe && a.multi_timeframe.conflicts) || [],
+    engine_bias: a.bias, alignment: a.multi_timeframe && a.multi_timeframe.alignment, higher_timeframes: ladder, higher_timeframes_unavailable: ladder.filter((x) => x.direction === "unavailable").map((x) => x.timeframe), conflicts: (a.multi_timeframe && a.multi_timeframe.conflicts) || [],
     trend: a.trend && { short: a.trend.short, medium: a.trend.medium, ema_stack: a.trend.ema_stack }, structure: a.structure && { trend: a.structure.trend, last_break: a.structure.last_break },
     momentum: { rsi14: a.indicators && a.indicators.rsi, rsi_zone: a.momentum && a.momentum.rsi_zone, macd_histogram_direction: a.momentum && a.momentum.macd_histogram_direction }, volatility: a.volatility && { atr14: a.volatility.value, atr_percent: a.volatility.percent, regime: a.volatility.regime },
     nearest_support: sup, nearest_resistance: res, price_to_support_edge_atr: sup ? dist(sup.high) : null, price_to_resistance_edge_atr: res ? dist(res.low) : null,
@@ -224,7 +224,7 @@ export function buildBriefing({ kind, lang, cs, grounded, events, session, statu
   return {
     kind, language: lang, session, generated_at: generatedAt,
     headline: grounded.headline || "", market_overview: grounded.market_overview || fallbackOverview(cs), session_context: grounded.session_context || "",
-    instruments: cs.map((c) => c.available ? { symbol: c.symbol, market_type: c.market_type, tracks: c.tracks, price: c.price, price_basis: c.price_basis, last_candle_at: c.last_candle_at, freshness: c.freshness, market_open: c.market_open, delayed: c.delayed, bias: c.engine_bias, alignment: c.alignment, higher_timeframes: c.higher_timeframes, conflicts: c.conflicts,
+    instruments: cs.map((c) => c.available ? { symbol: c.symbol, market_type: c.market_type, tracks: c.tracks, price: c.price, price_basis: c.price_basis, last_candle_at: c.last_candle_at, freshness: c.freshness, market_open: c.market_open, delayed: c.delayed, bias: c.engine_bias, alignment: c.alignment, higher_timeframes: c.higher_timeframes, higher_timeframes_unavailable: c.higher_timeframes_unavailable, conflicts: c.conflicts,
       trend: c.trend, momentum: c.momentum, volatility: c.volatility, support: c.nearest_support, resistance: c.nearest_resistance, invalidation: c.invalidation_reference, caveats: c.caveats, ...grounded.instruments[c.symbol] } : { symbol: c.symbol, available: false, reason: c.reason }),
     events_to_watch: grounded.events_to_watch, upcoming_events: events, cross_market_notes: grounded.cross_market_notes, risks: grounded.risks, data_quality_notes: grounded.data_quality_notes,
     methodology: "Biases, levels and invalidation levels are calculated by the AROM engine from validated candles (H1 with H4 and D1 context); the AI only explains them. Prices are closes of the last completed H1 candle, not live prices.",

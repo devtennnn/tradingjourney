@@ -169,10 +169,17 @@ async function analyze(b, ctx) {
 // ---- market briefing ----
 const sessionName = (ms) => { const h = new Date(ms).getUTCHours() + new Date(ms).getUTCMinutes() / 60; return h < 7 ? "Asia" : h < 12 ? "London" : h < 16 ? "London / New York overlap" : h < 21 ? "New York" : "Late New York / rollover"; };
 const inflight = new Map();
+const transient = (x) => /rate_limited|timeout|provider_error|http_5|http_429|slow_down|network/.test(String((x && (x.error || x.reason)) || ""));
+const ladderGap = (x) => !!(x && x.available && x.multi_timeframe && (x.multi_timeframe.ladder || []).some((l) => l.available === false && transient(l)));
 async function gatherBrief(syms, auth) {
-  const deadline = Date.now() + 60_000, out = new Array(syms.length); let idx = 0;
-  const worker = async () => { while (idx < syms.length) { const i = idx++; if (Date.now() > deadline) { out[i] = { error: "timeout" }; continue; } out[i] = await fn("market-intelligence", { symbol: syms[i], timeframe: "H1" }, auth, 45_000); } };
-  await Promise.all(Array.from({ length: 4 }, worker));
+  // two instruments at a time (each asks for 3 timeframes, and the data provider allows 5 requests a second), then one calm retry pass for transient failures
+  const deadline = Date.now() + 75_000, out = new Array(syms.length); let idx = 0;
+  const run = (s) => fn("market-intelligence", { symbol: s, timeframe: "H1" }, auth, 45_000);
+  const worker = async () => { while (idx < syms.length) { const i = idx++; if (Date.now() > deadline) { out[i] = { error: "timeout" }; continue; } out[i] = await run(syms[i]); } };
+  await Promise.all(Array.from({ length: 2 }, worker));
+  for (let i = 0; i < syms.length; i++) {
+    if ((transient(out[i]) || ladderGap(out[i])) && Date.now() < deadline - 5_000) { await new Promise((r) => setTimeout(r, 1500)); const again = await run(syms[i]); if (again.available || !out[i].available) out[i] = again; }   // the cache keeps what already worked, so only the failed timeframes are fetched again
+  }
   return out;
 }
 async function briefing(b, ctx, admin) {
@@ -200,7 +207,7 @@ async function buildBrief(kind, lang, syms, listKey, rkind, ctx) {
   const data = { session, window_hours: hours, events: events == null ? "calendar_unavailable" : events, events_note: "the calendar feed has no actual released values; only forecast and previous", instruments: cs };
   const allowedAll = numbersIn(data);
   const rs = await reserve(ctx.userId, "briefing"); if (rs.error) return { status: rs.error === "daily_limit" ? 429 : 503, body: { error: rs.error, limit: rs.limit } };
-  const base = `Write the ${kind} market briefing for the AROM TRADE watchlist. Language: ${langName(lang)}. Current session: ${session.current}.\nUse ONLY the data below. Write exactly one entry in "instruments" for every instrument with available=true (symbol must match). If engine_bias is null give no direction. Describe distances with the ATR values given. Copy numbers exactly as they appear in the data. Events: list only events from the data; if there are none, say so in session_context. Do not give causes or news that are not in the data. cross_market_notes may only relate engine biases of the instruments shown. Keep each instrument entry short (about 60 words).\n\nDATA:\n${JSON.stringify(data)}`;
+  const base = `Write the ${kind} market briefing for the AROM TRADE watchlist. Language: ${langName(lang)}. Current session: ${session.current}.\nUse ONLY the data below. Write exactly one entry in "instruments" for every instrument with available=true (symbol must match). If engine_bias is null give no direction. Describe distances with the ATR values given. Copy numbers exactly as they appear in the data. Events: list only events from the data; if there are none, say so in session_context. Do not give causes or news that are not in the data. cross_market_notes may only relate engine biases of the instruments shown. Mention a higher timeframe as unavailable ONLY if it is listed in higher_timeframes_unavailable; otherwise do not claim any timeframe is missing. Use the word \"aligned\" only when alignment is \"aligned\"; for the cross-market notes count engine_bias values (for example \"engine bias is bearish on 6 of 7 instruments\") and do not describe instruments with alignment other than \"aligned\" as aligned. Keep each instrument entry short (about 60 words).\n\nDATA:\n${JSON.stringify(data)}`;
   let usage = { input: 0, output: 0 }, grounded = null, replaced = [], bad = {};
   try {
     for (let attempt = 0; attempt < 2; attempt++) {
