@@ -15,7 +15,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const env = (k: string, d = "") => Deno.env.get(k) ?? d;
 const DAYS = Number(env("PLAN_DAYS", "30"));
-const COL: Record<string, string> = { premium: "premium_until", elite: "elite_until" };
+const COL: Record<string, string> = { premium: "premium_until", elite: "elite_until", ultra: "ultra_until" };
 const J = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 
 async function sha256hex(s: string): Promise<string> {
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       .update({ status: "paid", paid_at: new Date().toISOString(), bakong_hash: String(body.payment_details?.bakonghash ?? body.payment_details?.externalRef ?? "").slice(0, 120) || null })
       .eq("id", p.id).in("status", ["pending", "expired", "claimed"]).select().maybeSingle();
     if (claimed) {
-      const plan = p.plan === "elite" ? "elite" : "premium", col = COL[plan];
+      const plan = p.plan === "ultra" ? "ultra" : p.plan === "elite" ? "elite" : "premium", col = COL[plan];
       const cur = ((await admin.from("profiles").select(col).eq("id", p.user_id).maybeSingle()).data as any)?.[col] ?? null;
       const base = cur && new Date(cur) > new Date() ? new Date(cur) : new Date();
       const next = new Date(base.getTime() + DAYS * 86_400_000).toISOString();

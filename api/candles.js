@@ -27,7 +27,7 @@ async function fromTwelveData(sym, key, tf) {
   if (!r.ok || j.status === 'error' || !Array.isArray(j.values)) throw new Error('twelvedata: ' + (j.message || r.status));
   const candles = j.values.map(v => ({
     t: Math.floor(Date.parse(v.datetime.replace(' ', 'T') + 'Z') / 1000),
-    o: +v.open, h: +v.high, l: +v.low, c: +v.close,
+    o: +v.open, h: +v.high, l: +v.low, c: +v.close, v: +v.volume || 0,
   })).filter(x => isFinite(x.t) && isFinite(x.c));
   return {source: 'Twelve Data · ' + sym.td + ' spot', delayed: false, candles};
 }
@@ -42,7 +42,7 @@ async function fromYahoo(sym, tf) {
   const q = res.indicators.quote[0], candles = [];
   res.timestamp.forEach((t, i) => {
     const o = q.open[i], h = q.high[i], l = q.low[i], c = q.close[i];
-    if ([o, h, l, c].every(v => v != null && isFinite(v))) candles.push({t, o, h, l, c});
+    if ([o, h, l, c].every(v => v != null && isFinite(v))) candles.push({t, o, h, l, c, v: Number(q.volume && q.volume[i]) || 0});
   });
   return {source: 'Yahoo Finance · ' + sym.yahooName, delayed: true, candles};
 }
