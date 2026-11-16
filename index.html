@@ -2313,6 +2313,7 @@ header.nav2 .tools-menu{background:#13241c!important;border:1px solid rgba(238,2
 header.nav2 .tools-menu .util-btn{font-weight:500;color:#cfe0d5;border-radius:8px}
 header.nav2.nav-burger-mode .nav-links > a.on{background:rgba(238,246,240,.06);color:#eef6f0}
 header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
+.one-acct .form-group > label{display:none}
 </style>
 </head>
 <body data-page="main">
@@ -3634,7 +3635,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
       <h2 data-i18n="settings">Settings</h2>
       <button type="button" class="icon-btn" id="closeSet" aria-label="Close"><svg class="svg-ico sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="sub-title" data-i18n="startBalances">STARTING BALANCE PER ACCOUNT (USD)</div>
+    <div class="sub-title" id="balTitle" data-i18n="startBalances">STARTING BALANCE PER ACCOUNT (USD)</div>
     <div class="form-grid" id="balInputs"></div>
     <div class="sub-title" data-i18n="riskLimits">DAILY LOSS LIMIT</div>
     <div class="form-group"><label data-i18n="limitLabel">Warn me when today's loss reaches (USD, 0 = off)</label><input class="field" id="limitInput" type="number" min="0" step="1"></div>
@@ -3739,7 +3740,7 @@ const T = {
     calcTitle:"POSITION SIZE & RISK CALCULATOR",calcSub:"Define exact lot size, dollar risk and R-targets before entering",preTradeTag:"PRE-TRADE",calcAccSize:"Account Balance ($)",calcRiskPct:"Risk (%)",calcStopDist:"Stop Loss Distance (pips / points)",calcPipVal:"Pip / Point Value ($ per 1.00 lot)",calcDollarRisk:"RISK ($)",calcLotSize:"LOT SIZE",
     routineTitle:"Pre-Market Execution Ritual",routineSub:"Complete these 5 readiness checks before executing your first trade today.",saveRoutine:"Lock In Pre-Market Readiness",
     summaryTitle:"Executive Performance Snapshot",summarySelectPeriod:"Select snapshot period:",spAll:"All Time",spMonth:"This Month",sp7D:"Last 7 Days",copySummaryCard:"Copy Summary Text",downloadSummaryPng:"Download PNG Card",
-    startBalances:"STARTING BALANCE PER ACCOUNT (USD)",riskLimits:"DAILY LOSS LIMIT",limitLabel:"Warn me when today's loss reaches (USD, 0 = off)",backup:"CLOUD DATA & BACKUP",exportJSON:"Export backup (JSON)",importJSON:"Import backup",wipe:"Delete all cloud data",save:"Save",
+    startBalances:"STARTING BALANCE PER ACCOUNT (USD)",startBalance1:"STARTING BALANCE (USD)",riskLimits:"DAILY LOSS LIMIT",limitLabel:"Warn me when today's loss reaches (USD, 0 = off)",backup:"CLOUD DATA & BACKUP",exportJSON:"Export backup (JSON)",importJSON:"Import backup",wipe:"Delete all cloud data",save:"Save",
     confirmAction:"Confirm Action",confirmYes:"Confirm",
     tSaved:"Trade saved to cloud",tDeleted:"Trade deleted",tNote:"Note saved to cloud",tNoteDel:"Note deleted",tSet:"Settings saved to cloud",tImp:"Backup imported to cloud",tBad:"That file is not a valid backup",tWiped:"All cloud data deleted",tExp:"Backup downloaded",tCsv:"CSV downloaded",tRoutineSaved:"Pre-market readiness synced!",tSummaryCopied:"Performance summary copied!",tPngSaved:"Executive PNG card downloaded!",tAuthReq:"Please log in or sign up to save data to the cloud.",
     cDel:"Delete this trade from your cloud journal?",cDelNote:"Delete this journal note?",cImp:"Importing will merge/update these records into your cloud journal. Continue?",cWipe:"Delete ALL trades, notes and settings from your cloud database? This cannot be undone.",
@@ -3801,7 +3802,7 @@ const T = {
     calcTitle:"គណនាទំហំ Lot និងហានិភ័យ",calcSub:"កំណត់ទំហំ Lot និងហានិភ័យឱ្យច្បាស់មុនចូលទីផ្សារ",preTradeTag:"មុនចូលទីផ្សារ",calcAccSize:"សមតុល្យគណនី ($)",calcRiskPct:"ហានិភ័យ (%)",calcStopDist:"ចម្ងាយ Stop Loss (Pips / Points)",calcPipVal:"តម្លៃក្នុង 1 Pip ($ ក្នុង 1.00 Lot)",calcDollarRisk:"ប្រាក់ហានិភ័យ ($)",calcLotSize:"ទំហំ LOT",
     routineTitle:"បញ្ជីត្រួតពិនិត្យមុនពេលជួញដូរ",routineSub:"បំពេញការពិនិត្យទាំង 5 នេះមុននឹងបើក Trade ដំបូងថ្ងៃនេះ។",saveRoutine:"រក្សាទុកការត្រៀមខ្លួន",
     summaryTitle:"កាតសង្ខេបប្រតិបត្តិការ",summarySelectPeriod:"ជ្រើសរើសរយៈពេល៖",spAll:"ទាំងអស់",spMonth:"ខែនេះ",sp7D:"7 ថ្ងៃចុងក្រោយ",copySummaryCard:"ចម្លងអត្ថបទសង្ខេប",downloadSummaryPng:"ទាញយករូបភាព PNG",
-    startBalances:"សមតុល្យចាប់ផ្តើមតាមគណនី (USD)",riskLimits:"កម្រិតខាតប្រចាំថ្ងៃ",limitLabel:"ព្រមានខ្ញុំពេលខាតថ្ងៃនេះដល់ (USD, 0 = បិទ)",backup:"ទិន្នន័យលើពពក និងការបម្រុងទុក",exportJSON:"ទាញយកការបម្រុងទុក (JSON)",importJSON:"នាំចូលការបម្រុងទុក",wipe:"លុបទិន្នន័យទាំងអស់",save:"រក្សាទុក",
+    startBalances:"សមតុល្យចាប់ផ្តើមតាមគណនី (USD)",startBalance1:"សមតុល្យចាប់ផ្តើម (USD)",riskLimits:"កម្រិតខាតប្រចាំថ្ងៃ",limitLabel:"ព្រមានខ្ញុំពេលខាតថ្ងៃនេះដល់ (USD, 0 = បិទ)",backup:"ទិន្នន័យលើពពក និងការបម្រុងទុក",exportJSON:"ទាញយកការបម្រុងទុក (JSON)",importJSON:"នាំចូលការបម្រុងទុក",wipe:"លុបទិន្នន័យទាំងអស់",save:"រក្សាទុក",
     confirmAction:"បញ្ជាក់សកម្មភាព",confirmYes:"បញ្ជាក់",
     tSaved:"បានរក្សាទុក Trade ទៅកាន់ Cloud",tDeleted:"បានលុប Trade",tNote:"បានរក្សាទុកកំណត់ត្រា",tNoteDel:"បានលុបកំណត់ត្រា",tSet:"បានរក្សាទុកការកំណត់",tImp:"បាននាំចូលការបម្រុងទុក",tBad:"ឯកសារនេះមិនមែនជាការបម្រុងទុកត្រឹមត្រូវទេ",tWiped:"បានលុបទិន្នន័យទាំងអស់",tExp:"បានទាញយកការបម្រុងទុក",tCsv:"បានទាញយក CSV",tRoutineSaved:"បានរក្សាទុកការត្រៀមខ្លួនមុនពេលជួញដូរ!",tSummaryCopied:"បានចម្លងអត្ថបទសង្ខេប!",tPngSaved:"បានទាញយកកាតសង្ខេប PNG!",tAuthReq:"សូមចូលគណនី ឬចុះឈ្មោះជាមុនសិន ដើម្បីរក្សាទុកទិន្នន័យ។",
     cDel:"លុប Trade នេះចេញពីគណនី Cloud របស់អ្នក?",cDelNote:"លុបកំណត់ត្រានេះ?",cImp:"ការនាំចូលនឹងបញ្ចូលទិន្នន័យទាំងនេះទៅក្នុងគណនី Cloud របស់អ្នក។ បន្តទេ?",cWipe:"លុប Trade កំណត់ត្រា និងការកំណត់ទាំងអស់ពី Cloud Database? មិនអាចត្រឡប់វិញបានទេ។",
@@ -5014,6 +5015,7 @@ $('settingsBtn').onclick = () => {
   if(!requireAuth()) return;
   $('balInputs').innerHTML = ACCOUNTS.map(a => `<div class="form-group"><label>${a}</label><input class="field" type="number" step="0.01" data-bal="${a}" value="${+S.balances[a]||''}" placeholder="0"></div>`).join('');
   $('limitInput').value = S.dailyLimit || '';
+  { const one = ACCOUNTS.length === 1, bt = $('balTitle'); bt.dataset.i18n = one ? 'startBalance1' : 'startBalances'; bt.textContent = t(bt.dataset.i18n); $('balInputs').classList.toggle('one-acct', one); }
   $('setModal').classList.add('show');
 };
 $('closeSet').onclick = () => close('setModal');
