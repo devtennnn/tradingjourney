@@ -3,7 +3,7 @@
    - Static files (icons, manifest, fonts): stale-while-revalidate
    - /api/*, Supabase, Telegram and other live data: never cached, always from the network */
 const VERSION = 'arom-v3';
-const SHELL = ['/', '/analysis', '/intelligence', '/pricing', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
+const SHELL = ['/', '/analysis', '/pricing', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).catch(() => {}));

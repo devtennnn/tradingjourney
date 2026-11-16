@@ -127,11 +127,11 @@ const DEFAULTS = {
 } as const;
 const cfg = (k: keyof typeof DEFAULTS) => env(k, DEFAULTS[k]);
 
-// Plans: Premium = chart uploads. Elite = chart uploads + Market News Analysis + Signal Provider. Ultra = everything + the AROM Intelligence page.
+// Plans: Premium = chart uploads. Elite = chart uploads + Market News Analysis + Signal Provider. Ultra = Elite + Premium (top tier).
 const PLANS: Record<string, { price: number; col: string; label: string }> = {
   premium: { price: Number(env("PLAN_PRICE", "2.5")), col: "premium_until", label: "Premium" },
   elite:   { price: Number(env("PLAN_PRICE_ELITE", "14.99")), col: "elite_until", label: "Elite" },
-  ultra:   { price: Number(env("PLAN_PRICE_ULTRA", "50.99")), col: "ultra_until", label: "Ultra" },   // Ultra = Elite + Premium + AROM Intelligence
+  ultra:   { price: Number(env("PLAN_PRICE_ULTRA", "50.99")), col: "ultra_until", label: "Ultra" },   // Ultra = Elite + Premium
 };
 const planOf = (v: unknown) => (v === "ultra" ? "ultra" : v === "elite" ? "elite" : "premium");
 const DAYS = Number(env("PLAN_DAYS", "30"));

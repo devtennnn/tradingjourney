@@ -1,4 +1,4 @@
--- ULTRA plan ($50.99 / 30 days). Ultra includes everything in Elite and Premium, plus the AROM Intelligence page.
+-- ULTRA plan ($50.99 / 30 days). Ultra includes everything in Elite and Premium.
 -- Run once in Supabase -> SQL Editor. Safe to re-run. Run AFTER khqr-all.sql (it replaces functions defined there).
 begin;
 
