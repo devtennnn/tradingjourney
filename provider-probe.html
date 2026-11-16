@@ -32,6 +32,10 @@ textarea{width:100%;height:120px;background:#0c1a14;color:var(--text);border:1px
   <button class="pri" data-p="alphavantage">Alpha Vantage</button>
   <button class="pri" data-p="marketaux">Marketaux</button>
 </div>
+<div class="row" id="mdBtns" hidden>
+  <button class="pri" id="mdRun">Test market-data function (gold, EURUSD, QQQ)</button>
+  <button id="mdHealth">Show quota and health</button>
+</div>
 <div id="out"></div>
 <div id="cp" hidden><h2>Copy and paste this to Claude</h2><textarea id="ta" readonly></textarea><div class="row"><button id="copy">Copy results</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -45,7 +49,7 @@ const ALL = {}; let token = '';
 (async () => {
   const {data:{session}} = await sb.auth.getSession();
   if(!session){ $('st').innerHTML = 'You are not signed in. Open <a href="/" style="color:var(--lime)">aromx.trade</a>, sign in with your admin account, then come back to this page.'; return; }
-  token = session.access_token; $('st').textContent = 'Signed in. Tap a provider to test it (each takes up to about a minute).'; $('btns').hidden = false;
+  token = session.access_token; $('mdBtns').hidden = false; $('st').textContent = 'Signed in. Tap a provider to test it (each takes up to about a minute).'; $('btns').hidden = false;
 })();
 async function run(p, btn, q){
   btn.disabled = true; $('st').textContent = 'Testing ' + p + '… please wait, do not close the page.';
@@ -70,6 +74,30 @@ function show(){
   }
   $('out').innerHTML = html; $('ta').value = plain.join('\n\n'); $('cp').hidden = !plain.length;
 }
+
+/* test of the deployed market-data function (the one AROM AI will use): real calls through the shared cache */
+async function mdCall(body){
+  const {data, error} = await sb.functions.invoke('market-data', {body});
+  if(error){ let code = ''; try{ const j = await error.context.json(); code = j && j.error || ''; }catch(e){} return {error: code || 'http_error'}; }
+  return data;
+}
+function mdShow(title, lines){ ALL[title] = {rows: [], plain: lines}; const o = $('out'); const d = document.createElement('div'); d.innerHTML = '<h2>' + esc(title) + '</h2><pre style="white-space:pre-wrap;word-break:break-word;font-size:12.5px;color:#cfe0d5">' + esc(lines.join('\n')) + '</pre>'; o.prepend(d); const ta = $('ta'); ta.value = title + '\n' + lines.join('\n') + '\n\n' + ta.value; $('cp').hidden = false; }
+$('mdRun').onclick = async () => {
+  const b = $('mdRun'); b.disabled = true; $('st').textContent = 'Calling market-data… (first calls take a few seconds)';
+  const L = [];
+  for(const [name, body] of [['quote EURUSD', {action:'quote', symbol:'EURUSD'}], ['candles XAUUSD M5', {action:'candles', symbol:'XAUUSD', timeframe:'M5', limit:200}], ['candles XAUUSD H4', {action:'candles', symbol:'XAUUSD', timeframe:'H4', limit:100}], ['candles NAS100 M15', {action:'candles', symbol:'NAS100', timeframe:'M15', limit:100}], ['candles XAUUSD M5 again (should come from cache)', {action:'candles', symbol:'XAUUSD', timeframe:'M5', limit:200}]]){
+    const r = await mdCall(body);
+    if(r.error){ L.push(name + ': ERROR ' + r.error); continue; }
+    if(r.quote){ const q = r.quote; L.push(name + ': price ' + q.price + ' bid ' + q.bid + ' ask ' + q.ask + ' time ' + q.timestamp + ' stale ' + q.is_stale + ' cache ' + r.meta.from_cache + (r.meta.reason ? ' reason ' + r.meta.reason : '')); }
+    else { const m = r.meta, c = r.candles, l = c[c.length - 1]; L.push(name + ': ' + c.length + ' candles, last ' + (l ? l.timestamp + ' close ' + l.close + ' complete ' + l.complete : '-') + ', age ' + m.last_candle_age_s + 's, dropped ' + m.dropped_invalid + ', cache ' + m.from_cache + (m.served_stale ? ' STALE ' + m.reason : '') + ', ' + r.instrument.symbol + '/' + r.instrument.asset_class + (r.instrument.tracks ? ' tracks ' + r.instrument.tracks : '') + (m.derived ? ' derived' : '')); }
+  }
+  mdShow('market-data function', L); $('st').textContent = 'Done.'; b.disabled = false;
+};
+$('mdHealth').onclick = async () => {
+  const r = await mdCall({action:'health'});
+  if(r.error){ mdShow('market-data health', ['ERROR ' + r.error]); return; }
+  mdShow('market-data health', r.providers.map(h => h.provider + ': status ' + h.status + ', quota ' + h.quota_remaining + '/' + h.quota_limit + ', calls today ' + h.calls_today + ', errors today ' + h.errors_today + ', last ok ' + h.last_success_at + (h.last_error ? ', last error ' + h.last_error + ' at ' + h.last_error_at : '') + ', reserve ' + h.reserve).concat(['key configured: ' + r.configured.siftingio]));
+};
 $('btns').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if(b) run(b.dataset.p, b, b.dataset.q); });
 $('copy').onclick = async () => { try{ await navigator.clipboard.writeText($('ta').value); $('copy').textContent = 'Copied'; }catch(e){ $('ta').select(); $('copy').textContent = 'Select and copy manually'; } };
 })();
