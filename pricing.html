@@ -2276,6 +2276,20 @@ body.privacy :is(#ccToday,#ccWeek,#ccMonth,#ccTip,#net,#balance,#balFoot,#exp,#a
   #hero .cc-kp:nth-child(5){border-left:0;padding-left:0}
   #hero .cc-trades li{grid-template-columns:44px minmax(0,1fr) auto 64px;gap:8px;font-size:13px}
 }
+
+/* compact preview: today, the 14-day chart and the last 3 trades with mood; all-time numbers live in Performance */
+#hero .hx-stage.cc{max-width:860px;margin-top:48px}
+#hero .cc-main{padding:20px 20px 16px}
+#hero .cc-body{margin-top:16px;gap:24px}
+#hero .cc-big{font-size:36px}
+#hero .cc-row{margin-top:16px}
+#hero .cc-row span{padding:8px 0}
+#hero .cc-row b{font-size:15px}
+#hero .cc-bars-lbl{margin-top:16px}
+#hero .cc-bars{height:64px;margin-top:8px}
+#hero .cc-trades li{height:40px}
+#hero .cc-kpi-lbl,#hero .cc-kpis{display:none!important}
+@media(max-width:560px){#hero .cc-big{font-size:32px}#hero .cc-bars{height:56px}}
 </style>
 </head>
 <body data-page="pricing">
@@ -6721,7 +6735,7 @@ function heroMock(l, c, sb){
   {
     const DEMO_MOOD = ['Focused', 'Patient', 'Confident', 'Focused', 'Anxious'];
     const moodOf = (x, k) => { const n = (typeof notes !== 'undefined' ? notes : []).find(n => n.date === x.date); return n ? n.mood : (!currentUser ? DEMO_MOOD[k % DEMO_MOOD.length] : null); };
-    const rows = l.slice().sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 5);
+    const rows = l.slice().sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 3);
     const df = new Intl.DateTimeFormat(loc(), {day:'numeric', month:'short'});
     $('ccTrades').innerHTML = rows.length ? rows.map((x, k) => { const v = Number(x.pl) || 0, md = moodOf(x, k), ml = md ? (t('m_' + md) === 'm_' + md ? md : t('m_' + md)) : '';
       return `<li><span class="d">${esc(df.format(new Date(x.date + 'T12:00:00')))}</span><span class="s">${esc(x.symbol || '—')} <em>${esc(t(x.direction === 'Sell' ? 'sell' : 'buy') === (x.direction === 'Sell' ? 'sell' : 'buy') ? x.direction : t(x.direction === 'Sell' ? 'sell' : 'buy'))}</em></span>${ml ? `<span class="m">${esc(ml)}</span>` : '<span class="m none">—</span>'}<b class="${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${v > 0 ? '+' : ''}${esc(money(v))}</b></li>`; }).join('')
