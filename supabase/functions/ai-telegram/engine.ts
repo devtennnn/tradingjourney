@@ -103,10 +103,14 @@ const AiEng = (() => {
     const level = zone ? (L ? zone.hi : zone.lo) : onTl ? tl : rt;
     add('pullback', !!(zone || onTl || rt != null), zone ? 'SR' : onTl ? 'trendline' : rt != null ? 'retest' : null, true);
     // 4) Rejection candle off the level
-    const p = m[i - 1], rng = Math.max(b.h - b.l, 1e-9), body = Math.abs(b.c - b.o);
+    // Closing-price trigger (v4): uses ONLY the closes of the last candles, never open or wick shape (the gold / forex feeds' opens are unreliable).
+    //   reclaim = the candle closes back on the trend side of the pullback level after a close on or beyond it in the last two candles
+    //   thrust  = the candle closes beyond the highest (BUY) / lowest (SELL) close of the previous three candles
+    // both need the close to move with the trend versus the previous close.
+    const p = m[i - 1], c1 = p.c, c2 = m[i - 2].c, c3 = m[i - 3].c, rng = Math.max(b.h - b.l, 1e-9), body = Math.abs(b.c - b.o);   // rng / body are recorded as diagnostics only, not used to decide
     let trig = null;
-    if(L && b.c > b.o){ if(p.c < p.o && b.c >= p.o && b.o <= p.c) trig = 'engulf'; else if(Math.min(b.o, b.c) - b.l >= 1.5 * body && b.c >= b.l + .6 * rng) trig = 'pin'; else if(!M.noMom && body >= .55 * rng && b.c > p.h) trig = 'momentum'; }
-    if(!L && b.c < b.o){ if(p.c > p.o && b.c <= p.o && b.o >= p.c) trig = 'engulf'; else if(b.h - Math.max(b.o, b.c) >= 1.5 * body && b.c <= b.h - .6 * rng) trig = 'pin'; else if(!M.noMom && body >= .55 * rng && b.c < p.l) trig = 'momentum'; }
+    if(L && b.c > c1){ if(level != null && b.c >= level && Math.min(c1, c2) <= level + tol) trig = 'reclaim'; else if(!M.noMom && b.c > Math.max(c1, c2, c3)) trig = 'thrust'; }
+    if(!L && b.c < c1){ if(level != null && b.c <= level && Math.max(c1, c2) >= level - tol) trig = 'reclaim'; else if(!M.noMom && b.c < Math.min(c1, c2, c3)) trig = 'thrust'; }
     add('trigger', !!trig, trig, true);
     // 5) Session: all sessions, weekdays (market open)
     const wd = new Date(closeT * 1000).getUTCDay(); add('session', P.allWeek || (wd >= 1 && wd <= 5), P.allWeek ? '24/7' : 'any', true);
