@@ -176,8 +176,8 @@ async function call(body){
 /* ---------- briefing ---------- */
 function aiNote(ai, withheld){
   if(withheld) return `<div class="warn">${esc(t('withheld'))}</div>`;
-  if(!ai) return '';
-  return `<div class="meta" style="margin-top:10px">${ai.status === 'ok' ? esc(t('aiOk')) : esc(t('aiStatus')) + ': ' + esc(t('aiFb'))}${ai.model ? ' · ' + esc(ai.model) : ''}</div>`;
+  if(!ai || ai.status === 'ok') return '';
+  return `<div class="meta" style="margin-top:10px">${esc(t('aiStatus'))}: ${esc(t('aiFb'))}</div>`;
 }
 function renderBriefing(b){
   const ins = (b.instruments || []).map(i => {
@@ -279,7 +279,7 @@ function grpTable(title, a){
 function renderJournal(r){
   const s = r.stats, kv = (l, v) => `<div class="kv"><span>${esc(l)}</span><b>${v == null ? '—' : esc(v)}</b></div>`;
   const ai = r.ai || {}, pts = (title, a) => Array.isArray(a) && a.length ? `<div class="card"><h2>${esc(title)}</h2>${list(a)}</div>` : '';
-  return `<div class="card"><div class="hl">${esc(r.summary || '')}</div><div class="meta">${esc(ai.status === 'ok' ? t('jAi') : t('jAiNo'))}${ai.model ? ' · ' + esc(ai.model) : ''}</div>${s.sample_note ? `<div class="warn">${esc(s.sample_note)}</div>` : ''}</div>
+  return `<div class="card"><div class="hl">${esc(r.summary || '')}</div>${ai.status === 'ok' ? '' : `<div class="meta">${esc(t('jAiNo'))}</div>`}${s.sample_note ? `<div class="warn">${esc(s.sample_note)}</div>` : ''}</div>
     <div class="g2"><div class="card"><h2>${esc(t('jTrades'))}</h2>${kv(t('jTrades'), s.trades)}${kv(t('jWin'), num(s.win_rate_pct) + '%')}${kv(t('jTot'), num(s.total_pl))}${kv(t('jAvgW'), s.average_win == null ? null : num(s.average_win))}${kv(t('jAvgL'), s.average_loss == null ? null : num(s.average_loss))}</div>
     <div class="card"><h2>&nbsp;</h2>${kv(t('jPf'), s.profit_factor == null ? null : num(s.profit_factor))}${kv(t('jExp'), num(s.expectancy_per_trade))}${kv(t('jAvgR'), s.average_r == null ? null : num(s.average_r))}${kv(t('jStreak'), s.max_consecutive_losses)}</div></div>
     ${pts(t('jStr'), r.strengths)}${pts(t('jWk'), r.weaknesses)}${pts(t('jPat'), r.patterns)}${pts(t('jSug'), r.suggestions)}${pts(t('jNotes'), r.data_notes)}
