@@ -41,6 +41,7 @@ textarea{width:100%;height:120px;background:#0c1a14;color:var(--text);border:1px
   <button class="pri" id="aiRun">AROM AI: analyst report XAUUSD M15</button>
   <button class="pri" id="aiBrief">AROM AI: daily market briefing (10 instruments)</button>
   <button class="pri" id="aiBriefS">AROM AI: session briefing</button>
+  <button class="pri" id="aiNews">AROM AI: news explainer (gold)</button>
   <button class="pri" id="aiChat">AROM AI: ask "What is the current gold bias?"</button>
 </div>
 <div id="out"></div>
@@ -176,6 +177,14 @@ $('aiChat').onclick = async () => {
   if(d.error) L.push('ERROR ' + d.error);
   else { aiConv = d.conversation_id; L.push('ANSWER: ' + d.answer, 'status ' + d.ai.status + ' · model ' + d.ai.model, 'tools used: ' + d.tools_called.map(t => t.tool + '(' + JSON.stringify(t.args) + ')' + (t.ok ? '' : ' FAILED')).join(', '), 'data used: ' + d.data_used.join(' | '), 'caveats: ' + d.caveats.join(' | '), 'remaining today: ' + d.remaining); }
   mdShow('AROM AI chat', L); $('st').textContent = 'Done.'; b.disabled = false;
+};
+$('aiNews').onclick = async () => {
+  const b = $('aiNews'); b.disabled = true; $('st').textContent = 'Reading the news… (can take up to a minute)';
+  const d = await aiCall({action:'news_explain', symbol:'XAUUSD', lang:'en'}), L = [];
+  if(d.error) L.push('ERROR ' + d.error);
+  else if(d.available === false) L.push('NOT AVAILABLE: ' + d.reason);
+  else { const r = d.report; L.push('status ' + r.ai.status + ' · model ' + r.ai.model + ' · from cache ' + r.ai.from_cache, 'SUMMARY: ' + r.summary); r.headlines.forEach(h => L.push('[' + h.index + '] ' + h.title + ' (' + h.source + ', ' + h.published_at + ')', '   says: ' + h.plain_summary, '   why: ' + h.why_it_may_matter, '   relevance: ' + h.relevance)); L.push('calendar: ' + r.calendar_context, 'caveats: ' + r.caveats.join(' | ')); }
+  mdShow('AROM AI news', L); $('st').textContent = 'Done.'; b.disabled = false;
 };
 $('btns').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if(b) run(b.dataset.p, b, b.dataset.q); });
 $('copy').onclick = async () => { try{ await navigator.clipboard.writeText($('ta').value); $('copy').textContent = 'Copied'; }catch(e){ $('ta').select(); $('copy').textContent = 'Select and copy manually'; } };
