@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AROM Intelligence · AROM TRADE</title>
+<meta name="description" content="AROM Intelligence: market briefings, technical analysis and an AI market assistant explaining verified data. Ultra plan. For education, not financial advice.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://aromx.trade/intelligence">
+<meta name="theme-color" content="#07110c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07110c;--panel:#13261f;--panel2:#183027;--line:#2a4636;--lime:#b9f25a;--text:#eef6f0;--muted:#93ab9c;--dim:#6f8a7a;--green:#34d399;--red:#f05b78;--amber:#f5b942;--blue:#8ba8ff;--r:16px}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}[hidden]{display:none!important}
+body{margin:0;background:radial-gradient(900px 600px at 85% -10%,rgba(150,210,60,.14),transparent 60%),var(--bg);color:var(--text);font:15px/1.55 Inter,'Kantumruy Pro',system-ui,sans-serif;min-height:100vh}
+body.km{font-family:'Kantumruy Pro',Inter,system-ui,sans-serif;line-height:1.75}
+a{color:var(--lime);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1000px;margin:0 auto;padding:0 16px 56px}
+.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:10px 16px;margin:0 -16px 18px;background:rgba(7,17,12,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:2.5px;font-size:14px;color:var(--text);white-space:nowrap}.brand img{width:30px;height:30px;border-radius:8px}.brand b{color:var(--lime)}.brand:hover{text-decoration:none}
+.top nav{display:flex;gap:4px;margin-left:8px}.top nav a{padding:6px 11px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted)}.top nav a.on{background:rgba(185,242,90,.12);color:var(--lime)}
+.sp{flex:1}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;font-weight:700;padding:8px 12px;min-height:38px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--lime);color:#0b1813}
+h1{font-size:clamp(24px,4.2vw,34px);line-height:1.15;margin:6px 0 6px;font-weight:900;letter-spacing:-.5px}h1 span{color:var(--lime)}
+.sub{color:var(--muted);margin:0 0 16px;max-width:720px}
+.card{background:linear-gradient(160deg,var(--panel),#102119);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px;min-width:0}
+.card h2,.card h3{margin:0 0 10px;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--lime);font-weight:800}
+body.km .card h2,body.km .card h3{letter-spacing:.4px}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);font:inherit;font-weight:700;font-size:14px;padding:10px 16px;min-height:44px;border-radius:11px;cursor:pointer}.btn:hover{border-color:var(--lime)}.btn[disabled]{opacity:.5;cursor:default}
+.btn.pri{background:var(--lime);color:#0b1813;border-color:var(--lime)}a.btn{display:inline-flex;align-items:center;text-decoration:none}
+.ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+select,textarea,input{background:#0c1a14;border:1px solid var(--line);border-radius:10px;color:var(--text);font:inherit;font-size:14px;padding:10px 12px;min-height:44px}
+select:focus,textarea:focus,input:focus{outline:2px solid rgba(185,242,90,.45);border-color:var(--lime)}
+.meta{color:var(--dim);font-size:12.5px}
+.chip{display:inline-block;padding:4px 11px;border-radius:999px;font-weight:800;font-size:12px;letter-spacing:.4px}
+.chip.bull{background:rgba(52,211,153,.15);color:var(--green)}.chip.bear{background:rgba(240,91,120,.15);color:var(--red)}.chip.neu{background:rgba(245,185,66,.15);color:var(--amber)}.chip.na{background:rgba(147,171,156,.12);color:var(--muted)}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(42,70,54,.55);font-size:13.5px}.kv:last-child{border:0}.kv span:first-child{color:var(--muted)}.kv b{font-variant-numeric:tabular-nums;text-align:right}
+.hl{font-size:18px;font-weight:800;margin:0 0 8px;line-height:1.3}
+p.t{margin:0 0 10px;color:#d6e6dc}
+ul.pts{margin:6px 0 0;padding:0;list-style:none}ul.pts li{position:relative;padding:4px 0 4px 20px;font-size:13.5px;color:#cfe0d5}ul.pts li:before{content:'';position:absolute;left:4px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.g2{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+.warn{background:rgba(245,185,66,.1);border:1px solid rgba(245,185,66,.35);color:#f3d79a;border-radius:11px;padding:9px 12px;font-size:12.5px;margin:10px 0}
+.err{background:rgba(240,91,120,.1);border:1px solid rgba(240,91,120,.4);color:#ffc2cd;border-radius:12px;padding:14px;margin:14px 0}
+.load{display:flex;gap:10px;align-items:center;color:var(--muted);padding:16px 0}.spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--lime);animation:rot .8s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+.zone{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(42,70,54,.5);font-size:13px;font-variant-numeric:tabular-nums}.zone:last-child{border:0}.zone i{font-style:normal;color:var(--muted);font-size:11px;text-transform:uppercase}
+.ins{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:rgba(12,26,20,.5)}.ins .h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.ins .h b{font-size:15px}.ins .px{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700}
+.ins details summary{cursor:pointer;color:var(--lime);font-size:12.5px;font-weight:700;margin-top:6px}
+.chat{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.msg{max-width:92%;padding:10px 13px;border-radius:14px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.msg.u{align-self:flex-end;background:rgba(185,242,90,.14);border:1px solid rgba(185,242,90,.3)}
+.msg.a{align-self:flex-start;background:var(--panel2);border:1px solid var(--line)}
+.msg small{display:block;color:var(--dim);margin-top:6px;white-space:normal}
+.sendrow{display:flex;gap:8px}.sendrow textarea{flex:1;min-height:48px;max-height:140px;resize:vertical}
+.gate{max-width:520px;margin:30px auto;text-align:center;padding:28px 22px}.gate h2{font-size:18px;letter-spacing:0;text-transform:none;color:var(--text);margin:0 0 8px}.gate p{color:var(--muted);margin:0 0 14px}
+.legal{margin-top:22px;color:var(--dim);font-size:12.5px;line-height:1.7}
+@media(max-width:700px){.g2{grid-template-columns:1fr}.top nav{display:none}.wrap{padding:0 12px 48px}.top{margin:0 -12px 14px;padding:8px 12px}.brand span.t{display:none}.card{padding:14px}.msg{max-width:100%}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/"><img src="/icons/icon-192.png" alt="AROM TRADE" width="30" height="30"><span class="t">AROM <b>TRADE</b></span></a>
+    <nav aria-label="Pages"><a href="/" data-i="navJournal"></a><a href="/analysis" data-i="navDesk"></a><a href="/intelligence" class="on" data-i="navIntel"></a><a href="/pricing" data-i="navPricing"></a></nav>
+    <span class="sp"></span>
+    <div class="seg" id="langSeg" role="group" aria-label="Language"><button type="button" data-l="en" class="on">EN</button><button type="button" data-l="km">ខ្មែរ</button></div>
+  </header>
+
+  <h1><span>AROM</span> Intelligence</h1>
+  <p class="sub" data-i="sub"></p>
+
+  <div id="gate" class="card gate" hidden></div>
+
+  <div id="app" hidden>
+    <div class="seg" id="tabs" role="tablist" style="margin-bottom:14px"><button type="button" data-t="brief" class="on"></button><button type="button" data-t="analyst"></button><button type="button" data-t="chat"></button></div>
+
+    <section id="pBrief">
+      <div class="ctl"><div class="seg" id="bKind" role="group"><button type="button" data-k="daily" class="on"></button><button type="button" data-k="session"></button></div><button class="btn pri" id="bGo" type="button"></button><span class="meta" id="bMeta"></span></div>
+      <div id="bOut"></div>
+    </section>
+
+    <section id="pAnalyst" hidden>
+      <div class="ctl"><select id="aSym" aria-label="Market"></select><select id="aTf" aria-label="Timeframe"></select><button class="btn pri" id="aGo" type="button"></button><span class="meta" id="aMeta"></span></div>
+      <div id="aOut"></div>
+    </section>
+
+    <section id="pChat" hidden>
+      <div class="ctl"><select id="cHist" aria-label="History"></select><button class="btn" id="cNew" type="button"></button><span class="meta" id="cMeta"></span></div>
+      <div class="card"><div class="chat" id="cLog"></div>
+        <div class="sendrow"><textarea id="cIn" rows="2" maxlength="1200"></textarea><button class="btn pri" id="cSend" type="button"></button></div>
+        <div class="meta" id="cNote" style="margin-top:8px"></div></div>
+    </section>
+  </div>
+
+  <p class="legal" data-i="legal"></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sb = window.supabase.createClient('https://sksvwikfyrdhgjngekqp.supabase.co', 'sb_publishable_9HxgkobAgQtKb2Jx8dkX-A_DxWy_m6e');
+const SYMS = ['XAUUSD','XAGUSD','EURUSD','GBPUSD','USDJPY','BTCUSD','ETHUSD','NAS100','US30','SPX500'];
+const TFS = ['M5','M15','M30','H1','H4','D1'];
+const S = {lang:'en', tab:'brief', kind:'daily', conv:null, busy:{}};
+try{ const l = localStorage.getItem('arom_lang'); if(l === 'km' || l === 'en') S.lang = l; }catch(e){}
+
+const L = {
+ en:{navJournal:'Journal',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'Pricing',
+  sub:'Market briefings, technical analysis and an AI assistant. Biases, levels and invalidation points are calculated from verified market data; the AI only explains them and is never used to invent prices.',
+  legal:'AROM Intelligence is an educational analysis tool. It is not financial advice and not a signal service. Markets carry risk of loss; use your own judgement and risk limits. Prices come from data providers and can be delayed; the time of every data point is shown. Index markets use futures or ETF proxies where labelled.',
+  tBrief:'Briefing',tAnalyst:'Analyst',tChat:'Ask AI',daily:'Daily',session:'Session',make:'Get briefing',analyse:'Analyse',newChat:'New chat',send:'Send',history:'Saved chats',
+  working:'Working… a briefing can take up to two minutes.',workingA:'Analysing…',workingC:'Thinking…',
+  gSignT:'Sign in to open AROM Intelligence',gSignP:'AROM Intelligence is available to Ultra members. Sign in with your AROM TRADE account.',gSignB:'Sign in',
+  gUpT:'AROM Intelligence is part of the Ultra plan',gUpP:'Briefings, the analyst and the AI assistant are included with Ultra.',gUpB:'See Ultra',
+  gLoad:'Checking your plan…',
+  bias:'Engine bias',price:'Price',updated:'Updated',generated:'Generated',cached:'saved result',fresh:'new',
+  struct:'Market structure',trend:'Trend',momentum:'Momentum',vol:'Volatility',support:'Support zones',resist:'Resistance zones',liq:'Liquidity (calculated)',bull:'Bullish scenario',bear:'Bearish scenario',inval:'Invalidation',risks:'Risk notes',dq:'Data quality',mtf:'Timeframes',summary:'Summary',
+  none:'none identified',touches:'touches',events:'Events to watch',cross:'Across markets',overview:'Overview',sess:'Session',instruments:'Instruments',more:'Details',
+  aiStatus:'AI explanation',aiOk:'AI explanation, checked against the calculated data',aiFb:'Calculated data only: the AI text was unavailable or was rejected by the checks',withheld:'Direction withheld: the data is stale or incomplete',
+  basis:'Price basis',noData:'No analysis: the required market data is incomplete.',
+  chatHint:'Ask about gold, forex, crypto or indices, the calendar, or your own journal. Answers use verified data and show what they used.',chatPh:'e.g. What is the current gold bias?',used:'Data used',left:'AI requests left today',
+  e:{ultra_required:'AROM Intelligence is for Ultra members.',unauthorized:'Please sign in again.',not_configured:'AROM AI is not switched on yet. Please contact support.',slow_down:'Too many requests. Wait a moment and try again.',daily_limit:'Daily AI limit reached. Try again later.',data_unavailable:'Market data is not available right now. Try again in a minute.',unknown_symbol:'That market is not supported.',ai_failed:'The AI service could not finish. Try again.',refused:'The AI declined this request.',setup_needed:'Setup is not complete yet. Please contact support.',server_error:'Something went wrong. Try again.',rate_limited:'The AI service is busy. Try again in a minute.',timeout:'The request took too long. Try again.',message_too_long:'That message is too long.',empty_message:'Type a question first.'},
+  retry:'Try again',generic:'Request failed.'},
+ km:{navJournal:'កំណត់ហេតុ',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'តម្លៃ',
+  sub:'សេចក្តីសង្ខេបទីផ្សារ ការវិភាគបច្ចេកទេស និងជំនួយការ AI។ ទិសដៅ កម្រិត និងចំណុចបដិសេធត្រូវបានគណនាពីទិន្នន័យទីផ្សារដែលបានផ្ទៀងផ្ទាត់ AI គ្រាន់តែពន្យល់ ហើយមិនបង្កើតតម្លៃទេ។',
+  legal:'AROM Intelligence ជាឧបករណ៍វិភាគសម្រាប់ការអប់រំ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុ ឬសេវាសញ្ញាទេ។ ទីផ្សារមានហានិភ័យខាតបង់ សូមប្រើការវិនិច្ឆ័យ និងដែនកំណត់ហានិភ័យរបស់អ្នក។ តម្លៃមកពីអ្នកផ្តល់ទិន្នន័យ ហើយអាចយឺត ម៉ោងនៃទិន្នន័យនីមួយៗត្រូវបានបង្ហាញ។',
+  tBrief:'សង្ខេប',tAnalyst:'អ្នកវិភាគ',tChat:'សួរ AI',daily:'ប្រចាំថ្ងៃ',session:'សម័យ',make:'យកសង្ខេប',analyse:'វិភាគ',newChat:'ជជែកថ្មី',send:'ផ្ញើ',history:'ការជជែកដែលបានរក្សា',
+  working:'កំពុងដំណើរការ… សង្ខេបអាចចំណាយពេលដល់ពីរនាទី។',workingA:'កំពុងវិភាគ…',workingC:'កំពុងគិត…',
+  gSignT:'ចូលគណនីដើម្បីបើក AROM Intelligence',gSignP:'AROM Intelligence សម្រាប់សមាជិក Ultra។ សូមចូលគណនី AROM TRADE របស់អ្នក។',gSignB:'ចូលគណនី',
+  gUpT:'AROM Intelligence ជាផ្នែកនៃគម្រោង Ultra',gUpP:'សង្ខេប អ្នកវិភាគ និងជំនួយការ AI រួមបញ្ចូលក្នុង Ultra។',gUpB:'មើល Ultra',
+  gLoad:'កំពុងពិនិត្យគម្រោងរបស់អ្នក…',
+  bias:'ទិសដៅម៉ាស៊ីន',price:'តម្លៃ',updated:'អាប់ដេត',generated:'បង្កើតនៅ',cached:'លទ្ធផលដែលបានរក្សា',fresh:'ថ្មី',
+  struct:'រចនាសម្ព័ន្ធទីផ្សារ',trend:'និន្នាការ',momentum:'សន្ទុះ',vol:'ភាពប្រែប្រួល',support:'តំបន់ជំនួយ',resist:'តំបន់ទប់ទល់',liq:'សន្ទនីយភាព (គណនា)',bull:'សេណារីយ៉ូឡើង',bear:'សេណារីយ៉ូចុះ',inval:'ចំណុចបដិសេធ',risks:'កំណត់ចំណាំហានិភ័យ',dq:'គុណភាពទិន្នន័យ',mtf:'ស៊ុមពេលវេលា',summary:'សង្ខេប',
+  none:'មិនមាន',touches:'ដង',events:'ព្រឹត្តិការណ៍ត្រូវតាមដាន',cross:'ទូទាំងទីផ្សារ',overview:'ទិដ្ឋភាពទូទៅ',sess:'សម័យ',instruments:'ឧបករណ៍',more:'ព័ត៌មានលម្អិត',
+  aiStatus:'ការពន្យល់ AI',aiOk:'ការពន្យល់ AI ដែលបានផ្ទៀងផ្ទាត់ជាមួយទិន្នន័យគណនា',aiFb:'ទិន្នន័យគណនាតែប៉ុណ្ណោះ៖ អត្ថបទ AI មិនមាន ឬត្រូវបានបដិសេធ',withheld:'ទិសដៅត្រូវបានលាក់៖ ទិន្នន័យចាស់ ឬមិនពេញលេញ',
+  basis:'មូលដ្ឋានតម្លៃ',noData:'គ្មានការវិភាគ៖ ទិន្នន័យទីផ្សារមិនពេញលេញ។',
+  chatHint:'សួរអំពីមាស ហ្វ័រ គ្រីបតូ ឬសន្ទស្សន៍ ប្រតិទិន ឬកំណត់ហេតុរបស់អ្នក។ ចម្លើយប្រើទិន្នន័យដែលបានផ្ទៀងផ្ទាត់។',chatPh:'ឧ. និន្នាការមាសឥឡូវជាអ្វី?',used:'ទិន្នន័យដែលបានប្រើ',left:'សំណើ AI នៅសល់ថ្ងៃនេះ',
+  e:{ultra_required:'AROM Intelligence សម្រាប់សមាជិក Ultra។',unauthorized:'សូមចូលគណនីម្តងទៀត។',not_configured:'AROM AI មិនទាន់បើកទេ។ សូមទាក់ទងជំនួយ។',slow_down:'សំណើច្រើនពេក។ រង់ចាំបន្តិច។',daily_limit:'ដល់កម្រិត AI ប្រចាំថ្ងៃ។ សាកម្តងទៀតពេលក្រោយ។',data_unavailable:'ទិន្នន័យទីផ្សារមិនមានឥឡូវនេះ។ សាកម្តងទៀតក្នុងមួយនាទី។',unknown_symbol:'ទីផ្សារនេះមិនត្រូវបានគាំទ្រ។',ai_failed:'សេវា AI មិនអាចបញ្ចប់បាន។ សាកម្តងទៀត។',refused:'AI បដិសេធសំណើនេះ។',setup_needed:'ការរៀបចំមិនទាន់ពេញលេញ។ សូមទាក់ទងជំនួយ។',server_error:'មានបញ្ហា។ សាកម្តងទៀត។',rate_limited:'សេវា AI រវល់។ សាកម្តងទៀតក្នុងមួយនាទី។',timeout:'សំណើយូរពេក។ សាកម្តងទៀត។',message_too_long:'សារវែងពេក។',empty_message:'សូមវាយសំណួរជាមុន។'},
+  retry:'សាកម្តងទៀត',generic:'សំណើបរាជ័យ។'}
+};
+const t = k => (L[S.lang][k] != null ? L[S.lang][k] : L.en[k]);
+const terr = c => (L[S.lang].e[c] || L.en.e[c] || t('generic'));
+
+const tf = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false});
+const when = v => v ? tf.format(new Date(v)) + ' ICT' : '—';
+const num = v => { if(v == null || isNaN(v)) return '—'; const n = Number(v), a = Math.abs(n); return n.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits: a >= 1000 ? 2 : a >= 100 ? 3 : a >= 10 ? 4 : 5}); };
+const biasChip = b => { const k = String(b || '').toLowerCase(); const c = k.startsWith('bull') ? 'bull' : k.startsWith('bear') ? 'bear' : k ? 'neu' : 'na'; return `<span class="chip ${c}">${esc(b ? String(b).toUpperCase() : 'WITHHELD')}</span>`; };
+const list = a => Array.isArray(a) && a.length ? `<ul class="pts">${a.map(x => `<li>${esc(typeof x === 'string' ? x : x && (x.text || x.event || JSON.stringify(x)))}</li>`).join('')}</ul>` : '';
+const sec = (title, body) => body ? `<div style="margin-top:12px">${title ? `<h3>${esc(title)}</h3>` : ''}${body}</div>` : '';
+const para = s => s ? `<p class="t">${esc(s)}</p>` : '';
+const zones = a => Array.isArray(a) && a.length ? a.map(z => `<div class="zone"><span>${num(z.low)} – ${num(z.high)}</span><i>${esc(z.strength || '')}${z.touches != null ? ' · ' + z.touches + ' ' + esc(t('touches')) : ''}</i></div>`).join('') : `<div class="meta">${esc(t('none'))}</div>`;
+const loading = txt => `<div class="load"><div class="spin"></div><span>${esc(txt)}</span></div>`;
+const errBox = (code, retryId) => `<div class="err">${esc(terr(code))}${retryId ? ` <button class="btn" type="button" id="${retryId}" style="margin-left:8px">${esc(t('retry'))}</button>` : ''}</div>`;
+
+/* ---------- calls ---------- */
+async function call(body){
+  const {data, error} = await sb.functions.invoke('arom-ai', {body:Object.assign({lang:S.lang}, body)});
+  if(error){ let code = 'server_error'; try{ const j = await error.context.json(); code = j.error || code; }catch(_){ code = /timed? ?out|abort/i.test(error.message || '') ? 'timeout' : code; } const e = new Error(code); e.code = code; throw e; }
+  if(data && data.error){ const e = new Error(data.error); e.code = data.error; throw e; }
+  return data;
+}
+
+/* ---------- briefing ---------- */
+function aiNote(ai, withheld){
+  if(withheld) return `<div class="warn">${esc(t('withheld'))}</div>`;
+  if(!ai) return '';
+  return `<div class="meta" style="margin-top:10px">${esc(t('aiStatus'))}: ${esc(ai.status === 'ok' ? t('aiOk') : t('aiFb'))}${ai.model ? ' · ' + esc(ai.model) : ''}</div>`;
+}
+function renderBriefing(b){
+  const ins = (b.instruments || []).map(i => {
+    if(i.available === false) return `<div class="ins"><div class="h"><b>${esc(i.symbol)}</b><span class="chip na">N/A</span></div><div class="meta">${esc(i.reason || '')}</div></div>`;
+    const tfs = (i.higher_timeframes || []).map(x => `${esc(x.timeframe)} ${esc(x.direction)}`).join(' · ');
+    return `<div class="ins"><div class="h"><b>${esc(i.symbol)}</b>${biasChip(i.bias)}<span class="px">${num(i.price)}</span></div>
+      <div class="meta">${esc(i.market_type || '')} · ${esc(t('updated'))} ${esc(when(i.last_candle_at))}${i.delayed ? ' · delayed' : ''}${i.freshness && i.freshness !== 'fresh' ? ' · ' + esc(i.freshness) : ''}</div>
+      ${para(i.summary)}
+      <details><summary>${esc(t('more'))}</summary>
+        ${i.support ? `<div class="kv"><span>${esc(t('support'))}</span><b>${num(i.support.low)} – ${num(i.support.high)}</b></div>` : ''}
+        ${i.resistance ? `<div class="kv"><span>${esc(t('resist'))}</span><b>${num(i.resistance.low)} – ${num(i.resistance.high)}</b></div>` : ''}
+        ${i.invalidation ? `<div class="kv"><span>${esc(t('inval'))}</span><b>${esc(typeof i.invalidation === 'object' ? (i.invalidation.level != null ? num(i.invalidation.level) : JSON.stringify(i.invalidation)) : num(i.invalidation))}</b></div>` : ''}
+        ${tfs ? `<div class="kv"><span>${esc(t('mtf'))}</span><b style="text-align:right">${tfs}</b></div>` : ''}
+        ${sec(t('bull'), para(i.bullish_scenario))}${sec(t('bear'), para(i.bearish_scenario))}${sec(t('risks'), list(i.risk_notes))}${sec('', list(i.caveats))}
+      </details></div>`;
+  }).join('');
+  const ev = (b.events_to_watch || []).map(e => `<li>${esc(e.event)} — ${esc(e.why_it_matters)}</li>`).join('');
+  return `<div class="card"><div class="hl">${esc(b.headline || '')}</div>${para(b.market_overview)}${b.session_context ? `<div class="meta">${esc(t('sess'))}: ${esc(b.session_context)}</div>` : ''}${aiNote(b.ai)}</div>
+    <div class="card"><h2>${esc(t('instruments'))}</h2>${ins}</div>
+    ${ev ? `<div class="card"><h2>${esc(t('events'))}</h2><ul class="pts">${ev}</ul></div>` : ''}
+    ${(b.cross_market_notes || []).length ? `<div class="card"><h2>${esc(t('cross'))}</h2>${list(b.cross_market_notes)}</div>` : ''}
+    ${(b.risks || []).length || (b.data_quality_notes || []).length ? `<div class="card"><h2>${esc(t('risks'))}</h2>${list(b.risks)}${sec(t('dq'), list(b.data_quality_notes))}</div>` : ''}
+    ${b.methodology ? `<div class="meta">${esc(b.methodology)}</div>` : ''}`;
+}
+async function runBrief(){
+  if(S.busy.b) return; S.busy.b = 1; $('bGo').disabled = true; $('bOut').innerHTML = loading(t('working')); $('bMeta').textContent = '';
+  try{
+    const r = await call({action:'briefing', kind:S.kind}), b = r.briefing;
+    $('bOut').innerHTML = renderBriefing(b);
+    $('bMeta').textContent = `${t('generated')} ${when(b.generated_at)} · ${b.ai && b.ai.from_cache ? t('cached') : t('fresh')}`;
+  }catch(e){ $('bOut').innerHTML = errBox(e.code || 'server_error', 'bRetry'); const rb = $('bRetry'); if(rb) rb.onclick = runBrief; }
+  S.busy.b = 0; $('bGo').disabled = false;
+}
+
+/* ---------- analyst ---------- */
+function renderReport(r){
+  const mt = r.multi_timeframe || {}, lad = (mt.ladder || []).map(x => `${esc(x.timeframe)} ${esc(x.direction || 'n/a')}`).join(' · ');
+  const liq = (r.liquidity_observations || []).map(o => `<li>${esc(String(o.type || '').replace(/_/g, ' '))} @ ${num(o.level)}</li>`).join('');
+  const withheld = r.bias == null;
+  return `<div class="card">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="hl" style="margin:0">${esc(r.symbol)} · ${esc(r.timeframe)}</div>${biasChip(r.bias)}<span style="margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums">${num(r.price)}</span></div>
+    <div class="meta">${esc(t('basis'))}: ${'last completed candle'} · ${esc(t('updated'))} ${esc(when(r.data_timestamp))}${r.freshness && r.freshness.status && r.freshness.status !== 'fresh' ? ' · ' + esc(r.freshness.status) : ''}</div>
+    ${para(r.summary)}${r.confidence_note ? `<div class="meta">${esc(r.confidence_note)}</div>` : ''}${aiNote(r.ai, withheld)}</div>
+    <div class="g2"><div class="card"><h2>${esc(t('support'))}</h2>${zones(r.support_levels)}</div><div class="card"><h2>${esc(t('resist'))}</h2>${zones(r.resistance_levels)}</div></div>
+    <div class="card">
+      ${sec(t('struct'), para(r.market_structure))}${sec(t('trend'), para(r.trend))}${sec(t('momentum'), para(r.momentum))}${sec(t('vol'), para(r.volatility))}
+      ${liq || (r.liquidity_notes || []).length ? sec(t('liq'), (liq ? `<ul class="pts">${liq}</ul>` : '') + list(r.liquidity_notes)) : ''}
+      ${lad ? sec(t('mtf'), `<div class="meta" style="font-size:13px">${lad}${mt.alignment ? ' · ' + esc(String(mt.alignment).replace(/_/g, ' ')) : ''}</div>${list(mt.conflicts)}`) : ''}
+    </div>
+    <div class="g2"><div class="card"><h2>${esc(t('bull'))}</h2>${para(r.bullish_scenario)}</div><div class="card"><h2>${esc(t('bear'))}</h2>${para(r.bearish_scenario)}</div></div>
+    <div class="card">${sec(t('inval'), para(r.invalidation))}${sec(t('risks'), list(r.risk_notes))}${sec(t('dq'), list(r.data_quality_notes))}${sec('', list(r.caveats))}</div>`;
+}
+async function runAnalyst(){
+  if(S.busy.a) return; S.busy.a = 1; $('aGo').disabled = true; $('aOut').innerHTML = loading(t('workingA')); $('aMeta').textContent = '';
+  try{
+    const r = await call({action:'analyze', symbol:$('aSym').value, timeframe:$('aTf').value});
+    if(r.available === false){ $('aOut').innerHTML = `<div class="warn">${esc(t('noData'))}</div>`; }
+    else{ $('aOut').innerHTML = renderReport(r.report); const ai = r.report.ai || {}; $('aMeta').textContent = `${t('generated')} ${when(ai.generated_at)} · ${ai.from_cache ? t('cached') : t('fresh')}${r.remaining != null ? ' · ' + t('left') + ': ' + r.remaining : ''}`; }
+  }catch(e){ $('aOut').innerHTML = errBox(e.code || 'server_error', 'aRetry'); const rb = $('aRetry'); if(rb) rb.onclick = runAnalyst; }
+  S.busy.a = 0; $('aGo').disabled = false;
+}
+
+/* ---------- chat ---------- */
+function addMsg(role, text, extra){
+  const d = document.createElement('div'); d.className = 'msg ' + (role === 'user' ? 'u' : 'a'); d.textContent = text;
+  if(extra){ const s = document.createElement('small'); s.textContent = extra; d.appendChild(s); }
+  $('cLog').appendChild(d); d.scrollIntoView({block:'nearest'}); return d;
+}
+function refsNote(refs){ if(!refs) return ''; const used = (refs.data_used || []).join('; '), cav = (refs.caveats || []).join(' '); return [used ? t('used') + ': ' + used : '', cav].filter(Boolean).join(' · '); }
+async function sendChat(){
+  const m = $('cIn').value.trim(); if(!m || S.busy.c) return;
+  S.busy.c = 1; $('cSend').disabled = true; $('cIn').value = ''; addMsg('user', m); const w = addMsg('assistant', t('workingC'));
+  try{
+    const r = await call({action:'chat', message:m, conversation_id:S.conv || undefined});
+    S.conv = r.conversation_id; w.remove(); addMsg('assistant', r.answer, refsNote({data_used:r.data_used, caveats:r.caveats}));
+    $('cMeta').textContent = r.remaining != null ? t('left') + ': ' + r.remaining : ''; loadHist(true);
+  }catch(e){ w.remove(); addMsg('assistant', terr(e.code || 'server_error')); }
+  S.busy.c = 0; $('cSend').disabled = false;
+}
+async function loadHist(keep){
+  try{
+    const r = await call({action:'conversations'}), sel = $('cHist'), cur = S.conv;
+    sel.innerHTML = `<option value="">${esc(t('history'))}</option>` + (r.conversations || []).map(c => `<option value="${esc(c.id)}">${esc((c.title || '…').slice(0, 50))}</option>`).join('');
+    if(keep && cur) sel.value = cur;
+  }catch(_){}
+}
+async function openConv(id){
+  S.conv = id; $('cLog').innerHTML = '';
+  if(!id){ addMsg('assistant', t('chatHint')); return; }
+  try{ const r = await call({action:'messages', conversation_id:id}); (r.messages || []).forEach(x => addMsg(x.role, x.content, x.role === 'assistant' ? refsNote(x.data_refs) : '')); }
+  catch(e){ addMsg('assistant', terr(e.code)); }
+}
+
+/* ---------- shell ---------- */
+function paint(){
+  document.body.classList.toggle('km', S.lang === 'km'); document.documentElement.lang = S.lang;
+  document.querySelectorAll('[data-i]').forEach(el => { el.textContent = t(el.dataset.i); });
+  document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.l === S.lang));
+  const tabs = {brief:'tBrief', analyst:'tAnalyst', chat:'tChat'}; document.querySelectorAll('#tabs button').forEach(b => { b.textContent = t(tabs[b.dataset.t]); });
+  document.querySelectorAll('#bKind button').forEach(b => { b.textContent = t(b.dataset.k); });
+  $('bGo').textContent = t('make'); $('aGo').textContent = t('analyse'); $('cNew').textContent = t('newChat'); $('cSend').textContent = t('send'); $('cIn').placeholder = t('chatPh');
+  const h = $('cHist').options[0]; if(h) h.textContent = t('history');
+}
+function show(tab){
+  S.tab = tab; document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+  $('pBrief').hidden = tab !== 'brief'; $('pAnalyst').hidden = tab !== 'analyst'; $('pChat').hidden = tab !== 'chat';
+  if(tab === 'chat' && !$('cLog').children.length){ openConv(null); loadHist(); }
+}
+function gate(kind){
+  const g = $('gate'); g.hidden = false; $('app').hidden = true;
+  if(kind === 'load'){ g.innerHTML = loading(t('gLoad')); return; }
+  const signed = kind === 'ultra';
+  g.innerHTML = `<h2>${esc(signed ? t('gUpT') : t('gSignT'))}</h2><p>${esc(signed ? t('gUpP') : t('gSignP'))}</p><a class="btn pri" href="${signed ? '/pricing' : '/'}">${esc(signed ? t('gUpB') : t('gSignB'))}</a>`;
+}
+async function boot(){
+  paint(); gate('load');
+  let session = null; try{ session = (await sb.auth.getSession()).data.session; }catch(_){}
+  if(!session){ gate('signin'); return; }
+  let ok = false;
+  try{ const {data:p} = await sb.from('profiles').select('is_admin,ultra_until').eq('id', session.user.id).maybeSingle(); ok = !!(p && (p.is_admin === true || (p.ultra_until && new Date(p.ultra_until) > new Date()))); }catch(_){}
+  if(!ok){ gate('ultra'); return; }
+  $('gate').hidden = true; $('app').hidden = false;
+  $('aSym').innerHTML = SYMS.map(s => `<option>${s}</option>`).join(''); $('aTf').innerHTML = TFS.map(x => `<option${x === 'H1' ? ' selected' : ''}>${x}</option>`).join('');
+  show('brief');
+}
+$('langSeg').addEventListener('click', e => { const b = e.target.closest('button[data-l]'); if(!b) return; S.lang = b.dataset.l; try{ localStorage.setItem('arom_lang', S.lang); }catch(_){} paint(); if($('gate') && !$('gate').hidden) boot(); });
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button[data-t]'); if(b) show(b.dataset.t); });
+$('bKind').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if(!b) return; S.kind = b.dataset.k; document.querySelectorAll('#bKind button').forEach(x => x.classList.toggle('on', x === b)); });
+$('bGo').addEventListener('click', runBrief); $('aGo').addEventListener('click', runAnalyst);
+$('cSend').addEventListener('click', sendChat); $('cIn').addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
+$('cNew').addEventListener('click', () => { $('cHist').value = ''; openConv(null); });
+$('cHist').addEventListener('change', e => openConv(e.target.value || null));
+boot();
+})();
+</script>
+</body>
+</html>

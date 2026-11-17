@@ -230,6 +230,7 @@ header.top-nav.scrolled{border-color:#34512a;box-shadow:0 18px 44px rgba(0,0,0,.
 .key-toggle[aria-expanded="true"] .svg-ico{transform:rotate(180deg)}
 .key-toggle:focus-visible,.pay-recover:focus-visible,.qr-back:focus-visible,.qr-bill:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:8px}
 #keyBlock[hidden]{display:none}
+#nlIntel[hidden]{display:none!important}
 .pay-recover{display:block;margin:4px auto 0;min-height:44px;background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font:600 12px/1.35 sans-serif;font-family:inherit;cursor:pointer;text-align:center}
 .pay-recover:hover{color:var(--text)}
 .qr-back{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 6px 0 0;background:none;border:0;color:var(--muted);font:700 13px/1 sans-serif;font-family:inherit;cursor:pointer}
@@ -2537,6 +2538,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
     <a href="/news" data-sec="newsPanel" data-pg="news" data-i18n="nlNews">News</a>
     <a href="/analysis" data-sec="anHero" data-pg="analysis" data-i18n="nlDesk">AI Desk</a>
     <a href="/pricing" data-sec="prPlans" data-pg="pricing" data-i18n="nlPricing">Pricing</a>
+    <a href="/intelligence" id="nlIntel" hidden>AROM Intelligence</a>
     <div class="nl-tools">
       <button type="button" class="nl-tools-btn" id="toolsBtn" aria-haspopup="menu" aria-expanded="false"><span data-i18n="nlTools">Tools</span><span class="nl-dot" id="toolsDot" hidden></span><svg class="svg-ico sm chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="tools-menu utility-group" id="toolsMenu" role="menu" aria-label="Trading tools">
@@ -6096,6 +6098,7 @@ async function loadPremium(){
   syncPremiumUI();
 }
 function syncPremiumUI(){
+  const nli = $('nlIntel'); if(nli) nli.hidden = !Prem.ultra;   // AROM Intelligence is Ultra / admin only
   const chip = $('premiumChip'); if(!chip) return;
   chip.className = 'prem-chip' + (Prem.ultra ? ' ultra' : Prem.elite ? ' elite' : Prem.active ? ' pro' : '');
   const lbl = t(Prem.ultra ? 'premBtnUltra' : Prem.elite ? 'premBtnElite' : Prem.active ? 'premBtnPro' : 'premBtnUp');
