@@ -14,8 +14,8 @@ export function summariseUsage(rows, now, pr) {
   const out = { windows: {}, by_kind_24h: {}, active_users_24h: 0, top_users_24h: [], truncated: false };
   const cost = (i, o) => (pr.in == null ? null : r2((i * pr.in + o * pr.out) / 1e6));
   for (const [k, ms] of Object.entries(WIN)) {
-    const x = rows.filter((r) => r.ok !== false && now - Date.parse(r.created_at) <= ms);
-    const tin = x.reduce((s, r) => s + (r.input_tokens || 0), 0), tout = x.reduce((s, r) => s + (r.output_tokens || 0), 0);
+    const all = rows.filter((r) => now - Date.parse(r.created_at) <= ms), x = all.filter((r) => r.ok !== false);   // requests = successful ones; tokens and cost include failed requests that really spent tokens
+    const tin = all.reduce((s, r) => s + (r.input_tokens || 0), 0), tout = all.reduce((s, r) => s + (r.output_tokens || 0), 0);
     out.windows[k] = { requests: x.length, input_tokens: tin, output_tokens: tout, estimated_cost_usd: cost(tin, tout) };
   }
   const d = rows.filter((r) => r.ok !== false && now - Date.parse(r.created_at) <= WIN["24h"]);

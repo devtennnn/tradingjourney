@@ -34,7 +34,7 @@ async function reserve(userId, kind) {
   return { id: r.data.id, remaining: Math.max(0, limit - (c.count || 0) - 1) };
 }
 const finish = (id, model, usage) => db.from("ai_usage_log").update({ model, input_tokens: usage.input, output_tokens: usage.output }).eq("id", id);
-const refund = (id) => db.from("ai_usage_log").delete().eq("id", id);
+const refund = (id, usage) => (usage && (usage.input || usage.output) ? db.from("ai_usage_log").update({ ok: false, model: env("OPENAI_MODEL"), input_tokens: usage.input, output_tokens: usage.output }).eq("id", id) : db.from("ai_usage_log").delete().eq("id", id));   // a failed request does not use up the member's daily slot, but tokens that were really spent stay on record
 
 // ---- integration health (shown to admins by the market-data "health" action) ----
 async function health(ok, err) {
@@ -115,7 +115,7 @@ async function runTool(name, args, ctx) {
     const now = Date.now(), list = ev.filter((e) => e.ms >= now - 3600e3 && e.ms <= now + days * 86400e3 && (cur === "ALL" || e.country === cur)).slice(0, 15);
     return { source: "Forex Factory weekly calendar, filtered to gold / USD / oil and major global events", actual_values: "not provided by this feed", events: list.map((e) => ({ title: e.title, currency: e.country, impact: e.impact, time: ppTime(e.ms), forecast: e.forecast || null, previous: e.previous || null, released: e.ms <= now, usual_reaction_guide: e.guide || null })) };
   }
-  if (name === "get_market_news") return await newsFor(sym);
+  if (name === "get_market_news") { const n = await newsFor(sym); return n.items ? { ...n, items: n.items.map(({ url, ...rest }) => rest) } : n; }   // links stay out of the model's input
   if (name === "get_user_journal_summary") {
     const days = Math.min(90, Math.max(1, parseInt(args.days, 10) || 30)), cut = new Date(Date.now() - days * 86400e3).toISOString().slice(0, 10);
     // the member's own token: row-level security limits this to their own trades
@@ -127,8 +127,10 @@ async function runTool(name, args, ctx) {
 }
 
 // ---- news (Marketaux; headlines are untrusted text; cached 30 minutes per symbol so the 100-requests-a-day plan lasts) ----
+const NEWS_OK = () => new Set([...Object.keys(NEWS_QUERY), ...env("MARKET_EQUITIES").split(",").map((x) => x.trim().toUpperCase()).filter((x) => SYMBOL_RE.test(x))]);   // only our own instruments reach the news provider (its free plan is 100 requests a day)
 async function newsFor(sym) {
   const key = env("MARKETAUX_API_KEY"); if (!key) return { available: false, reason: "news_provider_not_configured" };
+  if (!NEWS_OK().has(sym)) return { available: false, reason: "unsupported_symbol" };
   const ck = "news:" + sym, { data: hit } = await db.from("market_cache").select("payload,fetched_at").eq("key", ck).maybeSingle();
   if (hit && Date.now() - Date.parse(hit.fetched_at) < 1800_000) return hit.payload;
   const q = NEWS_QUERY[sym], filter = q ? `search=${encodeURIComponent(q)}` : `symbols=${encodeURIComponent(sym)}&filter_entities=true`;
@@ -142,33 +144,40 @@ async function newsFor(sym) {
 async function newsExplain(b, ctx) {
   const symbol = String(b.symbol || "").toUpperCase(), lang = b.lang === "km" ? "km" : "en";
   if (!SYMBOL_RE.test(symbol)) return json({ error: "bad_symbol" }, 400);
-  const cacheS = intEnv("AI_NEWS_CACHE_S", 1800), { data: cached } = await db.from("ai_reports").select("payload,generated_at").eq("kind", "news").eq("symbol", symbol).eq("timeframe", "H1").eq("lang", lang).order("generated_at", { ascending: false }).limit(1).maybeSingle();
+  const cacheS = intEnv("AI_NEWS_CACHE_S", 1800), { data: cached } = await db.from("ai_reports").select("payload,generated_at").eq("kind", "news").eq("symbol", symbol).eq("timeframe", "news").eq("lang", lang).order("generated_at", { ascending: false }).limit(1).maybeSingle();
   if (cached && Date.now() - Date.parse(cached.generated_at) < cacheS * 1000) return json({ ok: true, report: { ...cached.payload, generated_at: cached.generated_at, ai: { ...cached.payload.ai, from_cache: true } } });
+  const flightKey = symbol + "|" + lang;
+  if (newsInflight.has(flightKey)) { const r = await newsInflight.get(flightKey); const { remaining, ...shared } = r.body || {}; return json(shared, r.status); }   // the same news is already being explained on this instance: share the result, one OpenAI call
+  const job = newsBuild(symbol, lang, ctx); newsInflight.set(flightKey, job);
+  try { const r = await job; return json(r.body, r.status); } finally { newsInflight.delete(flightKey); }
+}
+const newsInflight = new Map();
+async function newsBuild(symbol, lang, ctx) {
   const news = await newsFor(symbol);
-  if (news.available === false) return json({ ok: true, available: false, symbol, reason: news.reason });
+  if (news.available === false) return { status: 200, body: { ok: true, available: false, symbol, reason: news.reason } };
   const items = Array.isArray(news.items) ? news.items.slice(0, 3) : [];
-  if (!items.length) return json({ ok: true, available: false, symbol, reason: "no_recent_headlines" });
+  if (!items.length) return { status: 200, body: { ok: true, available: false, symbol, reason: "no_recent_headlines" } };
+  const rs = await reserve(ctx.userId, "news"); if (rs.error) return { status: rs.error === "daily_limit" ? 429 : 503, body: { error: rs.error, limit: rs.limit } };   // the cheap limit check comes before the calendar fetch
   const now = Date.now(), ev = await calendar(), events = ev == null ? null : ev.filter((e) => e.ms >= now - 1800e3 && e.ms <= now + 48 * 3600e3).slice(0, 8).map((e) => ({ title: e.title, currency: e.country, impact: e.impact, time: ppTime(e.ms), forecast: e.forecast || null, previous: e.previous || null }));
-  const when = new Date().toISOString(), fallback = () => newsReport({ symbol, items, ai: null, events, status: "rejected_ungrounded", model: null, generatedAt: when, lang });
-  const rs = await reserve(ctx.userId, "news"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
-  const data = { market: symbol, headlines: items.map((x, i) => ({ index: i, title: x.title, summary: x.summary, source: x.source, published_at: x.published_at })), scheduled_events_next_48h: events == null ? "calendar_unavailable" : events, events_note: "the calendar feed has no actual released values" };
+  const when = new Date().toISOString(), stale = !!news.stale, fallback = () => newsReport({ symbol, items, ai: null, events, status: "rejected_ungrounded", model: null, generatedAt: when, lang, stale });
+  const data = { market: symbol, headlines_are_old: stale, headlines: items.map((x, i) => ({ index: i, title: x.title, summary: x.summary, source: x.source, published_at: x.published_at })), scheduled_events_next_48h: events == null ? "calendar_unavailable" : events, events_note: "the calendar feed has no actual released values" };
   const allowed = numbersIn(data), prompt = `${NEWS_RULES}\n\nWrite in ${langName(lang)}. Market: ${symbol}.\n\nDATA:\n${JSON.stringify(data)}`;
   let usage = { input: 0, output: 0 }, ai = null, bad = [];
   try {
     for (let attempt = 0; attempt < 2 && !ai; attempt++) {
       const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: attempt ? prompt + `\n\nYour previous text contained numbers that are not in the data: ${bad.join(", ")}. Rewrite it using only numbers from the data.` : prompt }], text: { format: { type: "json_schema", name: "arom_news", schema: NEWS_SCHEMA, strict: true } } });
       usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
-      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
-      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      if (r.refusal) { await refund(rs.id, usage); return { status: 502, body: { error: "refused" } }; }
+      if (r.status === "incomplete") { await refund(rs.id, usage); await health(false, "incomplete"); return { status: 502, body: { error: "ai_failed" } }; }
       let parsed = null; try { parsed = sanitiseNews(JSON.parse(r.text), items.length); } catch { parsed = null; }
-      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      if (!parsed) { await refund(rs.id, usage); await health(false, "bad_json"); return { status: 502, body: { error: "ai_failed" } }; }
       bad = ungroundedNumbers(newsText(parsed), allowed, 1e-6); if (!bad.length) ai = parsed;
     }
-  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai news:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  } catch (e) { await refund(rs.id, usage); const [code, st] = mapError(e); console.error("arom-ai news:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return { status: st, body: { error: code } }; }
   await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
-  const report = ai ? newsReport({ symbol, items, ai, events, status: "ok", model: env("OPENAI_MODEL"), generatedAt: when, lang }) : fallback();
-  await db.from("ai_reports").insert({ kind: "news", symbol, timeframe: "H1", lang, variant: "default", payload: report, data_snapshot: { headlines: items.length, source: news.source, stale: !!news.stale }, model: env("OPENAI_MODEL") });
-  return json({ ok: true, report, remaining: rs.remaining });
+  const report = ai ? newsReport({ symbol, items, ai, events, status: "ok", model: env("OPENAI_MODEL"), generatedAt: when, lang, stale }) : fallback();
+  if (ai && !stale) await db.from("ai_reports").insert({ kind: "news", symbol, timeframe: "news", lang, variant: "default", payload: report, data_snapshot: { headlines: items.length, source: news.source, stale: !!news.stale }, model: env("OPENAI_MODEL") });
+  return { status: 200, body: { ok: true, report, remaining: rs.remaining } };
 }
 
 // ---- journal reviewer ----
@@ -188,13 +197,13 @@ async function journalReviewAction(b, ctx) {
     for (let attempt = 0; attempt < 2 && !ai; attempt++) {
       const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: attempt ? prompt + `\n\nYour previous text contained numbers that are not in the statistics: ${bad.join(", ")}. Rewrite it using only numbers from the statistics.` : prompt }], text: { format: { type: "json_schema", name: "arom_journal", schema: JOURNAL_SCHEMA, strict: true } } });
       usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
-      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
-      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      if (r.refusal) { await refund(rs.id, usage); return json({ error: "refused" }, 502); }
+      if (r.status === "incomplete") { await refund(rs.id, usage); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
       let parsed = null; try { parsed = sanitiseJournal(JSON.parse(r.text)); } catch { parsed = null; }
-      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      if (!parsed) { await refund(rs.id, usage); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
       bad = ungroundedNumbers(journalText(parsed), allowed, 0.06); if (!bad.length) ai = parsed;
     }
-  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai journal:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  } catch (e) { await refund(rs.id, usage); const [code, st] = mapError(e); console.error("arom-ai journal:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
   await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
   return ai ? done(ai, "ok", rs.remaining) : done(sanitiseJournal(journalFallback(stats)), "rejected_ungrounded", rs.remaining);
 }
@@ -217,13 +226,13 @@ async function analyze(b, ctx) {
     for (let attempt = 0; attempt < 2 && !ai; attempt++) {
       const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: attempt ? prompt + `\n\nYour previous text contained numbers that are not in the data: ${bad.join(", ")}. Rewrite it using only numbers from the data.` : prompt }], text: { format: { type: "json_schema", name: "arom_analyst", schema: ANALYST_SCHEMA, strict: true } } });
       usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
-      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
-      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      if (r.refusal) { await refund(rs.id, usage); return json({ error: "refused" }, 502); }
+      if (r.status === "incomplete") { await refund(rs.id, usage); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
       let parsed = null; try { parsed = sanitiseAnalyst(JSON.parse(r.text)); } catch { parsed = null; }
-      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      if (!parsed) { await refund(rs.id, usage); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
       bad = ungroundedNumbers(analystText(parsed), allowed, tol); if (!bad.length) ai = parsed;
     }
-  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai analyze:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  } catch (e) { await refund(rs.id, usage); const [code, st] = mapError(e); console.error("arom-ai analyze:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
   await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
   const status = ai ? "ok" : "rejected_ungrounded", report = buildReport(a, ai || sanitiseAnalyst(fallbackText(a)), { status, model: env("OPENAI_MODEL"), generated_at: when, lang });
   await db.from("ai_reports").insert({ kind: "analyst", symbol, timeframe, lang, variant, payload: report, data_snapshot: { sources: a.sources, last_candle_at: a.last_candle_at, calculated_at: a.calculated_at, engine: a.engine }, model: env("OPENAI_MODEL"), last_candle_at: a.last_candle_at });
@@ -279,14 +288,14 @@ async function buildBrief(kind, lang, syms, listKey, rkind, ctx) {
       const prompt = attempt ? base + `\n\nThese parts of your previous briefing contained numbers that are not in the data: ${Object.entries(bad).map(([k, v]) => k + ": " + v.join(", ")).join("; ")}. Rewrite the whole briefing using only numbers from the data.` : base;
       const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: prompt }], max_output_tokens: intEnv("OPENAI_BRIEFING_MAX_OUTPUT_TOKENS", 6000), text: { format: { type: "json_schema", name: "arom_briefing", schema: BRIEF_SCHEMA, strict: true } } });
       usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
-      if (r.refusal) { await refund(rs.id); return { status: 502, body: { error: "refused" } }; }
-      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return { status: 502, body: { error: "ai_failed" } }; }
+      if (r.refusal) { await refund(rs.id, usage); return { status: 502, body: { error: "refused" } }; }
+      if (r.status === "incomplete") { await refund(rs.id, usage); await health(false, "incomplete"); return { status: 502, body: { error: "ai_failed" } }; }
       let parsed = null; try { parsed = sanitiseBrief(JSON.parse(r.text), syms); } catch { parsed = null; }
-      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return { status: 502, body: { error: "ai_failed" } }; }
+      if (!parsed) { await refund(rs.id, usage); await health(false, "bad_json"); return { status: 502, body: { error: "ai_failed" } }; }
       const g = groundBrief(parsed, cs, events || []); grounded = g.grounded; replaced = g.replaced; bad = g.bad;
       if (!replaced.length) break;
     }
-  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai briefing:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return { status: st, body: { error: code } }; }
+  } catch (e) { await refund(rs.id, usage); const [code, st] = mapError(e); console.error("arom-ai briefing:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return { status: st, body: { error: code } }; }
   await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
   const generatedAt = new Date().toISOString(), report = buildBriefing({ kind, lang, cs, grounded, events: events == null ? null : events, session, status: replaced.length ? "partial_fallback" : "ok", model: env("OPENAI_MODEL"), generatedAt, replaced });
   await db.from("ai_reports").insert({ kind: rkind, symbol: listKey, timeframe: "H1", lang, variant: "default", payload: report, data_snapshot: { instruments: cs.map((c) => ({ symbol: c.symbol, available: c.available, last_candle_at: c.last_candle_at || null, freshness: c.freshness || null, reason: c.reason || null })), events: Array.isArray(events) ? events.length : null, session }, model: env("OPENAI_MODEL"), last_candle_at: have.map((c) => c.last_candle_at).sort().pop() });
@@ -308,7 +317,7 @@ async function chat(b, ctx) {
     for (let step = 0; step < 6 && !final; step++) {
       const r = await ask({ instructions: SYSTEM, input, tools: CHAT_TOOLS, text: { format: { type: "json_schema", name: "arom_chat", schema: CHAT_SCHEMA, strict: true } } });
       usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
-      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
+      if (r.refusal) { await refund(rs.id, usage); return json({ error: "refused" }, 502); }
       if (r.calls.length) {
         input = [...input, ...r.output];
         for (const c of r.calls.slice(0, 4)) {
@@ -318,15 +327,15 @@ async function chat(b, ctx) {
         }
         continue;
       }
-      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      if (r.status === "incomplete") { await refund(rs.id, usage); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
       let parsed = null; try { parsed = JSON.parse(r.text); } catch { parsed = null; }
-      if (!parsed || typeof parsed.answer !== "string") { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      if (!parsed || typeof parsed.answer !== "string") { await refund(rs.id, usage); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
       bad = ungroundedNumbers(parsed.answer, allowed, Math.max(tctx.tol || 0, 1e-6));
       if (bad.length && !retried) { retried = true; input = [...input, ...r.output, { role: "user", content: `Your answer contained numbers that are not in the data you retrieved: ${bad.join(", ")}. Rewrite the answer using only numbers from the tool results, or say the value is not available.` }]; continue; }
       final = parsed;
     }
-  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai chat:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
-  if (!final) { await refund(rs.id); await health(false, "no_final"); return json({ error: "ai_failed" }, 502); }
+  } catch (e) { await refund(rs.id, usage); const [code, st] = mapError(e); console.error("arom-ai chat:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  if (!final) { await refund(rs.id, usage); await health(false, "no_final"); return json({ error: "ai_failed" }, 502); }
   await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
   const rejected = bad.length > 0, answer = rejected ? "I could not verify every number in my answer against the data I retrieved, so I am not showing it. Please ask again, or ask for a specific symbol and timeframe." : String(final.answer).slice(0, 4000);
   const refs = { tools: calls, data_used: Array.isArray(final.data_used) ? final.data_used.slice(0, 8).map((x) => String(x).slice(0, 200)) : [], caveats: Array.isArray(final.caveats) ? final.caveats.slice(0, 6).map((x) => String(x).slice(0, 300)) : [], status: rejected ? "rejected_ungrounded" : "ok" };
