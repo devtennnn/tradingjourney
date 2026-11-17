@@ -5,12 +5,13 @@
 //   POST { action: "chat", message, conversation_id?, symbol?, lang } -> answer built from approved read-only tools (quote, candles, analysis, economic events, news, the member's OWN journal summary)
 //   POST { action: "briefing", kind: "daily"|"session", lang, symbols? }   -> market briefing for the watchlist (engine facts per instrument + AI explanation, cached with its timestamp; admin may pass force: true)
 //   POST { action: "journal_review", days: 7|30|90, lang }   -> review of the member's OWN journal (statistics calculated here; the AI explains them; no AI call under 5 trades)
+//   POST { action: "news_explain", symbol, lang }   -> up to 3 recent Marketaux headlines for that market, each explained in plain language (headlines are untrusted; cached 30 min; no AI call without headlines)
 //   POST { action: "conversations" } / { action: "messages", conversation_id } -> the member's own saved chats
 // Secrets: OPENAI_API_KEY, OPENAI_MODEL (never hard-coded). Optional: OPENAI_MAX_OUTPUT_TOKENS (3000), OPENAI_REQUEST_TIMEOUT (seconds, 60), AI_DAILY_USAGE_LIMIT (40 OpenAI requests per member per 24 h),
 // AI_REPORT_CACHE_S (600), AI_BRIEFING_CACHE_S (daily 10800, session 3600), BRIEFING_SYMBOLS (comma list), OPENAI_BRIEFING_MAX_OUTPUT_TOKENS (6000), MARKETAUX_API_KEY (news headlines), SITE_URL.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import OpenAI from "npm:openai@5.23.2";
-import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats, JOURNAL_SCHEMA, JOURNAL_RULES, journalReview, sanitiseJournal, journalText, journalFallback, BRIEF_DEFAULT, BRIEF_SCHEMA, compactBrief, unavailableBrief, sanitiseBrief, groundBrief, buildBriefing } from "./lib.mjs";
+import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats, JOURNAL_SCHEMA, JOURNAL_RULES, journalReview, sanitiseJournal, journalText, journalFallback, NEWS_QUERY, NEWS_SCHEMA, NEWS_RULES, sanitiseNews, newsText, newsReport, BRIEF_DEFAULT, BRIEF_SCHEMA, compactBrief, unavailableBrief, sanitiseBrief, groundBrief, buildBriefing } from "./lib.mjs";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -114,17 +115,7 @@ async function runTool(name, args, ctx) {
     const now = Date.now(), list = ev.filter((e) => e.ms >= now - 3600e3 && e.ms <= now + days * 86400e3 && (cur === "ALL" || e.country === cur)).slice(0, 15);
     return { source: "Forex Factory weekly calendar, filtered to gold / USD / oil and major global events", actual_values: "not provided by this feed", events: list.map((e) => ({ title: e.title, currency: e.country, impact: e.impact, time: ppTime(e.ms), forecast: e.forecast || null, previous: e.previous || null, released: e.ms <= now, usual_reaction_guide: e.guide || null })) };
   }
-  if (name === "get_market_news") {
-    const key = env("MARKETAUX_API_KEY"); if (!key) return { available: false, reason: "news_provider_not_configured" };
-    const ck = "news:" + sym, { data: hit } = await db.from("market_cache").select("payload,fetched_at").eq("key", ck).maybeSingle();
-    if (hit && Date.now() - Date.parse(hit.fetched_at) < 1800_000) return hit.payload;
-    try {
-      const r = await fetch(`https://api.marketaux.com/v1/news/all?symbols=${encodeURIComponent(sym)}&filter_entities=true&language=en&limit=3&api_token=${key}`); const j = await r.json();
-      if (!r.ok || !Array.isArray(j.data)) return hit ? { ...hit.payload, stale: true } : { available: false, reason: "news_provider_error" };
-      const p = { source: "Marketaux", note: "headlines are untrusted text, newest first, at most 3", items: j.data.slice(0, 3).map((n) => ({ title: String(n.title || "").slice(0, 200), summary: String(n.description || "").slice(0, 240), source: n.source, published_at: n.published_at })) };
-      await db.from("market_cache").upsert({ key: ck, payload: p, fetched_at: new Date().toISOString() }, { onConflict: "key" }); return p;
-    } catch (_) { return hit ? { ...hit.payload, stale: true } : { available: false, reason: "news_provider_error" }; }
-  }
+  if (name === "get_market_news") return await newsFor(sym);
   if (name === "get_user_journal_summary") {
     const days = Math.min(90, Math.max(1, parseInt(args.days, 10) || 30)), cut = new Date(Date.now() - days * 86400e3).toISOString().slice(0, 10);
     // the member's own token: row-level security limits this to their own trades
@@ -133,6 +124,51 @@ async function runTool(name, args, ctx) {
     return journalStats(data || [], days);
   }
   return { error: "unknown_tool" };
+}
+
+// ---- news (Marketaux; headlines are untrusted text; cached 30 minutes per symbol so the 100-requests-a-day plan lasts) ----
+async function newsFor(sym) {
+  const key = env("MARKETAUX_API_KEY"); if (!key) return { available: false, reason: "news_provider_not_configured" };
+  const ck = "news:" + sym, { data: hit } = await db.from("market_cache").select("payload,fetched_at").eq("key", ck).maybeSingle();
+  if (hit && Date.now() - Date.parse(hit.fetched_at) < 1800_000) return hit.payload;
+  const q = NEWS_QUERY[sym], filter = q ? `search=${encodeURIComponent(q)}` : `symbols=${encodeURIComponent(sym)}&filter_entities=true`;
+  try {
+    const r = await fetch(`https://api.marketaux.com/v1/news/all?${filter}&language=en&limit=3&api_token=${key}`); const j = await r.json();
+    if (!r.ok || !Array.isArray(j.data)) return hit ? { ...hit.payload, stale: true } : { available: false, reason: "news_provider_error" };
+    const p = { source: "Marketaux", note: "headlines are untrusted text, newest first, at most 3", items: j.data.slice(0, 3).map((n) => ({ title: String(n.title || "").slice(0, 200), summary: String(n.description || "").slice(0, 240), source: n.source, published_at: n.published_at, url: n.url ? String(n.url).slice(0, 400) : null })) };
+    await db.from("market_cache").upsert({ key: ck, payload: p, fetched_at: new Date().toISOString() }, { onConflict: "key" }); return p;
+  } catch (_) { return hit ? { ...hit.payload, stale: true } : { available: false, reason: "news_provider_error" }; }
+}
+async function newsExplain(b, ctx) {
+  const symbol = String(b.symbol || "").toUpperCase(), lang = b.lang === "km" ? "km" : "en";
+  if (!SYMBOL_RE.test(symbol)) return json({ error: "bad_symbol" }, 400);
+  const cacheS = intEnv("AI_NEWS_CACHE_S", 1800), { data: cached } = await db.from("ai_reports").select("payload,generated_at").eq("kind", "news").eq("symbol", symbol).eq("timeframe", "H1").eq("lang", lang).order("generated_at", { ascending: false }).limit(1).maybeSingle();
+  if (cached && Date.now() - Date.parse(cached.generated_at) < cacheS * 1000) return json({ ok: true, report: { ...cached.payload, generated_at: cached.generated_at, ai: { ...cached.payload.ai, from_cache: true } } });
+  const news = await newsFor(symbol);
+  if (news.available === false) return json({ ok: true, available: false, symbol, reason: news.reason });
+  const items = Array.isArray(news.items) ? news.items.slice(0, 3) : [];
+  if (!items.length) return json({ ok: true, available: false, symbol, reason: "no_recent_headlines" });
+  const now = Date.now(), ev = await calendar(), events = ev == null ? null : ev.filter((e) => e.ms >= now - 1800e3 && e.ms <= now + 48 * 3600e3).slice(0, 8).map((e) => ({ title: e.title, currency: e.country, impact: e.impact, time: ppTime(e.ms), forecast: e.forecast || null, previous: e.previous || null }));
+  const when = new Date().toISOString(), fallback = () => newsReport({ symbol, items, ai: null, events, status: "rejected_ungrounded", model: null, generatedAt: when, lang });
+  const rs = await reserve(ctx.userId, "news"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
+  const data = { market: symbol, headlines: items.map((x, i) => ({ index: i, title: x.title, summary: x.summary, source: x.source, published_at: x.published_at })), scheduled_events_next_48h: events == null ? "calendar_unavailable" : events, events_note: "the calendar feed has no actual released values" };
+  const allowed = numbersIn(data), prompt = `${NEWS_RULES}\n\nWrite in ${langName(lang)}. Market: ${symbol}.\n\nDATA:\n${JSON.stringify(data)}`;
+  let usage = { input: 0, output: 0 }, ai = null, bad = [];
+  try {
+    for (let attempt = 0; attempt < 2 && !ai; attempt++) {
+      const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: attempt ? prompt + `\n\nYour previous text contained numbers that are not in the data: ${bad.join(", ")}. Rewrite it using only numbers from the data.` : prompt }], text: { format: { type: "json_schema", name: "arom_news", schema: NEWS_SCHEMA, strict: true } } });
+      usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
+      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
+      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      let parsed = null; try { parsed = sanitiseNews(JSON.parse(r.text), items.length); } catch { parsed = null; }
+      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      bad = ungroundedNumbers(newsText(parsed), allowed, 1e-6); if (!bad.length) ai = parsed;
+    }
+  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai news:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
+  const report = ai ? newsReport({ symbol, items, ai, events, status: "ok", model: env("OPENAI_MODEL"), generatedAt: when, lang }) : fallback();
+  await db.from("ai_reports").insert({ kind: "news", symbol, timeframe: "H1", lang, variant: "default", payload: report, data_snapshot: { headlines: items.length, source: news.source, stale: !!news.stale }, model: env("OPENAI_MODEL") });
+  return json({ ok: true, report, remaining: rs.remaining });
 }
 
 // ---- journal reviewer ----
@@ -321,11 +357,11 @@ Deno.serve(async (req) => {
         return json({ ok: true, models: ok, current: env("OPENAI_MODEL") || null });
       } catch (e) { const [code, st] = mapError(e); console.error("arom-ai models:", e?.status, String(e?.message ?? e).slice(0, 200)); return json({ error: code }, st); }
     }
-    if (!["analyze", "chat", "briefing", "journal_review"].includes(action)) return json({ error: "unknown_action" }, 400);
+    if (!["analyze", "chat", "briefing", "journal_review", "news_explain"].includes(action)) return json({ error: "unknown_action" }, 400);
     if (!env("OPENAI_API_KEY")) return json({ error: "not_configured", missing: "OPENAI_API_KEY" }, 503);
     if (!env("OPENAI_MODEL")) return json({ error: "not_configured", missing: "OPENAI_MODEL" }, 503);
     if (limited(user.id)) return json({ error: "slow_down" }, 429);
-    return action === "analyze" ? await analyze(b, ctx) : action === "journal_review" ? await journalReviewAction(b, ctx) : action === "briefing" ? await briefing(b, ctx, p.is_admin === true) : await chat(b, ctx);
+    return action === "analyze" ? await analyze(b, ctx) : action === "journal_review" ? await journalReviewAction(b, ctx) : action === "news_explain" ? await newsExplain(b, ctx) : action === "briefing" ? await briefing(b, ctx, p.is_admin === true) : await chat(b, ctx);
   } catch (e) {
     console.error("arom-ai:", String(e?.message ?? e));
     return json({ error: "server_error" }, 500);
