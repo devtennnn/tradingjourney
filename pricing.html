@@ -231,6 +231,7 @@ header.top-nav.scrolled{border-color:#34512a;box-shadow:0 18px 44px rgba(0,0,0,.
 .key-toggle:focus-visible,.pay-recover:focus-visible,.qr-back:focus-visible,.qr-bill:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:8px}
 #keyBlock[hidden]{display:none}
 #nlIntel[hidden]{display:none!important}
+.nl-ultra{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.5px;color:#0b1813;background:#b9f25a;border-radius:99px;padding:1px 7px;margin-left:7px;vertical-align:middle}.nl-ultra[hidden]{display:none}
 /* ---- launch gift (free Ultra for joining the Telegram channel + community) ---- */
 .lg-bar{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:nowrap;padding:5px 40px 5px 10px;min-height:34px;background:linear-gradient(90deg,#b9f25a,#d9ff86,#b9f25a);background-size:200% 100%;color:#0b1813;font-size:12.5px;font-weight:800;position:relative;z-index:40;overflow:hidden;animation:lgFlow 7s linear infinite}
 .lg-bar:before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.6) 50%,transparent 70%);transform:translateX(-110%);animation:lgShine 3.4s ease-in-out infinite;pointer-events:none}
@@ -2586,7 +2587,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
     <a href="/news" data-sec="newsPanel" data-pg="news" data-i18n="nlNews">News</a>
     <a href="/analysis" data-sec="anHero" data-pg="analysis" data-i18n="nlDesk">AI Desk</a>
     <a href="/pricing" data-sec="prPlans" data-pg="pricing" data-i18n="nlPricing">Pricing</a>
-    <a href="/intelligence" id="nlIntel" hidden>AROM Intelligence</a>
+    <a href="/intelligence" id="nlIntel">AROM Intelligence<em class="nl-ultra" id="nlIntelU">Ultra</em></a>
     <div class="nl-tools">
       <button type="button" class="nl-tools-btn" id="toolsBtn" aria-haspopup="menu" aria-expanded="false"><span data-i18n="nlTools">Tools</span><span class="nl-dot" id="toolsDot" hidden></span><svg class="svg-ico sm chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="tools-menu utility-group" id="toolsMenu" role="menu" aria-label="Trading tools">
@@ -6228,7 +6229,7 @@ async function loadPremium(){
   lgRefresh(true);   // launch gift banner
 }
 function syncPremiumUI(){
-  const nli = $('nlIntel'); if(nli) nli.hidden = !Prem.ultra;   // AROM Intelligence is Ultra / admin only
+  const nlu = $('nlIntelU'); if(nlu) nlu.hidden = !!Prem.ultra;   // everyone sees AROM Intelligence in the menu; the page itself is Ultra / admin only, so others get an "Ultra" tag and the upgrade prompt
   const chip = $('premiumChip'); if(!chip) return;
   chip.className = 'prem-chip' + (Prem.ultra ? ' ultra' : Prem.elite ? ' elite' : Prem.active ? ' pro' : '');
   const lbl = t(Prem.ultra ? 'premBtnUltra' : Prem.elite ? 'premBtnElite' : Prem.active ? 'premBtnPro' : 'premBtnUp');
