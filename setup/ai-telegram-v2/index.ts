@@ -15,7 +15,7 @@ const DP = { XAGUSD: 3, EURUSD: 5, GBPUSD: 5, USDJPY: 3, NQ: 2, OIL: 2 };
 const NAME = { BTCUSD: "Bitcoin", XAUUSD: "Gold", XAGUSD: "Silver", EURUSD: "Euro", GBPUSD: "Pound", USDJPY: "Yen", NQ: "Nasdaq 100", OIL: "WTI Oil" };
 const fx = (v, sym) => Number(v).toFixed(DP[sym] ?? 2);
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const TRIG = { engulf: "Engulfing", pin: "Pin bar", momentum: "Momentum close" };
+const TRIG = { engulf: "Engulfing", pin: "Pin bar", momentum: "Momentum close", reclaim: "Close back at the level", thrust: "Close thrust" };
 const PUSH = Deno.env.get("SUPABASE_URL") + "/functions/v1/push-send";
 const plain = (h) => String(h).replace(/<[^>]+>/g, "");
 async function push(cfg, m) { try { await fetch(`${PUSH}?key=${encodeURIComponent(cfg.cron_secret)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(m) }); } catch (_) { /* push is best-effort */ } }
@@ -140,7 +140,7 @@ function readyText(sym, ev, last, M) {
     `⏳ <b>GET READY · ${sym} ${ev.side}</b>  <i>(${esc(NAME[sym] || sym)} · ${MLABEL[M.key]} ${M.eName})</i>`, "",
     `⏱ <b>ENTRY TIMER — WAITING FOR TRIGGER</b>`,
     ...timerLines(ev, buy, null, M),
-    `Price <code>${fx(last.c, sym)}</code> is in the pullback zone. ${M.v3 ? "" : ""}Wait for a ${buy ? "bullish" : "bearish"} engulfing, pin bar or momentum close on ${M.eName}, then the A+ signal posts here.`,
+    `Price <code>${fx(last.c, sym)}</code> is in the pullback zone. ${M.v3 ? "" : ""}Wait for ${M.v3 ? `a ${M.eName} close back at the level or a close beyond the last three closes` : `a ${buy ? "bullish" : "bearish"} engulfing, pin bar or momentum close on ${M.eName}`}, then the A+ signal posts here.`,
     `<i>Not an entry yet, don't front-run the trigger.</i>`,
   ].join("\n");
 }
@@ -163,7 +163,7 @@ function readyCardOf(sym, ev, last, M) {
   const buy = ev.side === "BUY";
   return { caption: `⏳ <b>GET READY · ${sym} ${ev.side}</b> (${esc(NAME[sym] || sym)} · ${MLABEL[M.key]} ${M.eName})\nNot an entry yet, don't front-run the trigger.`,
     svg: readyCard({ side: ev.side, sym, name: NAME[sym] || sym, mode: MLABEL[M.key], eTf: M.eName, items: itemsFromLines(timerLines(ev, buy, null, M)), price: fx(last.c, sym),
-      hint: `Wait for a ${buy ? "bullish" : "bearish"} engulfing, pin bar or momentum close on ${M.eName}, then the A+ signal posts here.`, at: ict.format(new Date()), site: SITE_SHORT }) };
+      hint: `Wait for ${M.v3 ? `a ${M.eName} close back at the level or a close beyond the last three closes` : `a ${buy ? "bullish" : "bearish"} engulfing, pin bar or momentum close on ${M.eName}`}, then the A+ signal posts here.`, at: ict.format(new Date()), site: SITE_SHORT }) };
 }
 /** follow-up card, chosen from the follow-up text (TP hit / SL / expired / closed) */
 function updCardOf(x, sym, row, mk, M, hits) {
