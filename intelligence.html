@@ -78,7 +78,7 @@ ul.pts{margin:6px 0 0;padding:0;list-style:none}ul.pts li{position:relative;padd
   <div id="gate" class="card gate" hidden></div>
 
   <div id="app" hidden>
-    <div class="seg" id="tabs" role="tablist" style="margin-bottom:14px"><button type="button" data-t="brief" class="on"></button><button type="button" data-t="analyst"></button><button type="button" data-t="chat"></button></div>
+    <div class="seg" id="tabs" role="tablist" style="margin-bottom:14px"><button type="button" data-t="brief" class="on"></button><button type="button" data-t="analyst"></button><button type="button" data-t="chat"></button><button type="button" data-t="journal"></button></div>
 
     <section id="pBrief">
       <div class="ctl"><div class="seg" id="bKind" role="group"><button type="button" data-k="daily" class="on"></button><button type="button" data-k="session"></button></div><button class="btn pri" id="bGo" type="button"></button><span class="meta" id="bMeta"></span></div>
@@ -88,6 +88,11 @@ ul.pts{margin:6px 0 0;padding:0;list-style:none}ul.pts li{position:relative;padd
     <section id="pAnalyst" hidden>
       <div class="ctl"><select id="aSym" aria-label="Market"></select><select id="aTf" aria-label="Timeframe"></select><button class="btn pri" id="aGo" type="button"></button><span class="meta" id="aMeta"></span></div>
       <div id="aOut"></div>
+    </section>
+
+    <section id="pJournal" hidden>
+      <div class="ctl"><div class="seg" id="jDays" role="group"><button type="button" data-d="7"></button><button type="button" data-d="30" class="on"></button><button type="button" data-d="90"></button></div><button class="btn pri" id="jGo" type="button"></button><span class="meta" id="jMeta"></span></div>
+      <div id="jOut"><p class="meta" data-i="jHint"></p></div>
     </section>
 
     <section id="pChat" hidden>
@@ -116,7 +121,7 @@ const L = {
  en:{navJournal:'Journal',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'Pricing',
   sub:'Market briefings, technical analysis and an AI assistant. Biases, levels and invalidation points are calculated from verified market data; the AI only explains them and is never used to invent prices.',
   legal:'AROM Intelligence is an educational analysis tool. It is not financial advice and not a signal service. Markets carry risk of loss; use your own judgement and risk limits. Prices come from data providers and can be delayed; the time of every data point is shown. Index markets use futures or ETF proxies where labelled.',
-  tBrief:'Briefing',tAnalyst:'Analyst',tChat:'Ask AI',daily:'Daily',session:'Session',make:'Get briefing',analyse:'Analyse',newChat:'New chat',send:'Send',history:'Saved chats',
+  tBrief:'Briefing',tAnalyst:'Analyst',tChat:'Ask AI',tJournal:'Journal review',jGo:'Review my journal',jD7:'7 days',jD30:'30 days',jD90:'90 days',jHint:'Reviews your own trading journal. The statistics are calculated from your trades; the AI explains them. Nothing is shared with other members.',jWork:'Reviewing your journal…',jNone:'No trades in this period. Add trades to your journal first.',jTrades:'Trades',jWin:'Win rate',jTot:'Total result',jAvgW:'Average win',jAvgL:'Average loss',jPf:'Profit factor',jExp:'Expectancy / trade',jStreak:'Longest losing streak',jAvgR:'Average R',jSym:'By symbol',jSes:'By session',jSet:'By setup',jDay:'By weekday',jStr:'Strengths',jWk:'Weaknesses',jPat:'Patterns',jSug:'Ideas to test',jNotes:'Notes on the data',jAi:'AI explanation, checked against your statistics',jAiNo:'Calculated statistics only (too few trades, or the AI text did not pass the checks)',jTr:'trades',daily:'Daily',session:'Session',make:'Get briefing',analyse:'Analyse',newChat:'New chat',send:'Send',history:'Saved chats',
   working:'Working… a briefing can take up to two minutes.',workingA:'Analysing…',workingC:'Thinking…',
   gSignT:'Sign in to open AROM Intelligence',gSignP:'AROM Intelligence is available to Ultra members. Sign in with your AROM TRADE account.',gSignB:'Sign in',
   gUpT:'AROM Intelligence is part of the Ultra plan',gUpP:'Briefings, the analyst and the AI assistant are included with Ultra.',gUpB:'See Ultra',
@@ -127,12 +132,12 @@ const L = {
   aiStatus:'AI explanation',aiOk:'AI explanation, checked against the calculated data',aiFb:'Calculated data only: the AI text was unavailable or was rejected by the checks',withheld:'Direction withheld: the data is stale or incomplete',
   basis:'Price basis',noData:'No analysis: the required market data is incomplete.',
   chatHint:'Ask about gold, forex, crypto or indices, the calendar, or your own journal. Answers use verified data and show what they used.',chatPh:'e.g. What is the current gold bias?',used:'Data used',left:'AI requests left today',
-  e:{ultra_required:'AROM Intelligence is for Ultra members.',unauthorized:'Please sign in again.',not_configured:'AROM AI is not switched on yet. Please contact support.',slow_down:'Too many requests. Wait a moment and try again.',daily_limit:'Daily AI limit reached. Try again later.',data_unavailable:'Market data is not available right now. Try again in a minute.',unknown_symbol:'That market is not supported.',ai_failed:'The AI service could not finish. Try again.',refused:'The AI declined this request.',setup_needed:'Setup is not complete yet. Please contact support.',server_error:'Something went wrong. Try again.',rate_limited:'The AI service is busy. Try again in a minute.',timeout:'The request took too long. Try again.',message_too_long:'That message is too long.',empty_message:'Type a question first.'},
+  e:{journal_unavailable:'Your journal could not be loaded. Try again.',ultra_required:'AROM Intelligence is for Ultra members.',unauthorized:'Please sign in again.',not_configured:'AROM AI is not switched on yet. Please contact support.',slow_down:'Too many requests. Wait a moment and try again.',daily_limit:'Daily AI limit reached. Try again later.',data_unavailable:'Market data is not available right now. Try again in a minute.',unknown_symbol:'That market is not supported.',ai_failed:'The AI service could not finish. Try again.',refused:'The AI declined this request.',setup_needed:'Setup is not complete yet. Please contact support.',server_error:'Something went wrong. Try again.',rate_limited:'The AI service is busy. Try again in a minute.',timeout:'The request took too long. Try again.',message_too_long:'That message is too long.',empty_message:'Type a question first.'},
   retry:'Try again',generic:'Request failed.'},
  km:{navJournal:'កំណត់ហេតុ',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'តម្លៃ',
   sub:'សេចក្តីសង្ខេបទីផ្សារ ការវិភាគបច្ចេកទេស និងជំនួយការ AI។ ទិសដៅ កម្រិត និងចំណុចបដិសេធត្រូវបានគណនាពីទិន្នន័យទីផ្សារដែលបានផ្ទៀងផ្ទាត់ AI គ្រាន់តែពន្យល់ ហើយមិនបង្កើតតម្លៃទេ។',
   legal:'AROM Intelligence ជាឧបករណ៍វិភាគសម្រាប់ការអប់រំ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុ ឬសេវាសញ្ញាទេ។ ទីផ្សារមានហានិភ័យខាតបង់ សូមប្រើការវិនិច្ឆ័យ និងដែនកំណត់ហានិភ័យរបស់អ្នក។ តម្លៃមកពីអ្នកផ្តល់ទិន្នន័យ ហើយអាចយឺត ម៉ោងនៃទិន្នន័យនីមួយៗត្រូវបានបង្ហាញ។',
-  tBrief:'សង្ខេប',tAnalyst:'អ្នកវិភាគ',tChat:'សួរ AI',daily:'ប្រចាំថ្ងៃ',session:'សម័យ',make:'យកសង្ខេប',analyse:'វិភាគ',newChat:'ជជែកថ្មី',send:'ផ្ញើ',history:'ការជជែកដែលបានរក្សា',
+  tBrief:'សង្ខេប',tAnalyst:'អ្នកវិភាគ',tChat:'សួរ AI',tJournal:'ពិនិត្យកំណត់ហេតុ',jGo:'ពិនិត្យកំណត់ហេតុរបស់ខ្ញុំ',jD7:'៧ ថ្ងៃ',jD30:'៣០ ថ្ងៃ',jD90:'៩០ ថ្ងៃ',jHint:'ពិនិត្យកំណត់ហេតុជួញដូររបស់អ្នក។ ស្ថិតិត្រូវបានគណនាពីការជួញដូររបស់អ្នក ហើយ AI ពន្យល់។ មិនចែករំលែកជាមួយសមាជិកផ្សេងទេ។',jWork:'កំពុងពិនិត្យកំណត់ហេតុ…',jNone:'គ្មានការជួញដូរក្នុងរយៈពេលនេះ។ សូមបន្ថែមការជួញដូរជាមុន។',jTrades:'ការជួញដូរ',jWin:'អត្រាឈ្នះ',jTot:'លទ្ធផលសរុប',jAvgW:'ឈ្នះជាមធ្យម',jAvgL:'ចាញ់ជាមធ្យម',jPf:'Profit factor',jExp:'Expectancy / ការជួញដូរ',jStreak:'ខាតជាប់គ្នាវែងបំផុត',jAvgR:'R ជាមធ្យម',jSym:'តាមនិមិត្តសញ្ញា',jSes:'តាមសម័យ',jSet:'តាម setup',jDay:'តាមថ្ងៃ',jStr:'ចំណុចខ្លាំង',jWk:'ចំណុចខ្សោយ',jPat:'លំនាំ',jSug:'គំនិតសាកល្បង',jNotes:'កំណត់ចំណាំអំពីទិន្នន័យ',jAi:'ការពន្យល់ AI ដែលបានផ្ទៀងផ្ទាត់ជាមួយស្ថិតិរបស់អ្នក',jAiNo:'ស្ថិតិគណនាតែប៉ុណ្ណោះ (ការជួញដូរតិចពេក ឬអត្ថបទ AI មិនឆ្លងកាត់ការត្រួតពិនិត្យ)',jTr:'ការជួញដូរ',daily:'ប្រចាំថ្ងៃ',session:'សម័យ',make:'យកសង្ខេប',analyse:'វិភាគ',newChat:'ជជែកថ្មី',send:'ផ្ញើ',history:'ការជជែកដែលបានរក្សា',
   working:'កំពុងដំណើរការ… សង្ខេបអាចចំណាយពេលដល់ពីរនាទី។',workingA:'កំពុងវិភាគ…',workingC:'កំពុងគិត…',
   gSignT:'ចូលគណនីដើម្បីបើក AROM Intelligence',gSignP:'AROM Intelligence សម្រាប់សមាជិក Ultra។ សូមចូលគណនី AROM TRADE របស់អ្នក។',gSignB:'ចូលគណនី',
   gUpT:'AROM Intelligence ជាផ្នែកនៃគម្រោង Ultra',gUpP:'សង្ខេប អ្នកវិភាគ និងជំនួយការ AI រួមបញ្ចូលក្នុង Ultra។',gUpB:'មើល Ultra',
@@ -143,7 +148,7 @@ const L = {
   aiStatus:'ការពន្យល់ AI',aiOk:'ការពន្យល់ AI ដែលបានផ្ទៀងផ្ទាត់ជាមួយទិន្នន័យគណនា',aiFb:'ទិន្នន័យគណនាតែប៉ុណ្ណោះ៖ អត្ថបទ AI មិនមាន ឬត្រូវបានបដិសេធ',withheld:'ទិសដៅត្រូវបានលាក់៖ ទិន្នន័យចាស់ ឬមិនពេញលេញ',
   basis:'មូលដ្ឋានតម្លៃ',noData:'គ្មានការវិភាគ៖ ទិន្នន័យទីផ្សារមិនពេញលេញ។',
   chatHint:'សួរអំពីមាស ហ្វ័រ គ្រីបតូ ឬសន្ទស្សន៍ ប្រតិទិន ឬកំណត់ហេតុរបស់អ្នក។ ចម្លើយប្រើទិន្នន័យដែលបានផ្ទៀងផ្ទាត់។',chatPh:'ឧ. និន្នាការមាសឥឡូវជាអ្វី?',used:'ទិន្នន័យដែលបានប្រើ',left:'សំណើ AI នៅសល់ថ្ងៃនេះ',
-  e:{ultra_required:'AROM Intelligence សម្រាប់សមាជិក Ultra។',unauthorized:'សូមចូលគណនីម្តងទៀត។',not_configured:'AROM AI មិនទាន់បើកទេ។ សូមទាក់ទងជំនួយ។',slow_down:'សំណើច្រើនពេក។ រង់ចាំបន្តិច។',daily_limit:'ដល់កម្រិត AI ប្រចាំថ្ងៃ។ សាកម្តងទៀតពេលក្រោយ។',data_unavailable:'ទិន្នន័យទីផ្សារមិនមានឥឡូវនេះ។ សាកម្តងទៀតក្នុងមួយនាទី។',unknown_symbol:'ទីផ្សារនេះមិនត្រូវបានគាំទ្រ។',ai_failed:'សេវា AI មិនអាចបញ្ចប់បាន។ សាកម្តងទៀត។',refused:'AI បដិសេធសំណើនេះ។',setup_needed:'ការរៀបចំមិនទាន់ពេញលេញ។ សូមទាក់ទងជំនួយ។',server_error:'មានបញ្ហា។ សាកម្តងទៀត។',rate_limited:'សេវា AI រវល់។ សាកម្តងទៀតក្នុងមួយនាទី។',timeout:'សំណើយូរពេក។ សាកម្តងទៀត។',message_too_long:'សារវែងពេក។',empty_message:'សូមវាយសំណួរជាមុន។'},
+  e:{journal_unavailable:'មិនអាចផ្ទុកកំណត់ហេតុរបស់អ្នកបានទេ។ សាកម្តងទៀត។',ultra_required:'AROM Intelligence សម្រាប់សមាជិក Ultra។',unauthorized:'សូមចូលគណនីម្តងទៀត។',not_configured:'AROM AI មិនទាន់បើកទេ។ សូមទាក់ទងជំនួយ។',slow_down:'សំណើច្រើនពេក។ រង់ចាំបន្តិច។',daily_limit:'ដល់កម្រិត AI ប្រចាំថ្ងៃ។ សាកម្តងទៀតពេលក្រោយ។',data_unavailable:'ទិន្នន័យទីផ្សារមិនមានឥឡូវនេះ។ សាកម្តងទៀតក្នុងមួយនាទី។',unknown_symbol:'ទីផ្សារនេះមិនត្រូវបានគាំទ្រ។',ai_failed:'សេវា AI មិនអាចបញ្ចប់បាន។ សាកម្តងទៀត។',refused:'AI បដិសេធសំណើនេះ។',setup_needed:'ការរៀបចំមិនទាន់ពេញលេញ។ សូមទាក់ទងជំនួយ។',server_error:'មានបញ្ហា។ សាកម្តងទៀត។',rate_limited:'សេវា AI រវល់។ សាកម្តងទៀតក្នុងមួយនាទី។',timeout:'សំណើយូរពេក។ សាកម្តងទៀត។',message_too_long:'សារវែងពេក។',empty_message:'សូមវាយសំណួរជាមុន។'},
   retry:'សាកម្តងទៀត',generic:'សំណើបរាជ័យ។'}
 };
 const t = k => (L[S.lang][k] != null ? L[S.lang][k] : L.en[k]);
@@ -266,19 +271,44 @@ async function openConv(id){
   catch(e){ addMsg('assistant', terr(e.code)); }
 }
 
+/* ---------- journal review ---------- */
+function grpTable(title, a){
+  if(!Array.isArray(a) || !a.length) return '';
+  return `<div class="card"><h2>${esc(title)}</h2>${a.map(g => `<div class="zone"><span>${esc(g.name)}</span><i>${g.trades} ${esc(t('jTr'))} · ${num(g.win_rate_pct)}% · ${num(g.total_pl)}</i></div>`).join('')}</div>`;
+}
+function renderJournal(r){
+  const s = r.stats, kv = (l, v) => `<div class="kv"><span>${esc(l)}</span><b>${v == null ? '—' : esc(v)}</b></div>`;
+  const ai = r.ai || {}, pts = (title, a) => Array.isArray(a) && a.length ? `<div class="card"><h2>${esc(title)}</h2>${list(a)}</div>` : '';
+  return `<div class="card"><div class="hl">${esc(r.summary || '')}</div><div class="meta">${esc(ai.status === 'ok' ? t('jAi') : t('jAiNo'))}${ai.model ? ' · ' + esc(ai.model) : ''}</div>${s.sample_note ? `<div class="warn">${esc(s.sample_note)}</div>` : ''}</div>
+    <div class="g2"><div class="card"><h2>${esc(t('jTrades'))}</h2>${kv(t('jTrades'), s.trades)}${kv(t('jWin'), num(s.win_rate_pct) + '%')}${kv(t('jTot'), num(s.total_pl))}${kv(t('jAvgW'), s.average_win == null ? null : num(s.average_win))}${kv(t('jAvgL'), s.average_loss == null ? null : num(s.average_loss))}</div>
+    <div class="card"><h2>&nbsp;</h2>${kv(t('jPf'), s.profit_factor == null ? null : num(s.profit_factor))}${kv(t('jExp'), num(s.expectancy_per_trade))}${kv(t('jAvgR'), s.average_r == null ? null : num(s.average_r))}${kv(t('jStreak'), s.max_consecutive_losses)}</div></div>
+    ${pts(t('jStr'), r.strengths)}${pts(t('jWk'), r.weaknesses)}${pts(t('jPat'), r.patterns)}${pts(t('jSug'), r.suggestions)}${pts(t('jNotes'), r.data_notes)}
+    <div class="g2">${grpTable(t('jSym'), s.by_symbol)}${grpTable(t('jSes'), s.by_session)}${grpTable(t('jSet'), s.by_setup)}${grpTable(t('jDay'), s.by_weekday)}</div>`;
+}
+async function runJournal(){
+  if(S.busy.j) return; S.busy.j = 1; $('jGo').disabled = true; $('jOut').innerHTML = loading(t('jWork')); $('jMeta').textContent = '';
+  try{
+    const d = (document.querySelector('#jDays button.on') || {dataset:{d:30}}).dataset.d, r = await call({action:'journal_review', days:+d});
+    if(r.available === false){ $('jOut').innerHTML = `<div class="warn">${esc(t('jNone'))}</div>`; }
+    else{ $('jOut').innerHTML = renderJournal(r.review); $('jMeta').textContent = `${t('generated')} ${when(r.review.ai && r.review.ai.generated_at)}${r.remaining != null ? ' · ' + t('left') + ': ' + r.remaining : ''}`; }
+  }catch(e){ $('jOut').innerHTML = errBox(e.code || 'server_error', 'jRetry'); const rb = $('jRetry'); if(rb) rb.onclick = runJournal; }
+  S.busy.j = 0; $('jGo').disabled = false;
+}
+
 /* ---------- shell ---------- */
 function paint(){
   document.body.classList.toggle('km', S.lang === 'km'); document.documentElement.lang = S.lang;
   document.querySelectorAll('[data-i]').forEach(el => { el.textContent = t(el.dataset.i); });
   document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.l === S.lang));
-  const tabs = {brief:'tBrief', analyst:'tAnalyst', chat:'tChat'}; document.querySelectorAll('#tabs button').forEach(b => { b.textContent = t(tabs[b.dataset.t]); });
+  const tabs = {brief:'tBrief', analyst:'tAnalyst', chat:'tChat', journal:'tJournal'}; document.querySelectorAll('#tabs button').forEach(b => { b.textContent = t(tabs[b.dataset.t]); });
   document.querySelectorAll('#bKind button').forEach(b => { b.textContent = t(b.dataset.k); });
+  document.querySelectorAll('#jDays button').forEach(b => { b.textContent = t('jD' + b.dataset.d); }); $('jGo').textContent = t('jGo');
   $('bGo').textContent = t('make'); $('aGo').textContent = t('analyse'); $('cNew').textContent = t('newChat'); $('cSend').textContent = t('send'); $('cIn').placeholder = t('chatPh');
   const h = $('cHist').options[0]; if(h) h.textContent = t('history');
 }
 function show(tab){
   S.tab = tab; document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  $('pBrief').hidden = tab !== 'brief'; $('pAnalyst').hidden = tab !== 'analyst'; $('pChat').hidden = tab !== 'chat';
+  $('pBrief').hidden = tab !== 'brief'; $('pAnalyst').hidden = tab !== 'analyst'; $('pChat').hidden = tab !== 'chat'; $('pJournal').hidden = tab !== 'journal';
   if(tab === 'chat' && !$('cLog').children.length){ openConv(null); loadHist(); }
 }
 function gate(kind){
@@ -301,6 +331,8 @@ async function boot(){
 $('langSeg').addEventListener('click', e => { const b = e.target.closest('button[data-l]'); if(!b) return; S.lang = b.dataset.l; try{ localStorage.setItem('arom_lang', S.lang); }catch(_){} paint(); if($('gate') && !$('gate').hidden) boot(); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button[data-t]'); if(b) show(b.dataset.t); });
 $('bKind').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if(!b) return; S.kind = b.dataset.k; document.querySelectorAll('#bKind button').forEach(x => x.classList.toggle('on', x === b)); });
+$('jDays').addEventListener('click', e => { const b = e.target.closest('button[data-d]'); if(!b) return; document.querySelectorAll('#jDays button').forEach(x => x.classList.toggle('on', x === b)); });
+$('jGo').addEventListener('click', runJournal);
 $('bGo').addEventListener('click', runBrief); $('aGo').addEventListener('click', runAnalyst);
 $('cSend').addEventListener('click', sendChat); $('cIn').addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
 $('cNew').addEventListener('click', () => { $('cHist').value = ''; openConv(null); });

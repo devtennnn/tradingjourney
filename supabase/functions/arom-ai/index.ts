@@ -4,12 +4,13 @@
 //   POST { action: "analyze", symbol, timeframe, lang, variant? }     -> technical analyst report (bias / levels / liquidity from the deterministic engine; the model only writes the explanation)
 //   POST { action: "chat", message, conversation_id?, symbol?, lang } -> answer built from approved read-only tools (quote, candles, analysis, economic events, news, the member's OWN journal summary)
 //   POST { action: "briefing", kind: "daily"|"session", lang, symbols? }   -> market briefing for the watchlist (engine facts per instrument + AI explanation, cached with its timestamp; admin may pass force: true)
+//   POST { action: "journal_review", days: 7|30|90, lang }   -> review of the member's OWN journal (statistics calculated here; the AI explains them; no AI call under 5 trades)
 //   POST { action: "conversations" } / { action: "messages", conversation_id } -> the member's own saved chats
 // Secrets: OPENAI_API_KEY, OPENAI_MODEL (never hard-coded). Optional: OPENAI_MAX_OUTPUT_TOKENS (3000), OPENAI_REQUEST_TIMEOUT (seconds, 60), AI_DAILY_USAGE_LIMIT (40 OpenAI requests per member per 24 h),
 // AI_REPORT_CACHE_S (600), AI_BRIEFING_CACHE_S (daily 10800, session 3600), BRIEFING_SYMBOLS (comma list), OPENAI_BRIEFING_MAX_OUTPUT_TOKENS (6000), MARKETAUX_API_KEY (news headlines), SITE_URL.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import OpenAI from "npm:openai@5.23.2";
-import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats, BRIEF_DEFAULT, BRIEF_SCHEMA, compactBrief, unavailableBrief, sanitiseBrief, groundBrief, buildBriefing } from "./lib.mjs";
+import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats, JOURNAL_SCHEMA, JOURNAL_RULES, journalReview, sanitiseJournal, journalText, journalFallback, BRIEF_DEFAULT, BRIEF_SCHEMA, compactBrief, unavailableBrief, sanitiseBrief, groundBrief, buildBriefing } from "./lib.mjs";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -132,6 +133,34 @@ async function runTool(name, args, ctx) {
     return journalStats(data || [], days);
   }
   return { error: "unknown_tool" };
+}
+
+// ---- journal reviewer ----
+async function journalReviewAction(b, ctx) {
+  const lang = b.lang === "km" ? "km" : "en", days = [7, 30, 90].includes(parseInt(b.days, 10)) ? parseInt(b.days, 10) : 30, cut = new Date(Date.now() - days * 86400e3).toISOString().slice(0, 10);
+  // the member's own token: row-level security limits this to their own trades
+  const { data, error } = await ctx.userDb.from("trades").select("date,symbol,session,direction,setup,result,pl,rmultiple,grade").eq("user_id", ctx.userId).gte("date", cut).order("date", { ascending: false }).limit(1000);
+  if (error) return json({ error: "journal_unavailable" }, 502);
+  const stats = journalReview(data || [], days), when = new Date().toISOString();
+  if (!stats.trades) return json({ ok: true, available: false, reason: "no_trades", days });
+  const done = (j, status, rem) => json({ ok: true, review: { days, stats, ...j, ai: { status, model: status === "ok" ? env("OPENAI_MODEL") : null, generated_at: when, language: lang, grounded: status === "ok" } }, remaining: rem });
+  if (stats.trades < 5) return done(sanitiseJournal(journalFallback(stats)), "too_few_trades");   // too small to be worth an AI call
+  const rs = await reserve(ctx.userId, "journal"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
+  const allowed = numbersIn(stats), prompt = `${JOURNAL_RULES}\n\nWrite the review in ${langName(lang)}.\nStatistics (calculated, last ${days} days):\n${JSON.stringify(stats)}`;
+  let usage = { input: 0, output: 0 }, ai = null, bad = [];
+  try {
+    for (let attempt = 0; attempt < 2 && !ai; attempt++) {
+      const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: attempt ? prompt + `\n\nYour previous text contained numbers that are not in the statistics: ${bad.join(", ")}. Rewrite it using only numbers from the statistics.` : prompt }], text: { format: { type: "json_schema", name: "arom_journal", schema: JOURNAL_SCHEMA, strict: true } } });
+      usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
+      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
+      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      let parsed = null; try { parsed = sanitiseJournal(JSON.parse(r.text)); } catch { parsed = null; }
+      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      bad = ungroundedNumbers(journalText(parsed), allowed, 0.06); if (!bad.length) ai = parsed;
+    }
+  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai journal:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
+  return ai ? done(ai, "ok", rs.remaining) : done(sanitiseJournal(journalFallback(stats)), "rejected_ungrounded", rs.remaining);
 }
 
 // ---- analyst ----
@@ -292,11 +321,11 @@ Deno.serve(async (req) => {
         return json({ ok: true, models: ok, current: env("OPENAI_MODEL") || null });
       } catch (e) { const [code, st] = mapError(e); console.error("arom-ai models:", e?.status, String(e?.message ?? e).slice(0, 200)); return json({ error: code }, st); }
     }
-    if (action !== "analyze" && action !== "chat" && action !== "briefing") return json({ error: "unknown_action" }, 400);
+    if (!["analyze", "chat", "briefing", "journal_review"].includes(action)) return json({ error: "unknown_action" }, 400);
     if (!env("OPENAI_API_KEY")) return json({ error: "not_configured", missing: "OPENAI_API_KEY" }, 503);
     if (!env("OPENAI_MODEL")) return json({ error: "not_configured", missing: "OPENAI_MODEL" }, 503);
     if (limited(user.id)) return json({ error: "slow_down" }, 429);
-    return action === "analyze" ? await analyze(b, ctx) : action === "briefing" ? await briefing(b, ctx, p.is_admin === true) : await chat(b, ctx);
+    return action === "analyze" ? await analyze(b, ctx) : action === "journal_review" ? await journalReviewAction(b, ctx) : action === "briefing" ? await briefing(b, ctx, p.is_admin === true) : await chat(b, ctx);
   } catch (e) {
     console.error("arom-ai:", String(e?.message ?? e));
     return json({ error: "server_error" }, 500);
