@@ -58,12 +58,12 @@ export function normaliseBars(raw, symbol, timeframe, source, nowMs = Date.now()
   }
   return { candles: [...seen.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]), dropped };
 }
-/** H1 -> H4 on UTC 4-hour boundaries; a bucket missing hours is still emitted but flagged incomplete */
+/** H1 -> H4 on UTC 4-hour boundaries; a bucket is complete once its period has ended, even if the market was only open for part of it */
 export function toH4(h1, symbol, source, nowMs = Date.now()) {
   const g = new Map();
   for (const c of h1) { const t = Date.parse(c.timestamp), k = Math.floor(t / 14400000) * 14400000; (g.get(k) || g.set(k, []).get(k)).push(c); }
   return [...g.entries()].sort((a, b) => a[0] - b[0]).map(([k, a]) => ({ symbol, timeframe: "H4", open: a[0].open, high: Math.max(...a.map((x) => x.high)), low: Math.min(...a.map((x) => x.low)), close: a[a.length - 1].close,
-    volume: a.every((x) => x.volume != null) ? a.reduce((s, x) => s + x.volume, 0) : null, timestamp: new Date(k).toISOString(), source, complete: a.length === 4 && k + 14400000 <= nowMs }));
+    volume: a.every((x) => x.volume != null) ? a.reduce((s, x) => s + x.volume, 0) : null, timestamp: new Date(k).toISOString(), source, complete: k + 14400000 <= nowMs }));   // complete = the 4-hour period has ended (a bucket with fewer than 4 bars is normal for stocks and around market closes)
 }
 export function normaliseQuote(q, sym, cfg, source, nowMs = Date.now()) {
   const d = q && (q.data || q), bid = num(d.b ?? d.bid), ask = num(d.a ?? d.ask), last = num(d.p ?? d.price ?? d.last), ts = toMs(d.t ?? d.ts ?? d.timestamp);
