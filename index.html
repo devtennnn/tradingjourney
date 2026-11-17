@@ -3698,6 +3698,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
       <button type="button" data-t="promo">Promo codes</button>
       <button type="button" data-t="aiq">AI report</button>
       <button type="button" data-t="nt">Notifications</button>
+      <button type="button" data-t="int">Integrations</button>
       <button type="button" data-t="mt">Maintenance</button>
     </div>
     <div class="adm-body">
@@ -3759,6 +3760,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
         <div id="aqBody"></div>
       </div>
       <div class="adm-pane" id="admSig" hidden><form id="sgForm"></form><div id="admSigList"></div></div>
+      <div class="adm-pane" id="admInt"></div>
       <div class="adm-pane" id="admMt">
         <div class="adm-tools"><span class="hint">Take one page offline at a time. Visitors on that page see a maintenance screen with links to the pages that are still open. Admins keep full access.</span></div>
         <div class="mtx-grid" id="mtxList"><div class="adm-msg">Loading…</div></div>
@@ -8600,7 +8602,7 @@ function openAdmin(){
 function admShow(tab, force){
   Adm.tab = tab;
   document.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', promo:'admPromo', aiq:'admAiq', nt:'admNt', mt:'admMt'};
+  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', promo:'admPromo', aiq:'admAiq', nt:'admNt', int:'admInt', mt:'admMt'};
   Object.entries(map).forEach(([k, id]) => $(id).classList.toggle('on', k === tab));
   if(tab === 'ov') admLoadOverview();
   else if(tab === 'users' && (force || !Adm.users.length)) admLoadUsers(true);
@@ -8610,10 +8612,69 @@ function admShow(tab, force){
   else if(tab === 'promo') admLoadPromo();
   else if(tab === 'keys') admLoadKeys();
   else if(tab === 'nt') admLoadNotifs();
+  else if(tab === 'int') admLoadInt();
   else if(tab === 'mt') mtAdmLoad();
   admClaimBadge();
 }
 function admStamp(){ Adm.loadedAt = new Date(); $('admUpdated').textContent = 'Updated ' + new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(Adm.loadedAt) + ' ICT'; }
+
+async function intCall(action, extra){
+  const {data, error} = await supabaseClient.functions.invoke('integration-admin', {body:Object.assign({action}, extra || {})});
+  if(error){ let m = error.message; try{ const j = await error.context.json(); m = j.error || m; }catch(_){} throw new Error(m); }
+  return data;
+}
+async function admLoadInt(){
+  const el = $('admInt'); el.innerHTML = '<div class="adm-msg">Loading…</div>';
+  try{
+    const o = await intCall('overview'), n = x => Number(x || 0).toLocaleString('en-US'), usd = x => x == null ? 'n/a' : '$' + x.toFixed(2);
+    const W = o.usage.windows, name = {siftingio:'SiftingIO (market data)', openai:'OpenAI (AROM AI)'};
+    const kpi = (l, v, sub) => `<div class="adm-kpi"><small>${l}</small><b>${v}</b><span>${sub || '&nbsp;'}</span></div>`;
+    const lv = {critical:'#ff7b7b', warning:'#f5c451', info:'#8fa79b'};
+    const q = o.quota;
+    const prov = o.providers.map(p => `<tr><td data-l="Provider">${esc(name[p.provider] || p.provider)}</td><td data-l="Status"><span class="adm-act ${p.status === 'ok' ? '' : 'warn'}">${esc(String(p.status || '—').toUpperCase())}</span></td><td data-l="Today">${n(p.calls_today)} calls · ${n(p.errors_today)} errors</td><td data-l="Total">${n(p.calls_total)} · ${n(p.errors_total)} errors</td><td data-l="Last success">${esc(admWhen(p.last_success_at))}</td><td data-l="Last error">${p.last_error_at ? esc(admWhen(p.last_error_at)) + ' · ' + esc(p.last_error || '') : '—'}</td></tr>`).join('');
+    const kinds = Object.entries(o.usage.by_kind_24h).map(([k, v]) => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid #1b352b"><span>${esc(k)}</span><span class="hint">${n(v.requests)} requests · ${n(v.input_tokens + v.output_tokens)} tokens · ${usd(v.estimated_cost_usd)}</span></div>`).join('') || '<div class="hint">No AI requests in the last 24 hours.</div>';
+    const sec = Object.entries(o.configured).filter(([k, v]) => v !== undefined).map(([k, v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #1b352b"><span>${esc(k)}</span><b style="color:${v ? '#b9f25a' : '#ff7b7b'}">${v ? 'set' : 'missing'}</b></div>`).join('');
+    el.innerHTML = `
+      ${o.warnings.length ? `<div class="adm-card" style="margin-bottom:14px"><h3>Needs attention</h3>${o.warnings.map(w => `<div style="font-size:13px;padding:5px 0;color:${lv[w.level]}"><b>${esc(w.level.toUpperCase())}</b> · ${esc(w.text)}</div>`).join('')}</div>` : '<div class="adm-card" style="margin-bottom:14px"><h3>Status</h3><div style="font-size:13px;color:#b9f25a">Everything looks healthy.</div></div>'}
+      <div class="adm-kpis">
+        ${kpi('Market data left', q ? n(q.remaining) : 'n/a', q ? `of ${n(q.limit)} this month · reserve ${n(q.reserve)}` : 'no call recorded yet')}
+        ${kpi('Daily budget', q ? n(q.per_day) : 'n/a', q ? `${n(q.used_today)} used today` : '')}
+        ${kpi('AI requests (24h)', n(W['24h'].requests), `${n(W['7d'].requests)} in 7 days`)}
+        ${kpi('Est. AI cost (24h)', usd(W['24h'].estimated_cost_usd), `30 days: ${usd(W['30d'].estimated_cost_usd)}`)}
+      </div>
+      <div class="adm-card" style="margin-bottom:14px"><h3>Providers</h3>${prov ? `<table class="adm-table"><thead><tr><th>Provider</th><th>Status</th><th>Today</th><th>Total</th><th>Last success</th><th>Last error</th></tr></thead><tbody>${prov}</tbody></table>` : '<div class="hint">No provider calls recorded yet.</div>'}</div>
+      <div class="adm-2">
+        <div class="adm-card"><h3>AI usage · last 24 hours</h3>${kinds}
+          <div class="hint" style="margin-top:10px">Active members: ${n(o.usage.active_users_24h)}${o.usage.top_users_24h.length ? ' · top: ' + o.usage.top_users_24h.map(u => esc(u.user) + ' (' + u.requests + ')').join(', ') : ''}</div>
+          <div class="hint" style="margin-top:6px">Cost is an estimate: ${esc(o.price_note)}.</div></div>
+        <div class="adm-card"><h3>Configuration</h3>${sec}
+          <div class="hint" style="margin-top:10px">Model: <b>${esc(o.model || 'not set')}</b> · daily limit per member: ${n(o.settings.AI_DAILY_USAGE_LIMIT)} · cost alert: $${o.settings.AI_COST_ALERT_USD}/24h<br>Only set / missing is shown. Secret values are never sent to this page.</div>
+          <h3 style="margin-top:16px">Cache</h3>
+          <div class="hint">${n(o.cache.market_entries)} market entries · newest ${esc(admWhen(o.cache.newest_market_at))} · ${n(o.cache.news_entries)} news entries</div></div>
+      </div>
+      <div class="adm-card" style="margin-top:14px"><h3>Tools</h3>
+        <div class="adm-acts" id="intActs">
+          <button type="button" data-ia="test_openai">Test OpenAI</button>
+          <button type="button" data-ia="test_market_data">Test market data</button>
+          <button type="button" data-ia="clear" data-s="market">Clear market cache</button>
+          <button type="button" data-ia="clear" data-s="briefings">Clear briefings</button>
+        </div>
+        <div class="hint" id="intOut" style="margin-top:10px">Tests use no AI tokens; the market-data test uses at most one provider call.</div></div>`;
+    admStamp();
+  }catch(e){ admErr(el, e); }
+}
+$('admInt') && $('admInt').addEventListener('click', async e => {
+  const b = e.target.closest('[data-ia]'); if(!b) return; const out = $('intOut'); let a = b.dataset.ia, extra = {};
+  if(a === 'clear'){ if(!(await askConfirm('Clear this cache? The next request will fetch fresh data and use provider quota / AI tokens.'))) return; extra = {scope:b.dataset.s, confirm:true}; a = 'clear_cache'; }
+  b.disabled = true; out.textContent = 'Working…';
+  try{ const r = await intCall(a, extra);
+    out.textContent = a === 'test_openai' ? (r.ok ? `OpenAI reachable in ${r.ms} ms · ${r.models_visible} models visible · configured model ${r.configured_model || 'not set'} ${r.configured_model_available === false ? '(NOT available to this key)' : r.configured_model_available ? '(available)' : ''}` : `OpenAI test failed: ${r.error}${r.missing ? ' (' + r.missing + ' missing)' : ''}`)
+      : a === 'test_market_data' ? (r.ok ? `Market data OK in ${r.ms} ms · EURUSD ${r.price} · ${r.from_cache ? 'from cache' : 'live'}${r.stale ? ' · STALE' : ''} · quote time ${admWhen(r.quote_time)}` : `Market data test failed: ${r.error}`)
+      : `Cleared ${r.rows_removed} cached item(s) (${r.scope}).`;
+    if(a === 'clear_cache') setTimeout(admLoadInt, 800);
+  }catch(err){ out.textContent = String(err.message || err); }
+  b.disabled = false;
+});
 
 async function admLoadOverview(){
   const el = $('admOv'); el.innerHTML = '<div class="adm-msg">Loading…</div>';
