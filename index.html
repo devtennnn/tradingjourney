@@ -6868,11 +6868,11 @@ function dkUpdate(){
   dkSet('dkSess', ss.on ? 'lime' : 'off', t(ss.k), ss.phase ? t(ss.phase) : '');
   // gold: live feed > engine candles > market strip
   let px = null, chg = null;
-  if(typeof LIVE !== 'undefined' && LIVE.price != null && LIVE.sym === 'XAUUSD') px = LIVE.price;
+  if(typeof LIVE !== 'undefined' && LIVE.price != null && LIVE.sym === 'XAUUSD') px = (LIVE.spot && AI.sym === 'XAUUSD' && liveSpotOk()) ? LIVE.spot.price : LIVE.price;
   else if(AI.data && AI.sym === 'XAUUSD') px = AI.data.candles[AI.data.candles.length - 1].c;
   const q = MQ.data && MQ.data.quotes && MQ.data.quotes.find(x => x.key === 'XAU' && !x.error);
   if(px == null && q) px = q.price;
-  if(AI.data && AI.sym === 'XAUUSD' && px != null){ const c = AI.data.candles, day = Math.floor(now / 86400000) * 86400, f = c.find(b => b.t >= day); if(f) chg = px - f.o; }
+  if(AI.data && AI.sym === 'XAUUSD' && px != null){ const c = AI.data.candles, day = Math.floor(now / 86400000) * 86400, f = c.find(b => b.t >= day); if(f) chg = (typeof LIVE !== 'undefined' && LIVE.spot && px === LIVE.spot.price && LIVE.price != null ? LIVE.price : px) - f.o; }   // the day's open is on the candle (futures) basis, so the change is measured on it
   else if(q && q.chg != null) chg = q.chg;
   dkSet('dkGold', chg == null ? '' : chg >= 0 ? 'up' : 'dn', px == null ? '—' : px.toFixed(2), chg == null ? '' : naTx('dkChg', {c:(chg >= 0 ? '+' : '') + chg.toFixed(2)}));
   // next USD news
@@ -7763,9 +7763,11 @@ async function liveTick(){
   catch(e){ LIVE.ok = false; }
   LIVE.busy = false; termDraw();
 }
+// the true spot price, when the server sent one that is still fresh (under 3 minutes counting the time since it was fetched)
+function liveSpotOk(){ return !!(LIVE.spot && LIVE.sym === AI.sym && LIVE.spot.lag + (Date.now() - LIVE.at) / 1000 < 180); }
 function liveApply(j){
   const c = AI.data.candles, last = c[c.length - 1], m1 = Array.isArray(j.m1) ? j.m1 : [];
-  if(LIVE.sym !== AI.sym){ LIVE.sym = AI.sym; LIVE.price = null; LIVE.prev = null; LIVE.m5 = []; }
+  if(LIVE.sym !== AI.sym){ LIVE.sym = AI.sym; LIVE.price = null; LIVE.prev = null; LIVE.m5 = []; LIVE.spot = null; }
   // candles may be Twelve Data spot while the live feed is Yahoo futures: align on the last closed candle
   let off = 0;
   const ST = aiM().base;
@@ -7780,7 +7782,8 @@ function liveApply(j){
   else if(nowB >= last.t + ST && (!lk || lk.t < nowB) && isFinite(px)) out.push({t:nowB, o:lk ? lk.c : last.c, h:Math.max(px, lk ? lk.c : last.c), l:Math.min(px, lk ? lk.c : last.c), c:px, live:true});
   LIVE.m5 = out; LIVE.prev = LIVE.price; LIVE.price = px; LIVE.at = Date.now(); LIVE.ok = true;
   LIVE.lag = j.time ? Math.max(0, Math.round(Date.now() / 1000 - j.time)) : 0;   // seconds behind the exchange (Yahoo futures can lag ~10 min)
-  LIVE.kind = j.kind || ''; LIVE.src = j.source || '';   // spot / futures: gold and silver use the fresher of the two Yahoo feeds
+  LIVE.kind = j.kind || ''; LIVE.src = j.source || '';
+  LIVE.spot = j.spot && isFinite(j.spot.price) ? {price:+j.spot.price, lag:+j.spot.lag || 0, src:j.spot.source || 'spot'} : null;   // true spot price (gold / silver): shown as the headline price; the candles stay on the feed above   // spot / futures: gold and silver use the fresher of the two Yahoo feeds
 }
 function liveExt(arr, closes, n, from){ // extend an EMA array over the live candles
   const k = 2 / (n + 1), o = arr.slice(); let pv = o[o.length - 1];
@@ -7824,11 +7827,11 @@ function termHeader(){
   $('termSess').classList.toggle('off', !ss.on);
   $('termSym').textContent = AI.sym;
   { const el = $('termLive'), on = LIVE.ok && LIVE.sym === AI.sym && LIVE.price != null && Date.now() - LIVE.at < 30000, dp = AI.sym === 'XAGUSD' ? 3 : (/USD$/.test(AI.sym) && !/^(XAU|BTC)/.test(AI.sym) ? (AI.sym === 'USDJPY' ? 3 : 5) : 2);
-    const lagM = Math.round((LIVE.lag || 0) / 60), rt = on && (LIVE.lag || 0) < 120;
+    const lagM = Math.round((LIVE.lag || 0) / 60), spotLive = on && liveSpotOk(), rt = on && ((LIVE.lag || 0) < 120 || spotLive);
     el.classList.toggle('on', rt); el.querySelector('small').textContent = rt ? 'LIVE' : on ? 'DELAYED ' + lagM + 'm' : 'OFFLINE';
     const kindL = LIVE.kind === 'spot' ? 'spot' : LIVE.kind === 'futures' ? 'futures' : 'market', lagTxt = (LIVE.lag || 0) < 120 ? (LIVE.lag || 0) + ' s' : lagM + ' min';
-    el.title = rt ? 'Live ' + kindL + ' price (' + lagTxt + ' behind) · the forming candle updates every 5 seconds' : on ? 'Price feed is about ' + lagTxt + ' behind the exchange (free Yahoo ' + kindL + ' data). Updates every 5 seconds.' : 'Live feed unavailable';
-    $('termLivePx').textContent = LIVE.price != null && LIVE.sym === AI.sym ? LIVE.price.toFixed(dp) : '—';
+    el.title = spotLive ? 'Live SPOT price (' + LIVE.spot.src + ', ' + Math.round(LIVE.spot.lag + (Date.now() - LIVE.at) / 1000) + ' s old). The candles come from COMEX futures' + ((LIVE.lag || 0) >= 120 ? ' (about ' + lagTxt + ' behind, and trade a few dollars above spot)' : '') + '.' : rt ? 'Live ' + kindL + ' price (' + lagTxt + ' behind) · the forming candle updates every 5 seconds' : on ? 'Price feed is about ' + lagTxt + ' behind the exchange (free Yahoo ' + kindL + ' data). Updates every 5 seconds.' : 'Live feed unavailable';
+    $('termLivePx').textContent = LIVE.price != null && LIVE.sym === AI.sym ? (spotLive ? LIVE.spot.price : LIVE.price).toFixed(dp) : '—';
     const dc = AI.data && LIVE.price != null && LIVE.sym === AI.sym ? (() => { const m5 = AI.data.candles, day = Math.floor(Date.now() / 86400000) * 86400, first = m5.find(b => b.t >= day); return first ? LIVE.price - first.o : null; })() : null;
     $('termLiveChg').textContent = dc == null ? '' : (dc >= 0 ? '+' : '') + dc.toFixed(dp); $('termLiveChg').className = 'chg ' + (dc == null ? '' : dc >= 0 ? 'u' : 'd');
     el.classList.remove('up', 'dn'); if(on && LIVE.prev != null && LIVE.price !== LIVE.prev && Date.now() - LIVE.at < 1500){ el.classList.add(LIVE.price > LIVE.prev ? 'up' : 'dn'); } }

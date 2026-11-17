@@ -19,7 +19,7 @@
 body{margin:0;background:radial-gradient(900px 600px at 85% -10%,rgba(150,210,60,.14),transparent 60%),var(--bg);color:var(--text);font:15px/1.55 Inter,'Kantumruy Pro',system-ui,sans-serif;min-height:100vh}
 body.km{font-family:'Kantumruy Pro',Inter,system-ui,sans-serif;line-height:1.75}
 a{color:var(--lime);text-decoration:none}a:hover{text-decoration:underline}
-.wrap{max-width:1000px;margin:0 auto;padding:0 16px 56px}
+.wrap{max-width:1000px;margin:0 auto;padding:0 16px 56px;overflow-x:clip}   /* the rotating orb rings grow the page width by a few px on phones; clip (not hidden) keeps the sticky header working */
 .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:10px 16px;margin:0 -16px 18px;background:rgba(7,17,12,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:2.5px;font-size:14px;color:var(--text);white-space:nowrap}.brand img{width:30px;height:30px;border-radius:8px}.brand b{color:var(--lime)}.brand:hover{text-decoration:none}
 .top nav{display:flex;gap:4px;margin-left:8px}.top nav a{padding:6px 11px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted)}.top nav a.on{background:rgba(185,242,90,.12);color:var(--lime)}

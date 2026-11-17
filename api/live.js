@@ -8,6 +8,9 @@
 // as long as it is sane (within 3 % of the other). If the spot feed is empty, stale or odd, the futures feed is used exactly as before.
 const SYMBOLS = {XAUUSD: 'GC=F', XAGUSD: 'SI=F', EURUSD: 'EURUSD=X', GBPUSD: 'GBPUSD=X', USDJPY: 'JPY=X', NQ: 'NQ=F', OIL: 'CL=F', BTCUSD: 'BTC-USD'};
 const SPOT = {XAUUSD: 'XAUUSD=X', XAGUSD: 'XAGUSD=X'};
+// Real spot gold / silver (Yahoo has no spot feed: XAUUSD=X is 404). gold-api.com is a free, key-less public price API: unofficial, no uptime guarantee,
+// so it is used for the headline PRICE only, checked against futures, and dropped silently if it is stale, odd or down.
+const GOLDAPI = {XAUUSD: 'XAU', XAGUSD: 'XAG'};
 const UA = {'User-Agent': 'Mozilla/5.0 (compatible; arom-trade/1.0)', Accept: 'application/json'};
 
 async function yahoo(sym, now) {
@@ -28,6 +31,22 @@ async function yahoo(sym, now) {
   return {symbol: sym, price, time, lag: time ? Math.max(0, now - time) : null, m1: m1.slice(-130), bars: m1.length};
 }
 
+async function goldApi(code, now) {
+  const r = await fetch('https://api.gold-api.com/price/' + code, {headers: UA, signal: AbortSignal.timeout(3500)});
+  if (!r.ok) throw new Error('gold-api ' + r.status);
+  const j = await r.json(), price = Number(j.price), t = Date.parse(j.updatedAt);
+  if (!isFinite(price) || price <= 0 || !isFinite(t)) throw new Error('gold-api bad data');
+  const time = Math.floor(t / 1000);
+  return {price, time, lag: Math.max(0, now - time), source: 'gold-api.com'};
+}
+/** spot is shown only if fresh (under 3 minutes) and within 1.5 % of the futures price (a normal futures premium is about 0.1-0.5 %) */
+function spotOk(spot, fut) {
+  if (!spot) return null;
+  if (spot.lag > 180) return null;
+  if (fut && Math.abs(spot.price - fut.price) / fut.price > 0.015) return null;
+  return spot;
+}
+
 /** pick the feed to show: spot if it is clearly fresher than the futures and its price is sane next to the futures; otherwise the futures (the previous behaviour) */
 function choose(fut, spot) {
   if (!fut && !spot) return null;
@@ -46,14 +65,16 @@ module.exports = async (req, res) => {
   if (!y) return res.status(400).json({error: 'unsupported symbol'});
   const now = Math.floor(Date.now() / 1000), debug = req.query && String(req.query.debug) === '1';
   try {
-    const [futR, spotR] = await Promise.allSettled([yahoo(y, now), SPOT[key] ? yahoo(SPOT[key], now) : Promise.reject(new Error('no spot feed'))]);
+    const [futR, spotR, gaR] = await Promise.allSettled([yahoo(y, now), SPOT[key] ? yahoo(SPOT[key], now) : Promise.reject(new Error('no spot feed')), GOLDAPI[key] ? goldApi(GOLDAPI[key], now) : Promise.reject(new Error('no spot api'))]);
     const fut = futR.status === 'fulfilled' ? futR.value : null, spot = spotR.status === 'fulfilled' ? spotR.value : null;
     const pick = choose(fut, spot);
     if (!pick) throw new Error(futR.reason && futR.reason.message || 'no feed');
     const u = pick.use, spotUsed = u === spot && !!SPOT[key];
     res.setHeader('Cache-Control', 'public, s-maxage=4, stale-while-revalidate=8');
+    const realSpot = spotOk(gaR.status === 'fulfilled' ? gaR.value : null, fut);
     const body = {symbol: key, source: 'Yahoo Finance · ' + u.symbol, kind: spotUsed ? 'spot' : (SPOT[key] ? 'futures' : 'market'), price: u.price, time: u.time, lag: u.lag, m1: u.m1, at: now};
-    if (debug) { res.setHeader('Cache-Control', 'no-store'); body.m1 = undefined; body.feeds = [fut && {name: 'futures', symbol: fut.symbol, price: fut.price, lag: fut.lag, bars: fut.bars}, spot && {name: 'spot', symbol: spot.symbol, price: spot.price, lag: spot.lag, bars: spot.bars}].filter(Boolean); body.chosen = u.symbol; body.why = pick.why; body.errors = [futR.status === 'rejected' && 'futures: ' + futR.reason.message, spotR.status === 'rejected' && SPOT[key] && 'spot: ' + spotR.reason.message].filter(Boolean); }
+    if (realSpot) body.spot = realSpot;   // the page shows this as the headline price; candles stay on the feed above
+    if (debug) { res.setHeader('Cache-Control', 'no-store'); body.m1 = undefined; body.feeds = [fut && {name: 'futures', symbol: fut.symbol, price: fut.price, lag: fut.lag, bars: fut.bars}, spot && {name: 'spot', symbol: spot.symbol, price: spot.price, lag: spot.lag, bars: spot.bars}].filter(Boolean); body.chosen = u.symbol; body.why = pick.why; body.spot_api = gaR.status === 'fulfilled' ? gaR.value : null; body.errors = [gaR.status === 'rejected' && GOLDAPI[key] && 'gold-api: ' + gaR.reason.message, futR.status === 'rejected' && 'futures: ' + futR.reason.message, spotR.status === 'rejected' && SPOT[key] && 'spot: ' + spotR.reason.message].filter(Boolean); }
     return res.status(200).json(body);
   } catch (e) {
     res.setHeader('Cache-Control', 'no-store');
@@ -61,3 +82,4 @@ module.exports = async (req, res) => {
   }
 };
 module.exports.choose = choose;
+module.exports.spotOk = spotOk;
