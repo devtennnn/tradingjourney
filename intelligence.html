@@ -61,6 +61,70 @@ ul.pts{margin:6px 0 0;padding:0;list-style:none}ul.pts li{position:relative;padd
 .legal{margin-top:22px;color:var(--dim);font-size:12.5px;line-height:1.7}
 @media(max-width:700px){.g2{grid-template-columns:1fr}.top nav{display:none}.wrap{padding:0 12px 48px}.top{margin:0 -12px 14px;padding:8px 12px}.brand span.t{display:none}.card{padding:14px}.msg{max-width:100%}}
 @media(prefers-reduced-motion:reduce){.spin{animation:none}}
+/* ===== AI look: hero, orb, thinking states (design pass) ===== */
+:root{--teal:#7fe3d0}
+body:before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(185,242,90,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(185,242,90,.05) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(900px 520px at 70% 0%,#000 20%,transparent 75%);mask-image:radial-gradient(900px 520px at 70% 0%,#000 20%,transparent 75%)}
+body:after{content:'';position:fixed;z-index:-1;pointer-events:none;width:520px;height:520px;top:-140px;right:-120px;border-radius:50%;background:radial-gradient(circle,rgba(127,227,208,.10),transparent 65%);animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(-160px,120px)}}
+.hero{display:grid;grid-template-columns:1fr 220px;gap:24px;align-items:center;margin:8px 0 22px}
+.eye{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 10px;border:1px solid rgba(185,242,90,.28);border-radius:999px;background:rgba(185,242,90,.06);font-size:11.5px;font-weight:700;letter-spacing:1.4px;color:var(--lime);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+body.km .eye{letter-spacing:.3px;font-family:inherit}
+.live{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(185,242,90,.6);animation:ping 2s ease-out infinite}
+@keyframes ping{70%{box-shadow:0 0 0 7px rgba(185,242,90,0)}100%{box-shadow:0 0 0 0 rgba(185,242,90,0)}}
+.hero h1{font-size:clamp(30px,5vw,46px);letter-spacing:-1px;margin:12px 0 8px}
+.hero h1 span{background:linear-gradient(90deg,var(--lime),var(--teal),var(--lime));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sheen 6s linear infinite}
+@keyframes sheen{to{background-position:-200% 0}}
+.caps{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}.caps span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);padding:4px 10px;border:1px solid var(--line);border-radius:8px;background:rgba(12,26,20,.6)}.caps svg{width:13px;height:13px;color:var(--lime)}
+.hero-orb{position:relative;height:200px;display:grid;place-items:center}
+.orb{position:relative;width:170px;height:170px;flex:none}
+.orb i{position:absolute;border-radius:50%;border:1px solid rgba(185,242,90,.18)}
+.orb .r1{inset:20%;border-color:rgba(185,242,90,.18);border-top-color:var(--lime);border-right-color:var(--lime);animation:rot 4s linear infinite}
+.orb .r2{inset:9%;border:1px dashed rgba(127,227,208,.32);animation:rot 16s linear infinite reverse}
+.orb .r3{inset:0;border-color:rgba(185,242,90,.10);animation:rot 9s linear infinite}
+.orb .r3:after,.orb .r2:after{content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
+.orb .r2:after{background:var(--teal);box-shadow:0 0 10px var(--teal);top:auto;bottom:-3px}
+.orb b{position:absolute;inset:31%;border-radius:50%;background:radial-gradient(circle at 34% 30%,#f2ffd9 0,#b9f25a 28%,#3d9a5f 62%,#0d2c1e 100%);box-shadow:0 0 34px rgba(185,242,90,.28),inset 0 -8px 18px rgba(0,0,0,.35);animation:breathe 3.2s ease-in-out infinite}
+.orb b:after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent,rgba(255,255,255,.35),transparent 30%);mix-blend-mode:overlay;animation:rot 3s linear infinite}
+@keyframes breathe{50%{transform:scale(1.07);box-shadow:0 0 46px rgba(185,242,90,.4),inset 0 -8px 18px rgba(0,0,0,.35)}}
+.orb.sm{width:46px;height:46px}.orb.sm .r3:after,.orb.sm .r2:after{width:4px;height:4px;margin-left:-2px;top:-2px}.orb.sm .r2:after{top:auto;bottom:-2px}
+.orb.busy .r1{animation-duration:1.1s}.orb.busy .r2{animation-duration:5s}.orb.busy .r3{animation-duration:3s}.orb.busy b{animation-duration:1.4s}
+.fl{position:absolute;font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(19,38,31,.9);white-space:nowrap;animation:bob 5s ease-in-out infinite}
+.fl b{color:var(--lime);font-weight:700}.fl.f1{top:8px;left:-6px}.fl.f2{top:46%;right:-14px;animation-delay:-1.6s}.fl.f3{bottom:6px;left:14px;animation-delay:-3.2s}
+@keyframes bob{50%{transform:translateY(-6px)}}
+#tabs{display:flex;width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:4px;border-radius:14px;margin-bottom:16px!important}#tabs::-webkit-scrollbar{display:none}
+#tabs button{display:inline-flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:center;min-height:42px;border-radius:10px;transition:background .2s,color .2s}
+#tabs button svg{width:16px;height:16px;flex:none}
+#tabs button:not(.on):hover{color:var(--text);background:rgba(185,242,90,.06)}
+.btn{transition:border-color .2s,transform .15s,box-shadow .2s}.btn:active{transform:scale(.98)}
+.btn.pri{display:inline-flex;align-items:center;gap:8px}.btn.pri svg{width:16px;height:16px}
+.btn.pri:not([disabled]):hover{box-shadow:0 6px 22px rgba(185,242,90,.22)}
+.btn.pri[disabled]{opacity:1;color:#0b1813;background:linear-gradient(90deg,#9fd94a,#d4ff8c,#9fd94a);background-size:200% 100%;animation:sheen 1.4s linear infinite}
+.card{position:relative;transition:border-color .25s}.card:hover{border-color:rgba(185,242,90,.35)}
+.out>.card,.out>.g2,.out>.warn,.out>.err,.out>.meta{animation:up .5s cubic-bezier(.2,.7,.2,1) both}
+.out>:nth-child(2){animation-delay:.07s}.out>:nth-child(3){animation-delay:.14s}.out>:nth-child(4){animation-delay:.21s}.out>:nth-child(5){animation-delay:.28s}.out>:nth-child(n+6){animation-delay:.35s}
+@keyframes up{from{opacity:0;transform:translateY(12px)}}
+.ai-empty{display:flex;gap:16px;align-items:center;padding:20px;border:1px dashed rgba(185,242,90,.22);border-radius:var(--r);background:rgba(12,26,20,.45)}
+.ai-empty b{display:block;font-size:15px;margin-bottom:2px}.ai-empty p{margin:0;color:var(--muted);font-size:13.5px}
+.think{border:1px solid rgba(185,242,90,.3);border-radius:var(--r);padding:18px;background:linear-gradient(160deg,rgba(19,38,31,.95),rgba(12,26,20,.95));position:relative;overflow:hidden;animation:up .35s both}
+.think:before{content:'';position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--lime),var(--teal),transparent);background-size:50% 100%;background-repeat:no-repeat;animation:scan 1.6s ease-in-out infinite}
+@keyframes scan{from{background-position:-60% 0}to{background-position:160% 0}}
+.th-top{display:flex;gap:14px;align-items:center}.th-top>div:not(.orb){flex:1;min-width:0}.th-top b{display:block;font-size:15px}
+.th-s{display:block;color:var(--lime);font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}body.km .th-s{font-family:inherit}
+.th-s:after{content:'▍';margin-left:2px;animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}
+.th-time{font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim);font-variant-numeric:tabular-nums}
+.th-steps{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:2px}
+.th-steps li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--dim);padding:5px 0;transition:color .3s}
+.th-steps li:before{content:'';width:16px;height:16px;flex:none;border-radius:50%;border:1.5px solid var(--line);box-sizing:border-box}
+.th-steps li.on{color:var(--text)}.th-steps li.on:before{border-color:var(--line);border-top-color:var(--lime);animation:rot .8s linear infinite}
+.th-steps li.done{color:var(--muted)}.th-steps li.done:before{border:0;background:var(--lime) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.3 2.3 4.7-4.9' fill='none' stroke='%230b1813' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+.th-note{margin-top:12px;font-size:12.5px;color:var(--dim)}
+.skel{margin-top:14px;display:grid;gap:8px}.skel i{display:block;height:10px;border-radius:6px;background:linear-gradient(90deg,rgba(42,70,54,.5),rgba(185,242,90,.14),rgba(42,70,54,.5));background-size:200% 100%;animation:sheen 1.6s linear infinite}.skel i:nth-child(2){width:86%}.skel i:nth-child(3){width:64%}
+.msg{animation:up .3s both}.msg.a{display:block}
+.msg.typing{display:inline-flex;gap:5px;align-items:center;padding:13px 15px}.msg.typing i{width:7px;height:7px;border-radius:50%;background:var(--lime);opacity:.35;animation:dot 1.2s ease-in-out infinite}.msg.typing i:nth-child(2){animation-delay:.15s}.msg.typing i:nth-child(3){animation-delay:.3s}
+@keyframes dot{30%{opacity:1;transform:translateY(-4px)}}
+.gate .orb{margin:0 auto 14px}
+@media(max-width:700px){.hero{grid-template-columns:1fr 96px;gap:12px;margin-bottom:16px}.hero-orb{height:96px}.hero-orb .orb{width:96px;height:96px}.fl{display:none}.caps{display:none}#tabs button span{font-size:12.5px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -72,8 +136,15 @@ ul.pts{margin:6px 0 0;padding:0;list-style:none}ul.pts li{position:relative;padd
     <div class="seg" id="langSeg" role="group" aria-label="Language"><button type="button" data-l="en" class="on">EN</button><button type="button" data-l="km">ខ្មែរ</button></div>
   </header>
 
-  <h1><span>AROM</span> Intelligence</h1>
-  <p class="sub" data-i="sub"></p>
+  <section class="hero">
+    <div>
+      <div class="eye"><span class="live"></span><span data-i="eye"></span></div>
+      <h1><span>AROM</span> Intelligence</h1>
+      <p class="sub" data-i="sub"></p>
+      <div class="caps"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><i data-i="cap1" style="font-style:normal"></i></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><i data-i="cap2" style="font-style:normal"></i></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><i style="font-style:normal">EN · ខ្មែរ</i></span></div>
+    </div>
+    <div class="hero-orb" aria-hidden="true"><div class="orb"><i class="r3"></i><i class="r2"></i><i class="r1"></i><b></b></div><span class="fl f1"><b>XAUUSD</b> · H1</span><span class="fl f2">S/R <b>zones</b></span><span class="fl f3">M15 · H1 · <b>H4</b></span></div>
+  </section>
 
   <div id="gate" class="card gate" hidden></div>
 
@@ -82,22 +153,22 @@ ul.pts{margin:6px 0 0;padding:0;list-style:none}ul.pts li{position:relative;padd
 
     <section id="pBrief">
       <div class="ctl"><div class="seg" id="bKind" role="group"><button type="button" data-k="daily" class="on"></button><button type="button" data-k="session"></button></div><button class="btn pri" id="bGo" type="button"></button><span class="meta" id="bMeta"></span></div>
-      <div id="bOut"></div>
+      <div class="out" id="bOut"></div>
     </section>
 
     <section id="pAnalyst" hidden>
       <div class="ctl"><select id="aSym" aria-label="Market"></select><select id="aTf" aria-label="Timeframe"></select><button class="btn pri" id="aGo" type="button"></button><span class="meta" id="aMeta"></span></div>
-      <div id="aOut"></div>
+      <div class="out" id="aOut"></div>
     </section>
 
     <section id="pNews" hidden>
       <div class="ctl"><select id="nSym" aria-label="Market"></select><button class="btn pri" id="nGo" type="button"></button><span class="meta" id="nMeta"></span></div>
-      <div id="nOut"><p class="meta" data-i="nHint"></p></div>
+      <div class="out" id="nOut"></div>
     </section>
 
     <section id="pJournal" hidden>
       <div class="ctl"><div class="seg" id="jDays" role="group"><button type="button" data-d="7"></button><button type="button" data-d="30" class="on"></button><button type="button" data-d="90"></button></div><button class="btn pri" id="jGo" type="button"></button><span class="meta" id="jMeta"></span></div>
-      <div id="jOut"><p class="meta" data-i="jHint"></p></div>
+      <div class="out" id="jOut"></div>
     </section>
 
     <section id="pChat" hidden>
@@ -123,7 +194,8 @@ const S = {lang:'en', tab:'brief', kind:'daily', conv:null, busy:{}};
 try{ const l = localStorage.getItem('arom_lang'); if(l === 'km' || l === 'en') S.lang = l; }catch(e){}
 
 const L = {
- en:{navJournal:'Journal',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'Pricing',
+ en:{navJournal:'Journal',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'Pricing',eye:'AI ENGINE · ONLINE',cap1:'Verified market data',cap2:'Numbers checked',thT:'AROM AI is working',bT:'Market briefing',bHint:'A short read on gold, forex, crypto and indices for today or this session: direction, key levels and events to watch.',aT:'Technical analyst',aHint:'Pick a market and timeframe. You get structure, support and resistance, both scenarios and the level where the idea is wrong.',nT:'News explainer',jT:'Journal review',
+  st_brief:['Loading market candles','Reading trend and structure on each timeframe','Checking the economic calendar','Writing the briefing','Checking every number against the data'],st_analyst:['Loading candles','Finding support and resistance','Measuring trend, momentum and volatility','Writing the analysis','Checking every number against the data'],st_news:['Fetching recent headlines','Matching scheduled events','Explaining what may matter','Checking the text'],st_journal:['Loading your trades','Calculating your statistics','Looking for patterns','Writing the review'],
   sub:'Market briefings, technical analysis and an AI assistant. Biases, levels and invalidation points are calculated from verified market data; the AI only explains them and is never used to invent prices.',
   legal:'AROM Intelligence is an educational analysis tool. It is not financial advice and not a signal service. Markets carry risk of loss; use your own judgement and risk limits. Prices come from data providers and can be delayed; the time of every data point is shown. Index markets use futures or ETF proxies where labelled.',
   tBrief:'Briefing',tAnalyst:'Analyst',tChat:'Ask AI',tNews:'News',nGo:'Explain the news',nHint:'Recent headlines for a market, explained in plain language. Headlines come from a news provider and can be incomplete or already priced in; the explanation says what could matter, not what will happen.',nWork:'Reading the news…',nNone:'No recent headlines were found for this market.',nOff:'News is not switched on yet. An admin needs to add the news provider key.',nErr:'The news provider could not be reached. Try again later.',nSays:'What it says',nWhy:'Why it may matter',nRead:'Read the source',nDirect:'Direct',nIndirect:'Indirect',nUnclear:'Unclear',nCal:'Scheduled events',nSrc:'Source',nStale:'The news provider could not be reached, so these headlines may be hours old.',tJournal:'Journal review',jGo:'Review my journal',jD7:'7 days',jD30:'30 days',jD90:'90 days',jHint:'Reviews your own trading journal. The statistics are calculated from your trades; the AI explains them. Nothing is shared with other members.',jWork:'Reviewing your journal…',jNone:'No trades in this period. Add trades to your journal first.',jTrades:'Trades',jWin:'Win rate',jTot:'Total result',jAvgW:'Average win',jAvgL:'Average loss',jPf:'Profit factor',jExp:'Expectancy / trade',jStreak:'Longest losing streak',jAvgR:'Average R',jSym:'By symbol',jSes:'By session',jSet:'By setup',jDay:'By weekday',jStr:'Strengths',jWk:'Weaknesses',jPat:'Patterns',jSug:'Ideas to test',jNotes:'Notes on the data',jAi:'Generated by GPT · numbers checked against your statistics',jAiNo:'Calculated statistics only (too few trades, or the AI text did not pass the checks)',jTr:'trades',daily:'Daily',session:'Session',make:'Get briefing',analyse:'Analyse',newChat:'New chat',send:'Send',history:'Saved chats',
@@ -139,7 +211,8 @@ const L = {
   chatHint:'Ask about gold, forex, crypto or indices, the calendar, or your own journal. Answers use verified data and show what they used.',chatPh:'e.g. What is the current gold bias?',used:'Data used',left:'AI requests left today',
   e:{journal_unavailable:'Your journal could not be loaded. Try again.',ultra_required:'AROM Intelligence is for Ultra members.',unauthorized:'Please sign in again.',not_configured:'AROM AI is not switched on yet. Please contact support.',slow_down:'Too many requests. Wait a moment and try again.',daily_limit:'Daily AI limit reached. Try again later.',data_unavailable:'Market data is not available right now. Try again in a minute.',unknown_symbol:'That market is not supported.',ai_failed:'The AI service could not finish. Try again.',refused:'The AI declined this request.',setup_needed:'Setup is not complete yet. Please contact support.',server_error:'Something went wrong. Try again.',rate_limited:'The AI service is busy. Try again in a minute.',timeout:'The request took too long. Try again.',message_too_long:'That message is too long.',empty_message:'Type a question first.'},
   retry:'Try again',generic:'Request failed.'},
- km:{navJournal:'កំណត់ហេតុ',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'តម្លៃ',
+ km:{navJournal:'កំណត់ហេតុ',navDesk:'AI Desk',navIntel:'AROM Intelligence',navPricing:'តម្លៃ',eye:'ម៉ាស៊ីន AI · កំពុងដំណើរការ',cap1:'ទិន្នន័យទីផ្សារបានផ្ទៀងផ្ទាត់',cap2:'លេខត្រូវបានត្រួតពិនិត្យ',thT:'AROM AI កំពុងដំណើរការ',bT:'សង្ខេបទីផ្សារ',bHint:'ការអានខ្លីអំពីមាស ហ្វ័រ គ្រីបតូ និងសន្ទស្សន៍សម្រាប់ថ្ងៃនេះ ឬសម័យនេះ៖ ទិសដៅ កម្រិតសំខាន់ និងព្រឹត្តិការណ៍ត្រូវតាមដាន។',aT:'អ្នកវិភាគបច្ចេកទេស',aHint:'ជ្រើសទីផ្សារ និងស៊ុមពេលវេលា។ អ្នកនឹងទទួលបានរចនាសម្ព័ន្ធ តំបន់ជំនួយ និងទប់ទល់ សេណារីយ៉ូទាំងពីរ និងកម្រិតដែលគំនិតខុស។',nT:'ពន្យល់ព័ត៌មាន',jT:'ពិនិត្យកំណត់ហេតុ',
+  st_brief:['កំពុងផ្ទុកទៀនទីផ្សារ','កំពុងអាននិន្នាការ និងរចនាសម្ព័ន្ធលើស៊ុមពេលវេលានីមួយៗ','កំពុងពិនិត្យប្រតិទិនសេដ្ឋកិច្ច','កំពុងសរសេរសង្ខេប','កំពុងផ្ទៀងផ្ទាត់លេខទាំងអស់ជាមួយទិន្នន័យ'],st_analyst:['កំពុងផ្ទុកទៀន','កំពុងរកតំបន់ជំនួយ និងទប់ទល់','កំពុងវាស់និន្នាការ សន្ទុះ និងភាពប្រែប្រួល','កំពុងសរសេរការវិភាគ','កំពុងផ្ទៀងផ្ទាត់លេខទាំងអស់ជាមួយទិន្នន័យ'],st_news:['កំពុងទាញយកចំណងជើងថ្មីៗ','កំពុងផ្គូផ្គងព្រឹត្តិការណ៍ដែលបានកំណត់','កំពុងពន្យល់អ្វីដែលអាចសំខាន់','កំពុងពិនិត្យអត្ថបទ'],st_journal:['កំពុងផ្ទុកការជួញដូររបស់អ្នក','កំពុងគណនាស្ថិតិ','កំពុងរកលំនាំ','កំពុងសរសេរការពិនិត្យ'],
   sub:'សេចក្តីសង្ខេបទីផ្សារ ការវិភាគបច្ចេកទេស និងជំនួយការ AI។ ទិសដៅ កម្រិត និងចំណុចបដិសេធត្រូវបានគណនាពីទិន្នន័យទីផ្សារដែលបានផ្ទៀងផ្ទាត់ AI គ្រាន់តែពន្យល់ ហើយមិនបង្កើតតម្លៃទេ។',
   legal:'AROM Intelligence ជាឧបករណ៍វិភាគសម្រាប់ការអប់រំ មិនមែនជាដំបូន្មានហិរញ្ញវត្ថុ ឬសេវាសញ្ញាទេ។ ទីផ្សារមានហានិភ័យខាតបង់ សូមប្រើការវិនិច្ឆ័យ និងដែនកំណត់ហានិភ័យរបស់អ្នក។ តម្លៃមកពីអ្នកផ្តល់ទិន្នន័យ ហើយអាចយឺត ម៉ោងនៃទិន្នន័យនីមួយៗត្រូវបានបង្ហាញ។',
   tBrief:'សង្ខេប',tAnalyst:'អ្នកវិភាគ',tChat:'សួរ AI',tNews:'ព័ត៌មាន',nGo:'ពន្យល់ព័ត៌មាន',nHint:'ចំណងជើងព័ត៌មានថ្មីៗសម្រាប់ទីផ្សារមួយ ពន្យល់ជាភាសាសាមញ្ញ។ ចំណងជើងមកពីអ្នកផ្តល់ព័ត៌មាន ហើយអាចមិនពេញលេញ ឬបានឆ្លុះបញ្ចាំងក្នុងតម្លៃរួចហើយ។ ការពន្យល់ប្រាប់ពីអ្វីដែលអាចសំខាន់ មិនមែនអ្វីដែលនឹងកើតឡើងទេ។',nWork:'កំពុងអានព័ត៌មាន…',nNone:'រកមិនឃើញចំណងជើងថ្មីៗសម្រាប់ទីផ្សារនេះទេ។',nOff:'ព័ត៌មានមិនទាន់បើកទេ។ អ្នកគ្រប់គ្រងត្រូវបន្ថែមកូនសោអ្នកផ្តល់ព័ត៌មាន។',nErr:'មិនអាចទាក់ទងអ្នកផ្តល់ព័ត៌មានបានទេ។ សាកម្តងទៀតពេលក្រោយ។',nSays:'វាប្រាប់ថា',nWhy:'ហេតុអ្វីអាចសំខាន់',nRead:'អានប្រភព',nDirect:'ផ្ទាល់',nIndirect:'ដោយប្រយោល',nUnclear:'មិនច្បាស់',nCal:'ព្រឹត្តិការណ៍ដែលបានកំណត់',nSrc:'ប្រភព',nStale:'មិនអាចទាក់ទងអ្នកផ្តល់ព័ត៌មានបាន ដូច្នេះចំណងជើងទាំងនេះអាចចាស់ជាច្រើនម៉ោង។',tJournal:'ពិនិត្យកំណត់ហេតុ',jGo:'ពិនិត្យកំណត់ហេតុរបស់ខ្ញុំ',jD7:'៧ ថ្ងៃ',jD30:'៣០ ថ្ងៃ',jD90:'៩០ ថ្ងៃ',jHint:'ពិនិត្យកំណត់ហេតុជួញដូររបស់អ្នក។ ស្ថិតិត្រូវបានគណនាពីការជួញដូររបស់អ្នក ហើយ AI ពន្យល់។ មិនចែករំលែកជាមួយសមាជិកផ្សេងទេ។',jWork:'កំពុងពិនិត្យកំណត់ហេតុ…',jNone:'គ្មានការជួញដូរក្នុងរយៈពេលនេះ។ សូមបន្ថែមការជួញដូរជាមុន។',jTrades:'ការជួញដូរ',jWin:'អត្រាឈ្នះ',jTot:'លទ្ធផលសរុប',jAvgW:'ឈ្នះជាមធ្យម',jAvgL:'ចាញ់ជាមធ្យម',jPf:'Profit factor',jExp:'Expectancy / ការជួញដូរ',jStreak:'ខាតជាប់គ្នាវែងបំផុត',jAvgR:'R ជាមធ្យម',jSym:'តាមនិមិត្តសញ្ញា',jSes:'តាមសម័យ',jSet:'តាម setup',jDay:'តាមថ្ងៃ',jStr:'ចំណុចខ្លាំង',jWk:'ចំណុចខ្សោយ',jPat:'លំនាំ',jSug:'គំនិតសាកល្បង',jNotes:'កំណត់ចំណាំអំពីទិន្នន័យ',jAi:'បង្កើតដោយ GPT · លេខត្រូវបានផ្ទៀងផ្ទាត់ជាមួយស្ថិតិរបស់អ្នក',jAiNo:'ស្ថិតិគណនាតែប៉ុណ្ណោះ (ការជួញដូរតិចពេក ឬអត្ថបទ AI មិនឆ្លងកាត់ការត្រួតពិនិត្យ)',jTr:'ការជួញដូរ',daily:'ប្រចាំថ្ងៃ',session:'សម័យ',make:'យកសង្ខេប',analyse:'វិភាគ',newChat:'ជជែកថ្មី',send:'ផ្ញើ',history:'ការជជែកដែលបានរក្សា',
@@ -167,7 +240,25 @@ const list = a => Array.isArray(a) && a.length ? `<ul class="pts">${a.map(x => `
 const sec = (title, body) => body ? `<div style="margin-top:12px">${title ? `<h3>${esc(title)}</h3>` : ''}${body}</div>` : '';
 const para = s => s ? `<p class="t">${esc(s)}</p>` : '';
 const zones = a => Array.isArray(a) && a.length ? a.map(z => `<div class="zone"><span>${num(z.low)} – ${num(z.high)}</span><i>${esc(z.strength || '')}${z.touches != null ? ' · ' + z.touches + ' ' + esc(t('touches')) : ''}</i></div>`).join('') : `<div class="meta">${esc(t('none'))}</div>`;
-const loading = txt => `<div class="load"><div class="spin"></div><span>${esc(txt)}</span></div>`;
+const ORB = (c='') => `<div class="orb ${c}" aria-hidden="true"><i class="r3"></i><i class="r2"></i><i class="r1"></i><b></b></div>`;
+const loading = txt => `<div class="load">${ORB('sm busy')}<span>${esc(txt)}</span></div>`;
+const empty = (title, hint) => `<div class="ai-empty">${ORB('sm')}<div><b>${esc(title)}</b><p>${esc(hint)}</p></div></div>`;
+const STEP_SEC = {brief:[10,30,10,45], analyst:[3,4,4,10], news:[4,3,10], journal:[2,3,4]};
+function thinking(out, kind, note){   // indicative progress: steps advance on a timer, the last one stays until the answer arrives
+  const steps = t('st_' + kind), secs = STEP_SEC[kind] || [];
+  out.innerHTML = `<div class="think" role="status" aria-live="polite"><div class="th-top">${ORB('sm busy')}<div><b>${esc(t('thT'))}</b><span class="th-s"></span></div><span class="th-time">0s</span></div>
+    <ol class="th-steps">${steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>${note ? `<div class="th-note">${esc(note)}</div>` : ''}<div class="skel"><i></i><i></i><i></i></div></div>`;
+  const lis = out.querySelectorAll('.th-steps li'), sub = out.querySelector('.th-s'), tm = out.querySelector('.th-time'), t0 = Date.now();
+  const tick = () => {
+    if(!tm.isConnected){ clearInterval(iv); return; }
+    const el = (Date.now() - t0) / 1000; let cur = steps.length - 1, acc = 0;
+    for(let i = 0; i < secs.length; i++){ acc += secs[i]; if(el < acc){ cur = i; break; } }
+    lis.forEach((li, i) => { li.className = i < cur ? 'done' : i === cur ? 'on' : ''; });
+    if(sub.textContent !== steps[cur]) sub.textContent = steps[cur];
+    tm.textContent = Math.floor(el) + 's';
+  };
+  const iv = setInterval(tick, 250); tick();
+}
 const errBox = (code, retryId) => `<div class="err">${esc(terr(code))}${retryId ? ` <button class="btn" type="button" id="${retryId}" style="margin-left:8px">${esc(t('retry'))}</button>` : ''}</div>`;
 
 /* ---------- calls ---------- */
@@ -208,7 +299,7 @@ function renderBriefing(b){
     ${b.methodology ? `<div class="meta">${esc(b.methodology)}</div>` : ''}`;
 }
 async function runBrief(){
-  if(S.busy.b) return; S.busy.b = 1; $('bGo').disabled = true; $('bOut').innerHTML = loading(t('working')); $('bMeta').textContent = '';
+  if(S.busy.b) return; S.busy.b = 1; $('bGo').disabled = true; thinking($('bOut'), 'brief', t('working')); $('bMeta').textContent = '';
   try{
     const r = await call({action:'briefing', kind:S.kind}), b = r.briefing;
     $('bOut').innerHTML = renderBriefing(b);
@@ -236,7 +327,7 @@ function renderReport(r){
     <div class="card">${sec(t('inval'), para(r.invalidation))}${sec(t('risks'), list(r.risk_notes))}${sec(t('dq'), list(r.data_quality_notes))}${sec('', list(r.caveats))}</div>`;
 }
 async function runAnalyst(){
-  if(S.busy.a) return; S.busy.a = 1; $('aGo').disabled = true; $('aOut').innerHTML = loading(t('workingA')); $('aMeta').textContent = '';
+  if(S.busy.a) return; S.busy.a = 1; $('aGo').disabled = true; thinking($('aOut'), 'analyst'); $('aMeta').textContent = '';
   try{
     const r = await call({action:'analyze', symbol:$('aSym').value, timeframe:$('aTf').value});
     if(r.available === false){ $('aOut').innerHTML = `<div class="warn">${esc(t('noData'))}</div>`; }
@@ -254,7 +345,7 @@ function addMsg(role, text, extra){
 function refsNote(refs){ if(!refs) return ''; const used = (refs.data_used || []).join('; '), cav = (refs.caveats || []).join(' '); return [used ? t('used') + ': ' + used : '', cav].filter(Boolean).join(' · '); }
 async function sendChat(){
   const m = $('cIn').value.trim(); if(!m || S.busy.c) return;
-  S.busy.c = 1; $('cSend').disabled = true; $('cIn').value = ''; addMsg('user', m); const w = addMsg('assistant', t('workingC'));
+  S.busy.c = 1; $('cSend').disabled = true; $('cIn').value = ''; addMsg('user', m); const w = document.createElement('div'); w.className = 'msg a typing'; w.setAttribute('aria-label', t('workingC')); w.innerHTML = '<i></i><i></i><i></i>'; $('cLog').appendChild(w); w.scrollIntoView({block:'nearest'});
   try{
     const r = await call({action:'chat', message:m, conversation_id:S.conv || undefined});
     S.conv = r.conversation_id; w.remove(); addMsg('assistant', r.answer, refsNote({data_used:r.data_used, caveats:r.caveats}));
@@ -290,7 +381,7 @@ function renderNews(r){
     ${(r.caveats || []).length ? `<div class="card">${list(r.caveats)}</div>` : ''}`;
 }
 async function runNews(){
-  if(S.busy.n) return; S.busy.n = 1; $('nGo').disabled = true; $('nOut').innerHTML = loading(t('nWork')); $('nMeta').textContent = '';
+  if(S.busy.n) return; S.busy.n = 1; $('nGo').disabled = true; thinking($('nOut'), 'news'); $('nMeta').textContent = '';
   try{
     const r = await call({action:'news_explain', symbol:$('nSym').value});
     if(r.available === false){ $('nOut').innerHTML = `<div class="warn">${esc(r.reason === 'news_provider_not_configured' ? t('nOff') : r.reason === 'news_provider_error' ? t('nErr') : t('nNone'))}</div>`; }
@@ -314,7 +405,7 @@ function renderJournal(r){
     <div class="g2">${grpTable(t('jSym'), s.by_symbol)}${grpTable(t('jSes'), s.by_session)}${grpTable(t('jSet'), s.by_setup)}${grpTable(t('jDay'), s.by_weekday)}</div>`;
 }
 async function runJournal(){
-  if(S.busy.j) return; S.busy.j = 1; $('jGo').disabled = true; $('jOut').innerHTML = loading(t('jWork')); $('jMeta').textContent = '';
+  if(S.busy.j) return; S.busy.j = 1; $('jGo').disabled = true; thinking($('jOut'), 'journal'); $('jMeta').textContent = '';
   try{
     const d = (document.querySelector('#jDays button.on') || {dataset:{d:30}}).dataset.d, r = await call({action:'journal_review', days:+d});
     if(r.available === false){ $('jOut').innerHTML = `<div class="warn">${esc(t('jNone'))}</div>`; }
@@ -324,18 +415,20 @@ async function runJournal(){
 }
 
 /* ---------- shell ---------- */
+const ICON = {brief:'<path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>', analyst:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>', chat:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>', news:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', journal:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>', spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>'};
+const ico = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 function paint(){
   document.body.classList.toggle('km', S.lang === 'km'); document.documentElement.lang = S.lang;
   document.querySelectorAll('[data-i]').forEach(el => { el.textContent = t(el.dataset.i); });
   document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.l === S.lang));
-  const tabs = {brief:'tBrief', analyst:'tAnalyst', chat:'tChat', news:'tNews', journal:'tJournal'}; document.querySelectorAll('#tabs button').forEach(b => { b.textContent = t(tabs[b.dataset.t]); });
+  const tabs = {brief:'tBrief', analyst:'tAnalyst', chat:'tChat', news:'tNews', journal:'tJournal'}; document.querySelectorAll('#tabs button').forEach(b => { b.innerHTML = ico(ICON[b.dataset.t]) + `<span>${esc(t(tabs[b.dataset.t]))}</span>`; });
   document.querySelectorAll('#bKind button').forEach(b => { b.textContent = t(b.dataset.k); });
-  document.querySelectorAll('#jDays button').forEach(b => { b.textContent = t('jD' + b.dataset.d); }); $('jGo').textContent = t('jGo'); $('nGo').textContent = t('nGo');
-  $('bGo').textContent = t('make'); $('aGo').textContent = t('analyse'); $('cNew').textContent = t('newChat'); $('cSend').textContent = t('send'); $('cIn').placeholder = t('chatPh');
+  document.querySelectorAll('#jDays button').forEach(b => { b.textContent = t('jD' + b.dataset.d); }); ['jGo','nGo'].forEach(id => { $(id).innerHTML = ico(ICON.spark) + `<span>${esc(t(id))}</span>`; });
+  $('bGo').innerHTML = ico(ICON.spark) + `<span>${esc(t('make'))}</span>`; $('aGo').innerHTML = ico(ICON.spark) + `<span>${esc(t('analyse'))}</span>`; $('cNew').textContent = t('newChat'); $('cSend').textContent = t('send'); $('cIn').placeholder = t('chatPh');
   const h = $('cHist').options[0]; if(h) h.textContent = t('history');
 }
 function resetOutputs(){   // generated text is in the language it was made in: clear it on a language switch instead of showing a mix
-  ['bOut','aOut'].forEach(id => { const e = $(id); if(e) e.innerHTML = ''; }); $('nOut').innerHTML = `<p class="meta">${esc(t('nHint'))}</p>`; $('jOut').innerHTML = `<p class="meta">${esc(t('jHint'))}</p>`; ['bMeta','aMeta','nMeta','jMeta'].forEach(id => { const e = $(id); if(e) e.textContent = ''; });
+  $('bOut').innerHTML = empty(t('bT'), t('bHint')); $('aOut').innerHTML = empty(t('aT'), t('aHint')); $('nOut').innerHTML = empty(t('nT'), t('nHint')); $('jOut').innerHTML = empty(t('jT'), t('jHint')); ['bMeta','aMeta','nMeta','jMeta'].forEach(id => { const e = $(id); if(e) e.textContent = ''; });
 }
 function show(tab){
   S.tab = tab; document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
@@ -344,9 +437,9 @@ function show(tab){
 }
 function gate(kind){
   const g = $('gate'); g.hidden = false; $('app').hidden = true;
-  if(kind === 'load'){ g.innerHTML = loading(t('gLoad')); return; }
+  if(kind === 'load'){ g.innerHTML = ORB('busy') + `<p>${esc(t('gLoad'))}</p>`; return; }
   const signed = kind === 'ultra';
-  g.innerHTML = `<h2>${esc(signed ? t('gUpT') : t('gSignT'))}</h2><p>${esc(signed ? t('gUpP') : t('gSignP'))}</p><a class="btn pri" href="${signed ? '/pricing' : '/'}">${esc(signed ? t('gUpB') : t('gSignB'))}</a>`;
+  g.innerHTML = ORB() + `<h2>${esc(signed ? t('gUpT') : t('gSignT'))}</h2><p>${esc(signed ? t('gUpP') : t('gSignP'))}</p><a class="btn pri" href="${signed ? '/pricing' : '/'}">${esc(signed ? t('gUpB') : t('gSignB'))}</a>`;
 }
 async function boot(){
   paint(); gate('load');
@@ -357,7 +450,7 @@ async function boot(){
   if(!ok){ gate('ultra'); return; }
   $('gate').hidden = true; $('app').hidden = false;
   $('aSym').innerHTML = SYMS.map(s => `<option>${s}</option>`).join(''); $('nSym').innerHTML = SYMS.map(s => `<option>${s}</option>`).join(''); $('aTf').innerHTML = TFS.map(x => `<option${x === 'H1' ? ' selected' : ''}>${x}</option>`).join('');
-  show('brief');
+  resetOutputs(); show('brief');
 }
 $('langSeg').addEventListener('click', e => { const b = e.target.closest('button[data-l]'); if(!b) return; S.lang = b.dataset.l; try{ localStorage.setItem('arom_lang', S.lang); }catch(_){} resetOutputs(); paint(); if($('gate') && !$('gate').hidden) boot(); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button[data-t]'); if(b) show(b.dataset.t); });
