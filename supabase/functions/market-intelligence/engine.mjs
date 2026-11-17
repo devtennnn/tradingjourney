@@ -170,7 +170,10 @@ export function analyse({ symbol, timeframe, instrument, feeds, now = Date.now()
   const ladder = (LADDER[timeframe] || []).map((tf) => per[tf]).map((x) => (x.available ? { timeframe: x.timeframe, direction: x.direction === 1 ? "bullish" : x.direction === -1 ? "bearish" : "neutral", structure: x.structure.trend, trend_medium: x.trend.medium, sufficient: x.sufficient, freshness: x.freshness.status } : { timeframe: x.timeframe, direction: null, available: false, reason: x.reason }));
   const dirs = [{ tf: timeframe, d: p.direction }, ...ladder.filter((x) => x.direction).map((x) => ({ tf: x.timeframe, d: x.direction === "bullish" ? 1 : x.direction === "bearish" ? -1 : 0 }))];
   const pos = dirs.filter((x) => x.d > 0), neg = dirs.filter((x) => x.d < 0), conflicts = pos.length && neg.length ? ["bullish on " + pos.map((x) => x.tf).join(", ") + " but bearish on " + neg.map((x) => x.tf).join(", ")] : [];
-  const alignment = dirs.length < 2 ? "single_timeframe" : conflicts.length ? "conflicting" : dirs.every((x) => x.d === dirs[0].d && x.d !== 0) ? "aligned" : "partial";
+  const missing = ladder.filter((x) => x.direction == null).map((x) => x.timeframe);
+  const agree = dirs.length >= 2 && !conflicts.length && dirs.every((x) => x.d === dirs[0].d && x.d !== 0);
+  // "aligned" only when EVERY timeframe of the ladder was available; agreement among fewer is reported as such, never as full alignment
+  const alignment = dirs.length < 2 ? "single_timeframe" : conflicts.length ? "conflicting" : agree && !missing.length ? "aligned" : agree ? "agree_but_incomplete" : "partial";
   const htf = [...ladder].reverse().find((x) => x.direction); const htfDir = htf ? (htf.direction === "bullish" ? 1 : htf.direction === "bearish" ? -1 : 0) : null;
   const ev = [...p.evidence]; if (htfDir) ev.push({ factor: "higher timeframe (" + htf.timeframe + ")", direction: htfDir, weight: 2 });
   const total = ev.reduce((s, e) => s + e.direction * e.weight, 0), max = ev.reduce((s, e) => s + e.weight, 0) || 1, lean = total / max;
@@ -178,9 +181,10 @@ export function analyse({ symbol, timeframe, instrument, feeds, now = Date.now()
   const bias = !usable ? null : lean >= 0.35 ? "bullish" : lean <= -0.35 ? "bearish" : "neutral";
   const caveats = [...p.caveats]; if (!usable) caveats.push(p.freshness.status === "stale" ? "bias withheld: data is stale" : "bias withheld: not enough data");
   if (conflicts.length) caveats.push("timeframes conflict: " + conflicts[0]);
+  if (missing.length) caveats.push("higher timeframe(s) unavailable: " + missing.join(", ") + "; the alignment reading uses only the timeframes that were available");
   if (out.instrument && out.instrument.is_proxy) caveats.push("prices are for an ETF that tracks " + out.instrument.tracks + ", not the index level");
   if (out.instrument && out.instrument.delayed) caveats.push("price feed is delayed futures data");
   return { ...out, available: true, price: p.price, bias, evidence_score: r6(lean), evidence: ev, confidence: null, confidence_note: "no statistically validated model backs a probability; evidence_score is a transparent heuristic from -1 to +1",
     last_candle_at: p.last_candle_at, last_complete_candle_at: p.last_complete_candle_at, freshness: p.freshness, session: p.session, trend: p.trend, momentum: p.momentum, volatility: p.volatility, structure: p.structure, levels: p.levels, liquidity: p.liquidity, indicators: p.indicators,
-    data: { candles_used: p.candles_used, forming_candle_excluded: p.forming_candle_excluded, sufficient_for_ema200: p.sufficient, unavailable: p.unavailable }, multi_timeframe: { alignment, higher_timeframe_bias: htf ? htf.direction : null, ladder, conflicts }, caveats };
+    data: { candles_used: p.candles_used, forming_candle_excluded: p.forming_candle_excluded, sufficient_for_ema200: p.sufficient, unavailable: p.unavailable }, multi_timeframe: { alignment, higher_timeframe_bias: htf ? htf.direction : null, ladder, conflicts, missing_timeframes: missing }, caveats };
 }

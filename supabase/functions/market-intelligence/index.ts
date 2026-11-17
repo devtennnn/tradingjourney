@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     if (!symbol || !/^[A-Z0-9]{2,10}$/.test(symbol)) return json({ error: "bad_symbol" }, 400);
     if (!LADDER[timeframe]) return json({ error: "unknown_timeframe", timeframes: Object.keys(LADDER) }, 400);
     if (limited(user.id)) return json({ error: "slow_down" }, 429);
-    const tfs = [timeframe, ...LADDER[timeframe]], got = await Promise.all(tfs.map((tf) => feed(symbol, tf, variant, auth)));
+    const tfs = [timeframe, ...LADDER[timeframe]], got = await Promise.all(tfs.map((tf, i) => new Promise((r) => setTimeout(r, i * 350)).then(() => feed(symbol, tf, variant, auth))));   // staggered: the data provider allows only 5 requests a second
     const feeds = {}; tfs.forEach((tf, i) => { feeds[tf] = got[i]; });
     // an unknown symbol / auth problem is the same for every timeframe: report it plainly instead of an empty analysis
     const first = feeds[timeframe]; if (first.error === "unknown_symbol") return json({ error: "unknown_symbol" }, 400); if (first.error === "ultra_required" || first.error === "unauthorized") return json({ error: first.error }, first.error === "unauthorized" ? 401 : 403);

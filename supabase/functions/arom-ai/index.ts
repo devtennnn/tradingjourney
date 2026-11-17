@@ -4,12 +4,13 @@
 //   POST { action: "analyze", symbol, timeframe, lang, variant? }     -> technical analyst report (bias / levels / liquidity from the deterministic engine; the model only writes the explanation)
 //   POST { action: "chat", message, conversation_id?, symbol?, lang } -> answer built from approved read-only tools (quote, candles, analysis, economic events, news, the member's OWN journal summary)
 //   POST { action: "briefing", kind: "daily"|"session", lang, symbols? }   -> market briefing for the watchlist (engine facts per instrument + AI explanation, cached with its timestamp; admin may pass force: true)
+//   POST { action: "journal_review", days: 7|30|90, lang }   -> review of the member's OWN journal (statistics calculated here; the AI explains them; no AI call under 5 trades)
 //   POST { action: "conversations" } / { action: "messages", conversation_id } -> the member's own saved chats
 // Secrets: OPENAI_API_KEY, OPENAI_MODEL (never hard-coded). Optional: OPENAI_MAX_OUTPUT_TOKENS (3000), OPENAI_REQUEST_TIMEOUT (seconds, 60), AI_DAILY_USAGE_LIMIT (40 OpenAI requests per member per 24 h),
 // AI_REPORT_CACHE_S (600), AI_BRIEFING_CACHE_S (daily 10800, session 3600), BRIEFING_SYMBOLS (comma list), OPENAI_BRIEFING_MAX_OUTPUT_TOKENS (6000), MARKETAUX_API_KEY (news headlines), SITE_URL.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import OpenAI from "npm:openai@5.23.2";
-import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats, BRIEF_DEFAULT, BRIEF_SCHEMA, compactBrief, unavailableBrief, sanitiseBrief, groundBrief, buildBriefing } from "./lib.mjs";
+import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats, JOURNAL_SCHEMA, JOURNAL_RULES, journalReview, sanitiseJournal, journalText, journalFallback, BRIEF_DEFAULT, BRIEF_SCHEMA, compactBrief, unavailableBrief, sanitiseBrief, groundBrief, buildBriefing } from "./lib.mjs";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -134,6 +135,34 @@ async function runTool(name, args, ctx) {
   return { error: "unknown_tool" };
 }
 
+// ---- journal reviewer ----
+async function journalReviewAction(b, ctx) {
+  const lang = b.lang === "km" ? "km" : "en", days = [7, 30, 90].includes(parseInt(b.days, 10)) ? parseInt(b.days, 10) : 30, cut = new Date(Date.now() - days * 86400e3).toISOString().slice(0, 10);
+  // the member's own token: row-level security limits this to their own trades
+  const { data, error } = await ctx.userDb.from("trades").select("date,symbol,session,direction,setup,result,pl,rmultiple,grade").eq("user_id", ctx.userId).gte("date", cut).order("date", { ascending: false }).limit(1000);
+  if (error) return json({ error: "journal_unavailable" }, 502);
+  const stats = journalReview(data || [], days), when = new Date().toISOString();
+  if (!stats.trades) return json({ ok: true, available: false, reason: "no_trades", days });
+  const done = (j, status, rem) => json({ ok: true, review: { days, stats, ...j, ai: { status, model: status === "ok" ? env("OPENAI_MODEL") : null, generated_at: when, language: lang, grounded: status === "ok" } }, remaining: rem });
+  if (stats.trades < 5) return done(sanitiseJournal(journalFallback(stats)), "too_few_trades");   // too small to be worth an AI call
+  const rs = await reserve(ctx.userId, "journal"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
+  const allowed = numbersIn(stats), prompt = `${JOURNAL_RULES}\n\nWrite the review in ${langName(lang)}.\nStatistics (calculated, last ${days} days):\n${JSON.stringify(stats)}`;
+  let usage = { input: 0, output: 0 }, ai = null, bad = [];
+  try {
+    for (let attempt = 0; attempt < 2 && !ai; attempt++) {
+      const r = await ask({ instructions: SYSTEM, input: [{ role: "user", content: attempt ? prompt + `\n\nYour previous text contained numbers that are not in the statistics: ${bad.join(", ")}. Rewrite it using only numbers from the statistics.` : prompt }], text: { format: { type: "json_schema", name: "arom_journal", schema: JOURNAL_SCHEMA, strict: true } } });
+      usage = { input: usage.input + r.usage.input, output: usage.output + r.usage.output };
+      if (r.refusal) { await refund(rs.id); return json({ error: "refused" }, 502); }
+      if (r.status === "incomplete") { await refund(rs.id); await health(false, "incomplete"); return json({ error: "ai_failed" }, 502); }
+      let parsed = null; try { parsed = sanitiseJournal(JSON.parse(r.text)); } catch { parsed = null; }
+      if (!parsed) { await refund(rs.id); await health(false, "bad_json"); return json({ error: "ai_failed" }, 502); }
+      bad = ungroundedNumbers(journalText(parsed), allowed, 0.06); if (!bad.length) ai = parsed;
+    }
+  } catch (e) { await refund(rs.id); const [code, st] = mapError(e); console.error("arom-ai journal:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
+  await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
+  return ai ? done(ai, "ok", rs.remaining) : done(sanitiseJournal(journalFallback(stats)), "rejected_ungrounded", rs.remaining);
+}
+
 // ---- analyst ----
 async function analyze(b, ctx) {
   const symbol = String(b.symbol || "").toUpperCase(), timeframe = String(b.timeframe || "M15").toUpperCase(), lang = b.lang === "km" ? "km" : "en", variant = b.variant === "etf" ? "etf" : "futures";
@@ -169,10 +198,17 @@ async function analyze(b, ctx) {
 // ---- market briefing ----
 const sessionName = (ms) => { const h = new Date(ms).getUTCHours() + new Date(ms).getUTCMinutes() / 60; return h < 7 ? "Asia" : h < 12 ? "London" : h < 16 ? "London / New York overlap" : h < 21 ? "New York" : "Late New York / rollover"; };
 const inflight = new Map();
+const transient = (x) => /rate_limited|timeout|provider_error|http_5|http_429|slow_down|network/.test(String((x && (x.error || x.reason)) || ""));
+const ladderGap = (x) => !!(x && x.available && x.multi_timeframe && (x.multi_timeframe.ladder || []).some((l) => l.available === false && transient(l)));
 async function gatherBrief(syms, auth) {
-  const deadline = Date.now() + 60_000, out = new Array(syms.length); let idx = 0;
-  const worker = async () => { while (idx < syms.length) { const i = idx++; if (Date.now() > deadline) { out[i] = { error: "timeout" }; continue; } out[i] = await fn("market-intelligence", { symbol: syms[i], timeframe: "H1" }, auth, 45_000); } };
-  await Promise.all(Array.from({ length: 4 }, worker));
+  // two instruments at a time (each asks for 3 timeframes, and the data provider allows 5 requests a second), then one calm retry pass for transient failures
+  const deadline = Date.now() + 75_000, out = new Array(syms.length); let idx = 0;
+  const run = (s) => fn("market-intelligence", { symbol: s, timeframe: "H1" }, auth, 45_000);
+  const worker = async () => { while (idx < syms.length) { const i = idx++; if (Date.now() > deadline) { out[i] = { error: "timeout" }; continue; } out[i] = await run(syms[i]); } };
+  await Promise.all(Array.from({ length: 2 }, worker));
+  for (let i = 0; i < syms.length; i++) {
+    if ((transient(out[i]) || ladderGap(out[i])) && Date.now() < deadline - 5_000) { await new Promise((r) => setTimeout(r, 1500)); const again = await run(syms[i]); if (again.available || !out[i].available) out[i] = again; }   // the cache keeps what already worked, so only the failed timeframes are fetched again
+  }
   return out;
 }
 async function briefing(b, ctx, admin) {
@@ -200,7 +236,7 @@ async function buildBrief(kind, lang, syms, listKey, rkind, ctx) {
   const data = { session, window_hours: hours, events: events == null ? "calendar_unavailable" : events, events_note: "the calendar feed has no actual released values; only forecast and previous", instruments: cs };
   const allowedAll = numbersIn(data);
   const rs = await reserve(ctx.userId, "briefing"); if (rs.error) return { status: rs.error === "daily_limit" ? 429 : 503, body: { error: rs.error, limit: rs.limit } };
-  const base = `Write the ${kind} market briefing for the AROM TRADE watchlist. Language: ${langName(lang)}. Current session: ${session.current}.\nUse ONLY the data below. Write exactly one entry in "instruments" for every instrument with available=true (symbol must match). If engine_bias is null give no direction. Describe distances with the ATR values given. Copy numbers exactly as they appear in the data. Events: list only events from the data; if there are none, say so in session_context. Do not give causes or news that are not in the data. cross_market_notes may only relate engine biases of the instruments shown. Keep each instrument entry short (about 60 words).\n\nDATA:\n${JSON.stringify(data)}`;
+  const base = `Write the ${kind} market briefing for the AROM TRADE watchlist. Language: ${langName(lang)}. Current session: ${session.current}.\nUse ONLY the data below. Write exactly one entry in "instruments" for every instrument with available=true (symbol must match). If engine_bias is null give no direction. Describe distances with the ATR values given. Copy numbers exactly as they appear in the data. Events: list only events from the data; if there are none, say so in session_context. Do not give causes or news that are not in the data. cross_market_notes may only relate engine biases of the instruments shown. Mention a higher timeframe as unavailable ONLY if it is listed in higher_timeframes_unavailable; otherwise do not claim any timeframe is missing. Use the word \"aligned\" only when alignment is \"aligned\"; for the cross-market notes count engine_bias values (for example \"engine bias is bearish on 6 of 7 instruments\") and do not describe instruments with alignment other than \"aligned\" as aligned. Keep each instrument entry short (about 60 words).\n\nDATA:\n${JSON.stringify(data)}`;
   let usage = { input: 0, output: 0 }, grounded = null, replaced = [], bad = {};
   try {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -285,11 +321,11 @@ Deno.serve(async (req) => {
         return json({ ok: true, models: ok, current: env("OPENAI_MODEL") || null });
       } catch (e) { const [code, st] = mapError(e); console.error("arom-ai models:", e?.status, String(e?.message ?? e).slice(0, 200)); return json({ error: code }, st); }
     }
-    if (action !== "analyze" && action !== "chat" && action !== "briefing") return json({ error: "unknown_action" }, 400);
+    if (!["analyze", "chat", "briefing", "journal_review"].includes(action)) return json({ error: "unknown_action" }, 400);
     if (!env("OPENAI_API_KEY")) return json({ error: "not_configured", missing: "OPENAI_API_KEY" }, 503);
     if (!env("OPENAI_MODEL")) return json({ error: "not_configured", missing: "OPENAI_MODEL" }, 503);
     if (limited(user.id)) return json({ error: "slow_down" }, 429);
-    return action === "analyze" ? await analyze(b, ctx) : action === "briefing" ? await briefing(b, ctx, p.is_admin === true) : await chat(b, ctx);
+    return action === "analyze" ? await analyze(b, ctx) : action === "journal_review" ? await journalReviewAction(b, ctx) : action === "briefing" ? await briefing(b, ctx, p.is_admin === true) : await chat(b, ctx);
   } catch (e) {
     console.error("arom-ai:", String(e?.message ?? e));
     return json({ error: "server_error" }, 500);

@@ -169,7 +169,7 @@ export function compactBrief(requested, a) {
   return {
     symbol: requested, market_type: MARKET_TYPE[a.instrument && a.instrument.asset_class] || "unknown", available: true, timeframe: a.timeframe, price: a.price, price_basis: "close of the last COMPLETED " + a.timeframe + " candle, not the live price",
     last_candle_at: a.last_candle_at, freshness: a.freshness && a.freshness.status, market_open: a.session && a.session.market_open, delayed: !!(a.instrument && a.instrument.delayed),
-    engine_bias: a.bias, alignment: a.multi_timeframe && a.multi_timeframe.alignment, higher_timeframes: ladder, conflicts: (a.multi_timeframe && a.multi_timeframe.conflicts) || [],
+    engine_bias: a.bias, alignment: a.multi_timeframe && a.multi_timeframe.alignment, higher_timeframes: ladder, higher_timeframes_unavailable: ladder.filter((x) => x.direction === "unavailable").map((x) => x.timeframe), conflicts: (a.multi_timeframe && a.multi_timeframe.conflicts) || [],
     trend: a.trend && { short: a.trend.short, medium: a.trend.medium, ema_stack: a.trend.ema_stack }, structure: a.structure && { trend: a.structure.trend, last_break: a.structure.last_break },
     momentum: { rsi14: a.indicators && a.indicators.rsi, rsi_zone: a.momentum && a.momentum.rsi_zone, macd_histogram_direction: a.momentum && a.momentum.macd_histogram_direction }, volatility: a.volatility && { atr14: a.volatility.value, atr_percent: a.volatility.percent, regime: a.volatility.regime },
     nearest_support: sup, nearest_resistance: res, price_to_support_edge_atr: sup ? dist(sup.high) : null, price_to_resistance_edge_atr: res ? dist(res.low) : null,
@@ -224,10 +224,52 @@ export function buildBriefing({ kind, lang, cs, grounded, events, session, statu
   return {
     kind, language: lang, session, generated_at: generatedAt,
     headline: grounded.headline || "", market_overview: grounded.market_overview || fallbackOverview(cs), session_context: grounded.session_context || "",
-    instruments: cs.map((c) => c.available ? { symbol: c.symbol, market_type: c.market_type, tracks: c.tracks, price: c.price, price_basis: c.price_basis, last_candle_at: c.last_candle_at, freshness: c.freshness, market_open: c.market_open, delayed: c.delayed, bias: c.engine_bias, alignment: c.alignment, higher_timeframes: c.higher_timeframes, conflicts: c.conflicts,
+    instruments: cs.map((c) => c.available ? { symbol: c.symbol, market_type: c.market_type, tracks: c.tracks, price: c.price, price_basis: c.price_basis, last_candle_at: c.last_candle_at, freshness: c.freshness, market_open: c.market_open, delayed: c.delayed, bias: c.engine_bias, alignment: c.alignment, higher_timeframes: c.higher_timeframes, higher_timeframes_unavailable: c.higher_timeframes_unavailable, conflicts: c.conflicts,
       trend: c.trend, momentum: c.momentum, volatility: c.volatility, support: c.nearest_support, resistance: c.nearest_resistance, invalidation: c.invalidation_reference, caveats: c.caveats, ...grounded.instruments[c.symbol] } : { symbol: c.symbol, available: false, reason: c.reason }),
     events_to_watch: grounded.events_to_watch, upcoming_events: events, cross_market_notes: grounded.cross_market_notes, risks: grounded.risks, data_quality_notes: grounded.data_quality_notes,
     methodology: "Biases, levels and invalidation levels are calculated by the AROM engine from validated candles (H1 with H4 and D1 context); the AI only explains them. Prices are closes of the last completed H1 candle, not live prices.",
     ai: { status, model: model ?? null, replaced_fields: replaced || [], grounded: status === "ok", from_cache: false },
+  };
+}
+
+// ======================= journal reviewer =======================
+export const JOURNAL_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["summary", "strengths", "weaknesses", "patterns", "suggestions", "data_notes"],
+  properties: { summary: str, strengths: strs, weaknesses: strs, patterns: strs, suggestions: strs, data_notes: strs },
+};
+export const JOURNAL_RULES = `Task: review the member's OWN trading journal statistics. The statistics were calculated by the server from their trade rows; you only explain them.
+- Use ONLY the numbers in the statistics. Never invent a number, trade, price or market view. Copy numbers exactly.
+- Be honest about sample size: with fewer than 30 trades the statistics are weak evidence; say so and do not call anything a proven edge or a proven flaw.
+- Talk about process and behaviour (risk per trade, losing streaks, which session / symbol / setup / grade has more or fewer trades or a better or worse result in this sample). Do not predict markets and do not recommend any specific trade.
+- Suggestions must be practical process habits the member can test (for example "tag every trade with a setup", "review the session with the most losses"), framed as ideas to test, not guarantees. Never promise improvement or profit.
+- A group with very few trades (under 5) is not a pattern: mention it only as too small to judge.
+- Do not give medical, psychological or financial-planning advice. No judgement of the person; neutral and respectful.
+- Write in the language requested. Keep names and numbers in Latin characters.`;
+const PCT = (x) => (x == null ? null : Math.round(x * 100) / 100);
+/** deterministic journal facts: journalStats plus profit factor, expectancy, weekday split and a sample-size note. Rows are the member's own; text fields are clipped. */
+export function journalReview(rows, days) {
+  const clean = (rows || []).map((r) => ({ ...r, symbol: clip(r.symbol, 12).toUpperCase(), session: clip(r.session, 24), setup: clip(r.setup, 32), direction: clip(r.direction, 8), grade: clip(r.grade, 4), date: String(r.date || "").slice(0, 10) }));
+  const s = journalStats(clean, days); if (!s.trades) return s;
+  const pls = clean.map((r) => Number(r.pl) || 0), gp = pls.filter((x) => x > 0).reduce((a, b) => a + b, 0), gl = -pls.filter((x) => x < 0).reduce((a, b) => a + b, 0);
+  s.profit_factor = gl > 0 ? PCT(gp / gl) : null; s.profit_factor_note = gl > 0 ? null : "no losing trades in this period";
+  s.expectancy_per_trade = PCT(pls.reduce((a, b) => a + b, 0) / pls.length);
+  const wd = {}; for (const r of clean) { const d = new Date(r.date + "T00:00:00Z"); if (isNaN(d)) continue; const k = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d.getUTCDay()]; const g = (wd[k] = wd[k] || { name: k, trades: 0, pl: 0, wins: 0 }); g.trades++; g.pl += Number(r.pl) || 0; if ((Number(r.pl) || 0) > 0) g.wins++; }
+  s.by_weekday = Object.values(wd).map((g) => ({ name: g.name, trades: g.trades, win_rate_pct: PCT((g.wins / g.trades) * 100), total_pl: PCT(g.pl) })).sort((a, b) => b.trades - a.trades);
+  s.sample_note = s.trades < 30 ? `only ${s.trades} trades: too few for reliable conclusions` : "sample of 30 or more trades: still not proof of an edge";
+  return s;
+}
+export function sanitiseJournal(o) {
+  if (!o || typeof o !== "object" || typeof o.summary !== "string") return null;
+  return { summary: clip(o.summary, 900), strengths: clipArr(o.strengths, 5, 320), weaknesses: clipArr(o.weaknesses, 5, 320), patterns: clipArr(o.patterns, 6, 320), suggestions: clipArr(o.suggestions, 5, 320), data_notes: clipArr(o.data_notes, 4, 240) };
+}
+export const journalText = (j) => [j.summary, ...j.strengths, ...j.weaknesses, ...j.patterns, ...j.suggestions, ...j.data_notes].join("\n");
+/** English text built only from the statistics (used for small samples or when the AI text is rejected) */
+export function journalFallback(s) {
+  const f = (x) => (x == null ? "n/a" : x), top = (a) => (a && a[0] ? `${a[0].name} (${a[0].trades} trades, win rate ${a[0].win_rate_pct}%, total ${a[0].total_pl})` : "n/a");
+  return {
+    summary: `Last ${s.days} days: ${s.trades} trades, win rate ${f(s.win_rate_pct)}%, total result ${f(s.total_pl)}, average win ${f(s.average_win)}, average loss ${f(s.average_loss)}. ${s.sample_note || ""} These figures are calculated from your journal; no AI explanation was added.`,
+    strengths: [], weaknesses: s.max_consecutive_losses >= 3 ? [`Longest losing streak in this period: ${s.max_consecutive_losses} trades.`] : [],
+    patterns: [`Most traded symbol: ${top(s.by_symbol)}.`, `Most traded session: ${top(s.by_session)}.`, `Most used setup: ${top(s.by_setup)}.`].filter((x) => !x.includes("n/a")),
+    suggestions: [], data_notes: [s.sample_note || ""].filter(Boolean),
   };
 }
