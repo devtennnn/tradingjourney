@@ -2579,6 +2579,32 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
   .scn{padding:10px}.scn-grid{gap:5px}.scn-c{min-height:46px;padding:6px 2px}.scn-grid .rw{font-size:11px}
   .tr-top{grid-template-columns:repeat(2,minmax(0,1fr))}.tr-kpi b{font-size:16px}
 }
+/* ---- Broker sync (Ultra) ---- */
+.bk-acc,.bk-steps,.bk-lock{border:1px solid var(--line,#23402f);border-radius:16px;padding:14px;margin-top:12px;background:linear-gradient(150deg,#132920,#0d1c16)}
+.bk-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.bk-top b{font-size:15px}.bk-tag{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;border:1px solid #2a4636;color:var(--muted,#93ab9c);margin-left:4px}
+.bk-sub{font-size:12px;color:var(--muted,#93ab9c);margin-top:3px}
+.bk-st{text-align:right;font-size:12.5px;font-weight:700}.bk-st small{display:block;font-weight:500;color:var(--muted,#93ab9c);margin-top:2px}
+.bk-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff5d73;margin-right:6px;vertical-align:middle}.bk-dot.on{background:#2ee6a0}.bk-dot.wait{background:#f5c96a}
+.bk-kpis,.bk-perf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.bk-kpi{padding:10px 12px;border-radius:12px;background:#0b1812;border:1px solid #1f3a2c;min-width:0}
+.bk-kpi small{display:block;font-size:11px;color:var(--muted,#93ab9c);margin-bottom:2px}.bk-kpi b{font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bk-pos{color:#2ee6a0}.bk-neg{color:#ff5d73}
+.bk-act{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.bk-chk{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted,#93ab9c);cursor:pointer}
+.bk-h{font-size:12px;font-weight:800;color:var(--muted,#93ab9c);margin:14px 0 6px;letter-spacing:.3px}
+.bk-tbl{width:100%;min-width:0!important;border-collapse:collapse;font-size:12.5px}
+.bk-tbl th,.bk-tbl td{padding:7px 4px;border-bottom:1px solid #1f3a2c;text-align:right;font-variant-numeric:tabular-nums}
+.bk-tbl th{font-size:11px;color:var(--muted,#93ab9c);font-weight:700}.bk-tbl th:first-child,.bk-tbl td:first-child{text-align:left}
+.bk-wrap{overflow-x:auto}
+.bk-empty,.bk-note{font-size:12.5px;color:var(--muted,#93ab9c);margin:10px 0 0;line-height:1.5}
+.bk-steps h3,.bk-lock h3{margin:0 0 8px;font-size:15px}.bk-steps ol{margin:10px 0 0;padding-left:20px;font-size:13px;line-height:1.6}.bk-steps li{margin-bottom:8px}
+.bk-k{font-size:12px;color:var(--muted,#93ab9c);margin-bottom:4px}
+.bk-code{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0}.bk-code code{font-size:12.5px;padding:7px 10px;border-radius:9px;background:#0b1812;border:1px solid #1f3a2c;word-break:break-all;flex:1;min-width:0}
+.bk-dl{display:inline-flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.bk-wait{margin-top:10px;font-size:13px;font-weight:700}
+.bk-eq{width:100%;height:auto;display:block;margin-top:6px}
+@media(max-width:700px){.bk-pt th:nth-child(5),.bk-pt td:nth-child(5),.bk-pt th:nth-child(6),.bk-pt td:nth-child(6),.bk-ct th:nth-child(4),.bk-ct td:nth-child(4),.bk-ct th:nth-child(5),.bk-ct td:nth-child(5){display:none}.bk-kpis,.bk-perf{grid-template-columns:repeat(2,minmax(0,1fr))}.bk-st{text-align:left}.bk-kpi b{font-size:15px}}
 </style>
 </head>
 <body data-page="main">
@@ -3230,6 +3256,13 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
 
 
 <!-- Trade History Table -->
+<section class="pg-main panel section" id="brokerPanel">
+  <div class="panel-head">
+    <div><div class="panel-title"><span data-i18n="bkTitle">BROKER SYNC</span> <span class="ai-chip">MT5 / MT4</span></div><div class="panel-sub" data-i18n="bkSub">MT5 / MT4: balance, open positions, closed trades and performance, synced into your journal automatically</div></div>
+    <div class="sg-tools"><button type="button" class="btn small" id="bkAdd" data-i18n="bkAdd" hidden>Connect account</button></div>
+  </div>
+  <div id="bkBody"></div>
+</section>
 <section class="pg-main pg-jr panel section" id="secJournal">
   <div class="toolbar">
     <div><div class="panel-title"><span data-i18n="history">TRADE HISTORY</span></div><div class="panel-sub" data-i18n="historySub">Review the setup, not just the money</div></div>
@@ -4100,6 +4133,7 @@ let currentUser = null;
 /* ---------- 2. Bilingual Translations (EN / KM) ---------- */
 const T = {
   en: {
+    bkTitle:"BROKER SYNC",bkSub:"MT5 / MT4: balance, open positions, closed trades and performance, synced into your journal automatically",bkAdd:"Connect account",bkLockT:"Broker sync is an Ultra feature",bkLockP:"Connect your MT5 or MT4 account: your balance, open positions and every closed trade appear here and in your journal automatically.",bkLockB:"See Ultra",bkSignin:"Sign in to connect your MT5 / MT4 account.",bkEmpty:"No account connected yet. Connect your MT5 or MT4 account to sync it automatically.",bkStepsT:"Connect your MetaTrader account",bkCode:"Your sync code (shown only once, keep it private)",bkCopy:"Copy",bkCopied:"Copied",bkS1:"Download the AROM Sync EA:",bkS2:"In MetaTrader: Tools → Options → Expert Advisors → tick “Allow WebRequest for listed URL” and add:",bkS3:"File → Open Data Folder → MQL5 / Experts (MQL4 / Experts on MT4): put the file there, restart MetaTrader, drag AROM_Sync onto any one chart and paste the sync code.",bkS4:"Keep MetaTrader running on your PC or a VPS. The EA is read-only: it never opens, changes or closes a trade.",bkPhone:"MetaTrader phone apps cannot run EAs. Phone-only sync (investor password) is coming next.",bkWait:"Waiting for the first sync…",bkGot:"Connected: first sync received.",bkDone:"Done",bkOnline:"Live",bkOffline:"Offline: is MetaTrader running?",bkNever:"Not synced yet",bkLast:"Last sync",bkBal:"Balance",bkEq:"Equity",bkFloat:"Floating P/L",bkMl:"Margin level",bkOpen:"Open positions",bkNoOpen:"No open positions",bkClosed:"Last closed trades",bkNoClosed:"No closed trades in the last 90 days",bkPerf:"Performance (90 days)",bkNet:"Net P/L",bkTrades:"Trades",bkWin:"Win rate",bkPF:"Profit factor",bkAvgW:"Average win",bkAvgL:"Average loss",bkStreak:"Max losing streak",bkBySym:"By symbol",bkEquity:"Equity",bkAuto:"Copy closed trades into my journal",bkRemove:"Remove",bkRemoveQ:"Remove this account? Its synced data is deleted; trades already in your journal stay.",bkDetails:"Details",bkHide:"Hide",bkSym:"Symbol",bkSide:"Side",bkLots:"Lots",bkOpenP:"Open",bkNow:"Now",bkPL:"P/L",bkCloseP:"Close",bkWhen:"Closed",bkLoading:"Loading…",bkErr:"Broker sync failed. Try again.",bkMax:"You can connect up to 3 accounts.",
     scnT:"Setup scanner",scnLegend:"A+ = signal now · A = almost · B / C = forming · — = no clear trend. Tap a cell to open it.",scnRange:"no trend",scnErr:"no data",scnBusy:"Scanning…",scnUpd:"Updated",trT:"Live track record",trSub:"Signals the AROM Telegram bot sent in the last 30 days, with their real results",trSignals:"Signals",trWin:"Win rate",trAvg:"Average per trade",trTotal:"Total",trMkt:"Market",trN:"Trades",trWinS:"Win",trAvgS:"Avg",trTotS:"Total",trRecent:"Last 10 results",trSince:"Since {d}.",trSmall:"Small sample: too early to judge.",trNote:"R = multiples of the risk; half closed at TP1 with the stop moved to entry. Before spread and fees. Past results do not guarantee future results.",trLoading:"Loading results…",trErr:"Results are unavailable right now.",
     tipAccount:"Switch account workspace",tipPre:"Pre-market routine checklist",tipSummary:"Executive summary card",tipCalc:"Position size & risk calculator",tipSettings:"Settings",tipLang:"Switch language (EN / ខ្មែរ)",tipLogin:"Log in or create an account",tipLogout:"Sign out",tipSynced:"Cloud synced",tipAdd:"Add a trade (N)",
     brandSub:"TRADING JOURNEY",workspace:"PERSONAL WORKSPACE",addTrade:"Add trade",settings:"Settings",allAccounts:"All accounts",
@@ -4163,6 +4197,7 @@ const T = {
     limitHit:"Daily loss limit reached: today's P/L is {pl} (limit {lim}). Stop trading and protect your capital."
   },
   km: {
+    bkTitle:"ការភ្ជាប់ឈ្មួញកណ្តាល",bkSub:"MT5 / MT4៖ សមតុល្យ ការជួញដូរកំពុងបើក ការជួញដូរបានបិទ និងលទ្ធផល ធ្វើសមកាលកម្មចូលកំណត់ហេតុដោយស្វ័យប្រវត្តិ",bkAdd:"ភ្ជាប់គណនី",bkLockT:"ការភ្ជាប់ឈ្មួញកណ្តាល ជាមុខងារ Ultra",bkLockP:"ភ្ជាប់គណនី MT5 ឬ MT4 របស់អ្នក៖ សមតុល្យ ការជួញដូរកំពុងបើក និងការជួញដូរបានបិទទាំងអស់ នឹងបង្ហាញនៅទីនេះ និងក្នុងកំណត់ហេតុដោយស្វ័យប្រវត្តិ។",bkLockB:"មើល Ultra",bkSignin:"សូមចូលគណនីដើម្បីភ្ជាប់គណនី MT5 / MT4 របស់អ្នក។",bkEmpty:"មិនទាន់មានគណនីភ្ជាប់ទេ។ ភ្ជាប់គណនី MT5 ឬ MT4 ដើម្បីធ្វើសមកាលកម្មដោយស្វ័យប្រវត្តិ។",bkStepsT:"ភ្ជាប់គណនី MetaTrader របស់អ្នក",bkCode:"លេខកូដសមកាលកម្មរបស់អ្នក (បង្ហាញតែម្តង សូមរក្សាជាការសម្ងាត់)",bkCopy:"ចម្លង",bkCopied:"បានចម្លង",bkS1:"ទាញយក AROM Sync EA៖",bkS2:"ក្នុង MetaTrader៖ Tools → Options → Expert Advisors → ធីក “Allow WebRequest for listed URL” ហើយបន្ថែម៖",bkS3:"File → Open Data Folder → MQL5 / Experts (MQL4 / Experts សម្រាប់ MT4)៖ ដាក់ឯកសារនៅទីនោះ ចាប់ផ្តើម MetaTrader ឡើងវិញ អូស AROM_Sync ទៅលើក្រាហ្វមួយ ហើយបិទភ្ជាប់លេខកូដ។",bkS4:"ទុក MetaTrader ឱ្យដំណើរការលើកុំព្យូទ័រ ឬ VPS។ EA នេះអានតែប៉ុណ្ណោះ៖ វាមិនបើក មិនកែ ឬមិនបិទការជួញដូរណាមួយទេ។",bkPhone:"កម្មវិធី MetaTrader លើទូរស័ព្ទមិនអាចដំណើរការ EA បានទេ។ ការធ្វើសមកាលកម្មសម្រាប់ទូរស័ព្ទ (ពាក្យសម្ងាត់អ្នកវិនិយោគ) នឹងមកដល់ឆាប់ៗ។",bkWait:"កំពុងរង់ចាំការធ្វើសមកាលកម្មលើកដំបូង…",bkGot:"បានភ្ជាប់៖ ទទួលបានការធ្វើសមកាលកម្មលើកដំបូងហើយ។",bkDone:"រួចរាល់",bkOnline:"កំពុងដំណើរការ",bkOffline:"ក្រៅបណ្តាញ៖ តើ MetaTrader កំពុងដំណើរការទេ?",bkNever:"មិនទាន់ធ្វើសមកាលកម្ម",bkLast:"សមកាលកម្មចុងក្រោយ",bkBal:"សមតុល្យ",bkEq:"មូលធនពិត",bkFloat:"ចំណេញ/ខាតមិនទាន់បិទ",bkMl:"កម្រិតមាជិន",bkOpen:"ការជួញដូរកំពុងបើក",bkNoOpen:"គ្មានការជួញដូរកំពុងបើក",bkClosed:"ការជួញដូរបានបិទចុងក្រោយ",bkNoClosed:"គ្មានការជួញដូរបានបិទក្នុង ៩០ ថ្ងៃចុងក្រោយ",bkPerf:"លទ្ធផល (៩០ ថ្ងៃ)",bkNet:"ចំណេញ/ខាតសុទ្ធ",bkTrades:"ការជួញដូរ",bkWin:"អត្រាឈ្នះ",bkPF:"កត្តាចំណេញ",bkAvgW:"ឈ្នះជាមធ្យម",bkAvgL:"ខាតជាមធ្យម",bkStreak:"ខាតជាប់គ្នាច្រើនបំផុត",bkBySym:"តាមនិមិត្តសញ្ញា",bkEquity:"មូលធនពិត",bkAuto:"ចម្លងការជួញដូរបានបិទចូលកំណត់ហេតុរបស់ខ្ញុំ",bkRemove:"លុប",bkRemoveQ:"លុបគណនីនេះ? ទិន្នន័យសមកាលកម្មនឹងត្រូវលុប; ការជួញដូរដែលមានក្នុងកំណត់ហេតុរួចហើយនៅដដែល។",bkDetails:"ព័ត៌មានលម្អិត",bkHide:"លាក់",bkSym:"និមិត្តសញ្ញា",bkSide:"ទិស",bkLots:"Lots",bkOpenP:"បើក",bkNow:"ឥឡូវ",bkPL:"ចំណេញ/ខាត",bkCloseP:"បិទ",bkWhen:"បានបិទ",bkLoading:"កំពុងផ្ទុក…",bkErr:"ការភ្ជាប់ឈ្មួញកណ្តាលបរាជ័យ។ សូមព្យាយាមម្តងទៀត។",bkMax:"អ្នកអាចភ្ជាប់បានរហូតដល់ ៣ គណនី។",
     scnT:"ម៉ាស៊ីនស្កេនការរៀបចំ",scnLegend:"A+ = មានសញ្ញាឥឡូវ · A = ជិតហើយ · B / C = កំពុងរៀបចំ · — = គ្មាននិន្នាការច្បាស់។ ចុចលើប្រអប់ដើម្បីបើក។",scnRange:"គ្មាននិន្នាការ",scnErr:"គ្មានទិន្នន័យ",scnBusy:"កំពុងស្កេន…",scnUpd:"ធ្វើបច្ចុប្បន្នភាព",trT:"លទ្ធផលពិតប្រាកដ",trSub:"សញ្ញាដែល bot Telegram របស់ AROM បានផ្ញើក្នុង ៣០ ថ្ងៃចុងក្រោយ ជាមួយលទ្ធផលពិត",trSignals:"សញ្ញា",trWin:"អត្រាឈ្នះ",trAvg:"ជាមធ្យមក្នុងមួយការជួញដូរ",trTotal:"សរុប",trMkt:"ទីផ្សារ",trN:"ការជួញដូរ",trWinS:"ឈ្នះ",trAvgS:"មធ្យម",trTotS:"សរុប",trRecent:"លទ្ធផល ១០ ចុងក្រោយ",trSince:"ចាប់ពី {d}។",trSmall:"គំរូតូច៖ នៅដំបូងពេកក្នុងការវាយតម្លៃ។",trNote:"R = ចំនួនដងនៃហានិភ័យ; បិទពាក់កណ្តាលនៅ TP1 ហើយផ្លាស់ Stop ទៅតម្លៃចូល។ មិនទាន់គិត spread និងថ្លៃសេវា។ លទ្ធផលអតីតកាលមិនធានាលទ្ធផលអនាគតទេ។",trLoading:"កំពុងផ្ទុកលទ្ធផល…",trErr:"មិនអាចបង្ហាញលទ្ធផលបានឥឡូវនេះទេ។",
     tipAccount:"ប្តូរគណនី",tipPre:"បញ្ជីពិនិត្យមុនបើកទីផ្សារ",tipSummary:"កាតសង្ខេបលទ្ធផល",tipCalc:"ម៉ាស៊ីនគណនាទំហំ Position និងហានិភ័យ",tipSettings:"ការកំណត់",tipLang:"ប្តូរភាសា (EN / ខ្មែរ)",tipLogin:"ចូលគណនី ឬបង្កើតគណនី",tipLogout:"ចាកចេញ",tipSynced:"បានធ្វើសមកាលកម្មលើ Cloud",tipAdd:"បន្ថែម Trade (N)",
     brandSub:"ទិនានុប្បវត្តិជួញដូរ",workspace:"កន្លែងធ្វើការផ្ទាល់ខ្លួន",addTrade:"បន្ថែម Trade",settings:"ការកំណត់",allAccounts:"គណនីទាំងអស់",
@@ -6266,6 +6301,7 @@ async function loadPremium(){
   }
   syncPremiumUI();
   lgRefresh(true);   // launch gift banner
+  try{ bkLoad(); }catch(e){}   // broker sync panel (Ultra)
 }
 function syncPremiumUI(){
   const nlu = $('nlIntelU'); if(nlu) nlu.hidden = !!Prem.ultra;   // everyone sees AROM Intelligence in the menu; the page itself is Ultra / admin only, so others get an "Ultra" tag and the upgrade prompt
@@ -10130,6 +10166,111 @@ function trRender(){
 }
 setTimeout(() => { try{ trLoad(); }catch(e){} try{ const g = $('scnGrid'); if(g) g.addEventListener('click', e => { const b = e.target.closest('button[data-s]'); if(b) scnOpen(b.dataset.s, b.dataset.m); }); scnRender(); }catch(e){} }, 0);
 
+/* ---------- Broker sync (Ultra): MT5 / MT4 through the read-only AROM Sync EA (edge function broker-sync) ---------- */
+const BK = {accounts:[], ultra:false, open:{}, detail:{}, token:null, newId:null, poll:null, seen:{}, err:false};
+const BK_URL = 'https://sksvwikfyrdhgjngekqp.supabase.co';
+async function bkCall(body){
+  const {data, error} = await supabaseClient.functions.invoke('broker-sync', {body});
+  if(error){ let c = 'bk_err'; try{ const j = await error.context.json(); c = j.error || c; }catch(_){} const e = new Error(c); e.code = c; throw e; }
+  return data;
+}
+async function bkLoad(){
+  if(!$('bkBody')) return;
+  clearTimeout(BK.poll);
+  if(typeof currentUser === 'undefined' || !currentUser || !supabaseClient){ BK.accounts = []; BK.token = null; bkRender(); return; }
+  try{ const r = await bkCall({action:'list'}); BK.accounts = r.accounts || []; BK.ultra = !!r.ultra; BK.err = false; }catch(e){ BK.err = true; }
+  let changed = false;
+  BK.accounts.forEach(a => { if(BK.seen[a.id] !== undefined && a.last_sync_at !== BK.seen[a.id]) changed = true; BK.seen[a.id] = a.last_sync_at; });
+  bkRender();
+  Object.keys(BK.open).forEach(id => { if(BK.open[id]) bkDetail(id); });
+  if(changed && BK.accounts.some(a => a.auto_import)) bkTrades();
+  if(BK.accounts.length && bkUltra()) BK.poll = setTimeout(() => { if(document.visibilityState === 'visible') bkLoad(); else BK.later = true; }, BK.token ? 10000 : 60000);
+}
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && BK.later){ BK.later = false; bkLoad(); } });
+async function bkTrades(){ try{ const r = await supabaseClient.from('trades').select('*').eq('user_id', currentUser.id); if(Array.isArray(r.data)){ trades = r.data.map(norm); render(); } }catch(e){} }
+function bkUltra(){ return BK.ultra || (typeof Prem !== 'undefined' && !!Prem.ultra); }
+const bkMoney = (v, cur) => v == null || isNaN(v) ? '—' : (v < 0 ? '−' : '') + Math.abs(+v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + (cur ? ' ' + cur : '');
+const bkSigned = (v, cur) => v == null || isNaN(v) ? '—' : (v > 0 ? '+' : '') + bkMoney(v, cur);
+const bkCls = v => v > 0 ? 'bk-pos' : v < 0 ? 'bk-neg' : '';
+const bkICT = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false});
+const bkTime = v => v ? bkICT.format(new Date(typeof v === 'number' ? v * 1000 : v)) : '—';
+const bkPx = v => v == null ? '—' : String(+(+v).toFixed(5));
+const bkKpi = (k, v, c) => `<div class="bk-kpi"><small>${esc(k)}</small><b class="${c || ''}">${v}</b></div>`;
+const bkOnline = a => !!a.last_sync_at && Date.now() - Date.parse(a.last_sync_at) < 180000;
+function bkEqSvg(pts){
+  const v = pts.map(p => +p.equity).filter(x => isFinite(x)); if(v.length < 2) return '';
+  const mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), rg = (mx - mn) || 1, W = 600, H = 120;
+  const pl = v.map((x, i) => (4 + i * (W - 8) / (v.length - 1)).toFixed(1) + ',' + (H - 4 - (x - mn) / rg * (H - 8)).toFixed(1)).join(' ');
+  return `<div class="bk-h">${esc(t('bkEquity'))}</div><svg class="bk-eq" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t('bkEquity'))}"><polyline fill="none" stroke="#b9f25a" stroke-width="2" points="${pl}"/></svg>`;
+}
+function bkDetailHtml(a, d){
+  const cur = a.currency || '', s = d.stats || {};
+  const pos = d.positions.length ? `<div class="bk-wrap"><table class="bk-tbl bk-pt"><thead><tr><th>${esc(t('bkSym'))}</th><th>${esc(t('bkSide'))}</th><th>${esc(t('bkLots'))}</th><th>${esc(t('bkOpenP'))}</th><th>${esc(t('bkNow'))}</th><th>SL / TP</th><th>${esc(t('bkPL'))}</th></tr></thead><tbody>`
+    + d.positions.map(p => `<tr><td>${esc(p.symbol)}</td><td class="${p.side === 'BUY' ? 'bk-pos' : 'bk-neg'}">${esc(p.side)}</td><td>${bkPx(p.volume)}</td><td>${bkPx(p.open_price)}</td><td>${bkPx(p.price)}</td><td>${p.sl ? bkPx(p.sl) : '—'} / ${p.tp ? bkPx(p.tp) : '—'}</td><td class="${bkCls(+p.profit)}">${bkSigned(+p.profit)}</td></tr>`).join('') + '</tbody></table></div>'
+    : `<div class="bk-empty">${esc(t('bkNoOpen'))}</div>`;
+  const perf = `<div class="bk-perf">${bkKpi(t('bkNet'), bkSigned(s.net, cur), bkCls(s.net))}${bkKpi(t('bkTrades'), s.trades || 0)}${bkKpi(t('bkWin'), s.win_rate == null ? '—' : s.win_rate + '%')}${bkKpi(t('bkPF'), s.profit_factor == null ? '—' : s.profit_factor)}${bkKpi(t('bkAvgW'), bkSigned(s.avg_win), 'bk-pos')}${bkKpi(t('bkAvgL'), bkSigned(s.avg_loss), 'bk-neg')}${bkKpi(t('bkStreak'), s.max_loss_streak || 0)}${bkKpi(t('bkOpen'), d.positions.length)}</div>`;
+  const bySym = (s.by_symbol || []).length ? `<div class="bk-h">${esc(t('bkBySym'))}</div><div class="bk-wrap"><table class="bk-tbl"><thead><tr><th>${esc(t('bkSym'))}</th><th>${esc(t('bkTrades'))}</th><th>${esc(t('bkWin'))}</th><th>${esc(t('bkNet'))}</th></tr></thead><tbody>`
+    + s.by_symbol.map(x => `<tr><td>${esc(x.symbol)}</td><td>${x.trades}</td><td>${Math.round(100 * x.wins / x.trades)}%</td><td class="${bkCls(x.net)}">${bkSigned(x.net)}</td></tr>`).join('') + '</tbody></table></div>' : '';
+  const closed = d.deals.length ? `<div class="bk-wrap"><table class="bk-tbl bk-ct"><thead><tr><th>${esc(t('bkWhen'))}</th><th>${esc(t('bkSym'))}</th><th>${esc(t('bkSide'))}</th><th>${esc(t('bkLots'))}</th><th>${esc(t('bkOpenP'))} → ${esc(t('bkCloseP'))}</th><th>${esc(t('bkPL'))}</th></tr></thead><tbody>`
+    + d.deals.slice(0, 15).map(x => `<tr><td>${bkTime(+x.close_time)}</td><td>${esc(x.symbol)}</td><td class="${x.side === 'BUY' ? 'bk-pos' : 'bk-neg'}">${esc(x.side)}</td><td>${bkPx(x.volume)}</td><td>${bkPx(x.open_price)} → ${bkPx(x.close_price)}</td><td class="${bkCls(+x.net)}">${bkSigned(+x.net)}</td></tr>`).join('') + '</tbody></table></div>'
+    : `<div class="bk-empty">${esc(t('bkNoClosed'))}</div>`;
+  return `<div class="bk-h">${esc(t('bkOpen'))}</div>${pos}<div class="bk-h">${esc(t('bkPerf'))}</div>${perf}${bkEqSvg(d.equity || [])}${bySym}<div class="bk-h">${esc(t('bkClosed'))}</div>${closed}`;
+}
+function bkCard(a){
+  const cur = a.currency || '', on = bkOnline(a), d = BK.detail[a.id], open = !!BK.open[a.id];
+  const st = !a.last_sync_at ? `<span class="bk-dot wait"></span>${esc(t('bkNever'))}` : on ? `<span class="bk-dot on"></span>${esc(t('bkOnline'))}` : `<span class="bk-dot"></span>${esc(t('bkOffline'))}`;
+  const ml = +a.margin > 0 ? Math.round(100 * a.equity / a.margin) + '%' : '—';
+  return `<div class="bk-acc" data-id="${esc(a.id)}"><div class="bk-top"><div><b>${esc(a.label)}</b><span class="bk-tag">${esc(String(a.platform || 'mt5').toUpperCase())}</span><div class="bk-sub">${a.login ? esc(a.login) + ' · ' + esc(a.server || '') : '…' + esc(a.token_hint || '')}</div></div>
+    <div class="bk-st">${st}${a.last_sync_at ? `<small>${esc(t('bkLast'))} ${bkTime(a.last_sync_at)} ICT</small>` : ''}</div></div>
+    ${a.last_sync_at ? `<div class="bk-kpis">${bkKpi(t('bkBal'), bkMoney(a.balance, cur))}${bkKpi(t('bkEq'), bkMoney(a.equity, cur))}${bkKpi(t('bkFloat'), bkSigned(a.floating, cur), bkCls(+a.floating))}${bkKpi(t('bkMl'), ml)}</div>` : ''}
+    <div class="bk-act">${a.last_sync_at ? `<button type="button" class="btn secondary small" data-bk="det">${esc(t(open ? 'bkHide' : 'bkDetails'))}</button>` : ''}<label class="bk-chk"><input type="checkbox" data-bk="auto"${a.auto_import ? ' checked' : ''}${bkUltra() ? '' : ' disabled'}> ${esc(t('bkAuto'))}</label><button type="button" class="btn secondary small" data-bk="rm">${esc(t('bkRemove'))}</button></div>
+    ${open ? (d ? bkDetailHtml(a, d) : `<div class="bk-empty">${esc(t('bkLoading'))}</div>`) : ''}</div>`;
+}
+function bkSteps(){
+  const a = BK.accounts.find(x => x.id === BK.newId), got = a && a.last_sync_at;
+  const copy = v => `<button type="button" class="btn secondary small" data-bk="copy" data-v="${esc(v)}">${esc(t('bkCopy'))}</button>`;
+  return `<div class="bk-steps"><h3>${esc(t('bkStepsT'))}</h3><div class="bk-k">${esc(t('bkCode'))}</div><div class="bk-code"><code>${esc(BK.token)}</code>${copy(BK.token)}</div>
+    <ol><li>${esc(t('bkS1'))}<div class="bk-dl"><a class="btn secondary small" href="/downloads/AROM_Sync.mq5" download>MT5 · AROM_Sync.mq5</a><a class="btn secondary small" href="/downloads/AROM_Sync.mq4" download>MT4 · AROM_Sync.mq4</a></div></li>
+    <li>${esc(t('bkS2'))}<div class="bk-code"><code>${BK_URL}</code>${copy(BK_URL)}</div></li><li>${esc(t('bkS3'))}</li><li>${esc(t('bkS4'))}</li></ol>
+    <p class="bk-note">${esc(t('bkPhone'))}</p><div class="bk-wait">${got ? '<span class="bk-dot on"></span>' + esc(t('bkGot')) : '<span class="bk-dot wait"></span>' + esc(t('bkWait'))}</div>
+    <div class="bk-act"><button type="button" class="btn small" data-bk="done">${esc(t('bkDone'))}</button></div></div>`;
+}
+function bkRender(){
+  const box = $('bkBody'), add = $('bkAdd'); if(!box) return;
+  if(typeof currentUser === 'undefined' || !currentUser){ add.hidden = true; box.innerHTML = `<div class="bk-empty">${esc(t('bkSignin'))}</div>`; return; }
+  const ultra = bkUltra();
+  add.hidden = !ultra || BK.accounts.length >= 3 || !!BK.token;
+  if(!ultra && !BK.accounts.length){ box.innerHTML = `<div class="bk-lock"><h3>${esc(t('bkLockT'))}</h3><p class="bk-empty" style="margin:0 0 10px">${esc(t('bkLockP'))}</p><a class="btn small" href="/pricing">${esc(t('bkLockB'))}</a></div>`; return; }
+  box.innerHTML = (BK.err ? `<div class="bk-empty">${esc(t('bkErr'))}</div>` : '') + (BK.token ? bkSteps() : '') + (!BK.accounts.length && !BK.token ? `<div class="bk-empty">${esc(t('bkEmpty'))}</div>` : '') + BK.accounts.map(bkCard).join('');
+}
+async function bkDetail(id){
+  try{ const r = await bkCall({action:'detail', id}); BK.detail[id] = r; }catch(e){ BK.detail[id] = null; BK.open[id] = false; }
+  bkRender();
+}
+async function bkCreate(){
+  const b = $('bkAdd'); b.disabled = true;
+  try{ const r = await bkCall({action:'create', label:'MT5'}); BK.token = r.token; BK.newId = r.account.id; BK.accounts.push(r.account); bkRender(); clearTimeout(BK.poll); BK.poll = setTimeout(bkLoad, 10000); }
+  catch(e){ toast(t(e.code === 'too_many_accounts' ? 'bkMax' : 'bkErr'), true); }
+  b.disabled = false;
+}
+function bkWire(){
+  if(bkWire.done || !$('bkBody')) return; bkWire.done = true;
+  $('bkAdd').addEventListener('click', bkCreate);
+  $('bkBody').addEventListener('click', async e => {
+    const b = e.target.closest('[data-bk]'); if(!b || b.tagName === 'INPUT') return;
+    const card = b.closest('.bk-acc'), id = card && card.dataset.id, k = b.dataset.bk;
+    if(k === 'copy'){ try{ await navigator.clipboard.writeText(b.dataset.v); toast(t('bkCopied')); }catch(_){ } return; }
+    if(k === 'done'){ BK.token = null; BK.newId = null; bkRender(); return; }
+    if(k === 'det'){ BK.open[id] = !BK.open[id]; bkRender(); if(BK.open[id]) bkDetail(id); return; }
+    if(k === 'rm'){ if(!confirm(t('bkRemoveQ'))) return; try{ await bkCall({action:'remove', id}); delete BK.open[id]; delete BK.detail[id]; if(BK.newId === id){ BK.token = null; BK.newId = null; } }catch(_){ toast(t('bkErr'), true); } bkLoad(); }
+  });
+  $('bkBody').addEventListener('change', async e => {
+    const c = e.target.closest('input[data-bk="auto"]'); if(!c) return;
+    const id = c.closest('.bk-acc').dataset.id;
+    try{ const r = await bkCall({action:'update', id, auto_import:c.checked}); const i = BK.accounts.findIndex(x => x.id === id); if(i >= 0) BK.accounts[i] = r.account; }catch(_){ c.checked = !c.checked; toast(t('bkErr'), true); }
+  });
+}
+setTimeout(() => { try{ bkWire(); bkRender(); }catch(e){} }, 0);
 function goSection(id){
   const el = document.getElementById(id);
   if(el && el.offsetParent !== null){ const tb = $('dkTabs'), extra = tb && tb.offsetParent !== null && id !== 'anHero' ? tb.offsetHeight + 10 : 0; window.scrollTo({top: el.getBoundingClientRect().top + scrollY - $('topNav').offsetHeight - 18 - extra, behavior:'smooth'}); return; }
