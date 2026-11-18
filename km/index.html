@@ -683,6 +683,8 @@ button.auth-avatar:hover{border-color:var(--gold)}
 .aq-seg button.on{background:var(--lime);color:#0b1a0e}
 .aq-nav{display:flex;gap:6px;align-items:center}.aq-nav .field{height:40px;min-width:150px}
 .aq-chk{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.aq-sel{width:auto;min-width:0;padding:7px 10px}.aq-sh{display:inline-block;margin-left:6px;font-size:10px;font-weight:800;letter-spacing:.4px;padding:1px 6px;border-radius:99px;background:rgba(255,207,112,.14);color:#ffcf70;border:1px solid rgba(255,207,112,.35)}
+.aq-bt{margin-top:16px}
 .aq-label{font-size:20px;font-weight:800;margin:4px 0 12px}
 .aq-r.pos{color:var(--green)}.aq-r.neg{color:#ff8fa3}
 .aq-bar2{display:block;height:4px;border-radius:99px;margin-top:5px;background:var(--line);max-width:90px}.aq-bar2.pos{background:var(--green)}.aq-bar2.neg{background:#ff5d73}
@@ -3891,12 +3893,24 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
         <div class="aq-bar">
           <div class="aq-seg" id="aqSeg" role="group" aria-label="Report period"><button type="button" data-p="day" class="on">Day</button><button type="button" data-p="week">Week</button><button type="button" data-p="month">Month</button></div>
           <div class="aq-nav"><button type="button" class="btn secondary small" id="aqPrev" aria-label="Previous period">‹</button><input type="date" class="field" id="aqDate" aria-label="Select date"><button type="button" class="btn secondary small" id="aqNext" aria-label="Next period">›</button><button type="button" class="btn secondary small" id="aqToday">Today</button></div>
-          <label class="aq-chk"><input type="checkbox" id="aqRes"> Include research signals</label>
+          <select class="field aq-sel" id="aqSym" aria-label="Market"><option value="">All markets</option><option value="XAUUSD">XAUUSD</option><option value="BTCUSD">BTCUSD</option><option value="NQ">NQ</option><option value="EURUSD">EURUSD</option><option value="GBPUSD">GBPUSD</option><option value="USDJPY">USDJPY</option><option value="XAGUSD">XAGUSD</option><option value="OIL">OIL</option></select>
+          <label class="aq-chk"><input type="checkbox" id="aqRes"> Include research (shadow) signals</label>
           <span class="grow"></span>
           <button type="button" class="btn small" id="aqImg">Download image</button><button type="button" class="btn secondary small" id="aqCsv">CSV</button>
         </div>
         <div class="aq-label" id="aqLabel"></div>
         <div id="aqBody"></div>
+        <div class="adm-card aq-bt" id="btCard">
+          <h3>Backtest a strategy</h3>
+          <p class="hint" style="margin:0 0 10px">Runs the real signal engine over the candles the site already has: about 16 days for 15-minute strategies, about 100 days for 1-hour strategies, about 33 hours for scalping. Shadow strategies included. R after the spread you set.</p>
+          <div class="aq-bar">
+            <select class="field aq-sel" id="btSym" aria-label="Market"><option value="XAUUSD">XAUUSD</option><option value="BTCUSD">BTCUSD</option><option value="NQ">NQ</option><option value="EURUSD">EURUSD</option><option value="GBPUSD">GBPUSD</option><option value="USDJPY">USDJPY</option><option value="XAGUSD">XAGUSD</option><option value="OIL">OIL</option></select>
+            <select class="field aq-sel" id="btMode" aria-label="Strategy"></select>
+            <label class="aq-chk">Spread <input class="field" id="btSpread" type="number" min="0" step="0.01" style="width:90px"></label>
+            <button type="button" class="btn small" id="btRun">Run backtest</button>
+          </div>
+          <div id="btBody"></div>
+        </div>
       </div>
       <div class="adm-pane" id="admSig" hidden><form id="sgForm"></form><div id="admSigList"></div></div>
       <div class="adm-pane" id="admInt"></div>
@@ -9415,7 +9429,7 @@ async function admLoadPayments(){
 /* ---- AI signal report: Day / Week / Month by pair, exported as an image or CSV ----
    Numbers come from the admin-only database function admin_ai_report (supabase/sql/ai-report.sql). Periods follow Phnom Penh time (ICT, UTC+7).
    The image is drawn in the browser on a canvas (nothing is uploaded). R = realized result before spread: SL -1, TP1 +0.5, TP2/TP3 +1.5, expired 0. */
-const Aq = {per:'day', date:'', research:false, data:null, range:null};
+const Aq = {per:'day', date:'', research:false, sym:'', data:null, range:null};
 const AQ_NAME = {BTCUSD:'Bitcoin', XAUUSD:'Gold', XAGUSD:'Silver', EURUSD:'Euro', GBPUSD:'Pound', USDJPY:'Yen', NQ:'Nasdaq 100', OIL:'WTI Oil'};
 const AQ_KIND = {day:'DAILY REPORT', week:'WEEKLY REPORT', month:'MONTHLY REPORT'};
 const aqDay = d => d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
@@ -9452,10 +9466,12 @@ async function admLoadAiq(){
   const r = aqRange(Aq.per, Aq.date); $('aqLabel').textContent = r.label;
   const box = $('aqBody'); box.innerHTML = '<div class="adm-msg">Loading…</div>';
   try{
-    const d = await admRpc('admin_ai_report', {p_from:r.from.toISOString(), p_to:r.to.toISOString(), p_research:Aq.research});
+    const args = {p_from:r.from.toISOString(), p_to:r.to.toISOString(), p_research:Aq.research}; if(Aq.sym) args.p_symbol = Aq.sym;
+    const d = await admRpc('admin_ai_report', args);
     Aq.data = d; Aq.range = r; aqRender(); admStamp();
   }catch(e){
     Aq.data = null; const m = String((e && e.message) || e || '');
+    if(Aq.sym && /p_symbol|function|schema cache/i.test(m)){ box.innerHTML = '<div class="adm-msg">The market filter needs the updated report function (supabase/sql/ai-report.sql). Choose “All markets” for now.</div>'; return; }
     box.innerHTML = `<div class="adm-msg">${/function|does not exist|schema cache/i.test(m) && !/forbidden/.test(m) ? 'Run <b>supabase/sql/ai-report.sql</b> once in Supabase → SQL Editor, then reload this tab.' : /forbidden/.test(m) ? 'This account is not an admin.' : esc(m)}</div>`;
   }
 }
@@ -9463,7 +9479,7 @@ function aqRender(){
   const d = Aq.data, t = d.total || {}, pairs = d.pairs || [], sigs = d.signals || [], box = $('aqBody');
   const kpi = (l, v, sub, cls) => `<div class="adm-kpi"><small>${l}</small><b class="${cls || ''}">${v}</b><span>${sub || '&nbsp;'}</span></div>`;
   const wr = aqRate(t.wins, t.losses);
-  if(!+t.signals){ box.innerHTML = '<div class="adm-msg">No AI signals in this period.</div>'; return; }
+  if(!+t.signals){ box.innerHTML = '<div class="adm-msg">No AI signals in this period' + (Aq.sym ? ' for ' + esc(Aq.sym) : '') + '.' + (!Aq.research && d.hidden_shadow ? ' ' + d.hidden_shadow + ' shadow signals hidden: tick “Include research (shadow) signals”.' : '') + '</div>'; return; }
   const maxAbs = Math.max(0.01, ...pairs.map(p => Math.abs(p.net_r)));
   const rows = pairs.map(p => { const pw = aqRate(p.wins, p.losses);
     return `<tr><td data-l="Pair"><b>${esc(p.symbol)}</b><span class="adm-sub">${esc(AQ_NAME[p.symbol] || '')}</span></td>
@@ -9471,7 +9487,11 @@ function aqRender(){
       <td data-l="TP1 / TP2 / TP3">${p.tp1} / ${p.tp2} / ${p.tp3}</td><td data-l="Win rate">${pw == null ? '—' : pw + '%'}</td>
       <td data-l="Net R"><span class="aq-r ${aqCls(p.net_r)}">${aqR(p.net_r)}</span><i class="aq-bar2 ${aqCls(p.net_r)}" style="width:${(Math.abs(p.net_r) / maxAbs * 100).toFixed(0)}%"></i></td>
       <td data-l="" class="adm-row-actions"><button type="button" class="btn secondary small" data-aq-img="${esc(p.symbol)}">Image</button></td></tr>`; }).join('');
-  const list = sigs.slice(0, 120).map(s => `<tr><td data-l="Time (ICT)" style="white-space:nowrap">${esc(aqWhen(s.t))}</td><td data-l="Pair"><b>${esc(s.symbol)}</b></td><td data-l="Mode">${esc(s.mode)}</td>
+  const shTag = sh => sh ? '<span class="aq-sh">SHADOW</span>' : '';
+  const mdRows = (d.modes || []).map(m => { const mw = aqRate(m.wins, m.losses);
+    return `<tr><td data-l="Strategy"><b>${esc(AQ_MODE[m.mode] || m.mode)}</b>${shTag(m.shadow)}</td><td data-l="Signals">${m.signals}</td><td data-l="Closed">${m.closed ?? '—'}</td><td data-l="Wins">${m.wins}</td><td data-l="Losses">${m.losses}</td>
+      <td data-l="Win rate">${mw == null ? '—' : mw + '%'}</td><td data-l="Avg R"><span class="aq-r ${aqCls(m.avg_r)}">${m.avg_r == null ? '—' : aqR(m.avg_r)}</span></td><td data-l="Net R"><span class="aq-r ${aqCls(m.net_r)}">${aqR(m.net_r)}</span></td></tr>`; }).join('');
+  const list = sigs.slice(0, 120).map(s => `<tr><td data-l="Time (ICT)" style="white-space:nowrap">${esc(aqWhen(s.t))}</td><td data-l="Pair"><b>${esc(s.symbol)}</b></td><td data-l="Mode">${esc(AQ_MODE[s.mode] || s.mode)}${s.pat ? ' · ' + esc(s.pat) : ''}${shTag(s.shadow)}</td>
       <td data-l="Side"><span class="adm-act ${s.side === 'BUY' ? 'money' : 'bad'}">${esc(s.side)}</span></td><td data-l="Entry">${Number(s.entry)}</td>
       <td data-l="Result"><span class="adm-act ${s.result === 'sl' ? 'bad' : /^tp/.test(s.result || '') ? 'money' : ''}">${esc(aqRes(s))}</span></td>
       <td data-l="R"><span class="aq-r ${aqCls(s.r)}">${s.r == null ? '—' : aqR(s.r)}</span></td></tr>`).join('');
@@ -9480,6 +9500,8 @@ function aqRender(){
       ${kpi('Win rate', wr == null ? '—' : wr + '%', `${t.wins} wins · ${t.losses} losses`)}
       ${kpi('Net result', aqR(t.net_r), 'realized R, before spread', 'aq-r ' + aqCls(t.net_r))}
       ${kpi('Targets hit', `${t.tp1} / ${t.tp2} / ${t.tp3}`, 'TP1 / TP2 / TP3')}</div>
+    ${mdRows ? `<div class="adm-card"><h3>By strategy</h3><table class="adm-table"><thead><tr><th>Strategy</th><th>Signals</th><th>Closed</th><th>Wins</th><th>Losses</th><th>Win rate</th><th>Avg R</th><th>Net R</th></tr></thead><tbody>${mdRows}</tbody></table></div>` : ''}
+    ${!Aq.research && d.hidden_shadow ? `<div class="hint" style="margin:0 0 10px">${d.hidden_shadow} shadow signal${d.hidden_shadow === 1 ? '' : 's'} hidden. Tick “Include research (shadow) signals” to see them.</div>` : ''}
     <div class="adm-card"><h3>By pair</h3><table class="adm-table"><thead><tr><th>Pair</th><th>Signals</th><th>Wins</th><th>Losses</th><th>Open</th><th>TP1 / TP2 / TP3</th><th>Win rate</th><th>Net R</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
     <details class="adm-card aq-list"><summary>Signals in this period (${sigs.length}${sigs.length >= 500 ? '+' : ''})</summary><table class="adm-table"><thead><tr><th>Time (ICT)</th><th>Pair</th><th>Mode</th><th>Side</th><th>Entry</th><th>Result</th><th>R</th></tr></thead><tbody>${list}</tbody></table></details>
     <div class="hint" style="margin-top:10px">Results are the engine's own simulation on the candle feed, before spread and slippage. They are for review, not a promise of future results.</div>`;
@@ -9606,6 +9628,50 @@ $('aqPrev').onclick = () => aqStep(-1); $('aqNext').onclick = () => aqStep(1);
 $('aqToday').onclick = () => { Aq.date = aqToday(); admLoadAiq(); };
 $('aqDate').addEventListener('change', () => { if($('aqDate').value){ Aq.date = $('aqDate').value; admLoadAiq(); } });
 $('aqRes').addEventListener('change', () => { Aq.research = $('aqRes').checked; admLoadAiq(); });
+$('aqSym').addEventListener('change', () => { Aq.sym = $('aqSym').value; admLoadAiq(); });
+/* ---- Backtest any strategy (public or shadow) on the candles the site already serves (/api/candles), with the real engine (AiEng) ----
+   R per trade = the bot's own accounting (half off at TP1, stop to entry; SL -1, TP1 rr1/2, TP2+ (rr1+rr2)/2, expired 0) minus spread / risk. */
+const AQ_MODE = {scalp:'Scalping', intraday:'Intraday', swing:'Swing', btcx:'BTC shadow (scalp)', intraday_brt:'Intraday · breakout retest', intraday_lsr:'Intraday · liquidity sweep',
+  intraday_srb:'Intraday · session breakout', swing_brt:'Swing · breakout retest', swing_lsr:'Swing · liquidity sweep', intraday_msnr:'Intraday · MSNR', intraday_qm:'Intraday · QM',
+  swing_msnr:'Swing · MSNR', swing_qm:'Swing · QM', intraday_pat:'Intraday · chart patterns', swing_pat:'Swing · chart patterns'};
+const BT_SPREAD = {XAUUSD:0.4, BTCUSD:15, NQ:1, EURUSD:0.00012, GBPUSD:0.00015, USDJPY:0.015, XAGUSD:0.03, OIL:0.04};
+function btFill(){
+  const sel = $('btMode'); if(!sel || sel.options.length) return;
+  sel.innerHTML = Object.keys(AQ_MODE).filter(k => AiEng.MODES[k]).map(k => `<option value="${k}">${esc(AQ_MODE[k])}${AiEng.MODES[k].shadow ? ' (shadow)' : ''}</option>`).join('');
+  $('btSpread').value = BT_SPREAD[$('btSym').value] ?? 0;
+}
+async function btRun(){
+  const sym = $('btSym').value, mk = $('btMode').value, M = AiEng.MODES[mk], spread = Math.max(0, +$('btSpread').value || 0), box = $('btBody'), btn = $('btRun');
+  if(!M) return;
+  if(M.only && !M.only.test(sym)){ box.innerHTML = `<div class="adm-msg">${esc(AQ_MODE[mk])} runs on Bitcoin only.</div>`; return; }
+  btn.disabled = true; box.innerHTML = '<div class="adm-msg">Loading candles and running the engine…</div>';
+  try{
+    const r = await fetch(`/api/candles?symbol=${encodeURIComponent(sym)}&tf=${M.base / 60}`), j = await r.json();
+    if(!r.ok || !Array.isArray(j.candles) || j.candles.length < 200) throw new Error(j.error || 'not enough candles');
+    const c = j.candles, P = AiEng.prep(c, null, mk, sym);
+    const S = AiEng.scan(P, null).filter(s => s.out.res !== 'open' && !/\+$/.test(s.out.res));
+    const rr = M.rr, rOf = res => res === 'sl' ? -1 : res === 'expired' ? 0 : (+res[2] >= 2 ? (rr[0] + rr[1]) / 2 : +res[2] === 1 ? rr[0] / 2 : 0);
+    const T = S.map(s => ({...s, R:rOf(s.out.res) - (s.risk > 0 ? spread / s.risk : 0)}));
+    const days = ((c[c.length - 1].t - c[0].t) / 86400).toFixed(1), n = T.length, sum = a => a.reduce((x, y) => x + y, 0);
+    if(!n){ box.innerHTML = `<div class="adm-msg">No closed ${esc(AQ_MODE[mk])} signals on ${esc(sym)} in the last ${days} days of candles.</div>`; btn.disabled = false; return; }
+    const R = T.map(x => x.R), w = R.filter(x => x > 0), l = R.filter(x => x < 0), avg = sum(R) / n, pf = l.length ? sum(w) / -sum(l) : null;
+    let eq = 0, pk = 0, dd = 0; for(const x of R){ eq += x; pk = Math.max(pk, eq); dd = Math.max(dd, pk - eq); }
+    const kpi = (lb, v, sub, cls) => `<div class="adm-kpi"><small>${lb}</small><b class="${cls || ''}">${v}</b><span>${sub || '&nbsp;'}</span></div>`;
+    const grp = {}; T.forEach(x => { const k = (x.feat && x.feat.pat) || ''; if(k) (grp[k] = grp[k] || []).push(x.R); });
+    const gRows = Object.entries(grp).sort((a, b) => b[1].length - a[1].length).map(([k, a]) => `<tr><td data-l="Pattern"><b>${esc(k)}</b></td><td data-l="Trades">${a.length}</td><td data-l="Win rate">${Math.round(100 * a.filter(x => x > 0).length / a.length)}%</td><td data-l="Avg R"><span class="aq-r ${aqCls(sum(a) / a.length)}">${aqR(sum(a) / a.length)}</span></td></tr>`).join('');
+    const rows = T.slice(-25).reverse().map(x => `<tr><td data-l="Time (ICT)" style="white-space:nowrap">${esc(aqWhen(x.t))}</td><td data-l="Side"><span class="adm-act ${x.side === 'BUY' ? 'money' : 'bad'}">${esc(x.side)}</span></td>
+      <td data-l="Entry">${x.entry}</td><td data-l="SL">${x.sl}</td><td data-l="Result">${esc(String(x.out.res).toUpperCase())}${x.feat && x.feat.pat ? ' · ' + esc(x.feat.pat) : ''}</td><td data-l="R"><span class="aq-r ${aqCls(x.R)}">${aqR(x.R)}</span></td></tr>`).join('');
+    box.innerHTML = `<div class="adm-kpis">${kpi('Trades', n, `${days} days of ${M.eName} candles`)}${kpi('Win rate', Math.round(100 * w.length / n) + '%', `${w.length} wins · ${l.length} losses`)}
+        ${kpi('Average', aqR(avg), 'per trade, after spread', 'aq-r ' + aqCls(avg))}${kpi('Total', aqR(sum(R)), `profit factor ${pf == null ? '—' : pf.toFixed(2)} · max DD ${dd.toFixed(1)}R`, 'aq-r ' + aqCls(sum(R)))}</div>
+      ${gRows ? `<table class="adm-table"><thead><tr><th>Pattern</th><th>Trades</th><th>Win rate</th><th>Avg R</th></tr></thead><tbody>${gRows}</tbody></table>` : ''}
+      <details class="aq-list"><summary>Last ${Math.min(25, n)} trades</summary><table class="adm-table"><thead><tr><th>Time (ICT)</th><th>Side</th><th>Entry</th><th>SL</th><th>Result</th><th>R</th></tr></thead><tbody>${rows}</tbody></table></details>
+      <div class="hint" style="margin-top:8px">${n < 30 ? 'Fewer than 30 trades: this says very little. ' : ''}Source: ${esc(j.source || 'site candles')}. A test on past candles, not a promise of future results.</div>`;
+  }catch(e){ box.innerHTML = `<div class="adm-msg">Backtest failed: ${esc(String((e && e.message) || e))}</div>`; }
+  btn.disabled = false;
+}
+$('btSym').addEventListener('change', () => { $('btSpread').value = BT_SPREAD[$('btSym').value] ?? 0; });
+$('btRun').onclick = btRun;
+setTimeout(() => { try{ btFill(); }catch(e){} }, 0);
 $('aqImg').onclick = () => aqExport(null); $('aqCsv').onclick = aqCsv;
 $('aqBody').addEventListener('click', e => { const b = e.target.closest('[data-aq-img]'); if(b) aqExport(b.dataset.aqImg); });
 
