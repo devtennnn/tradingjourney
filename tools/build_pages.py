@@ -77,7 +77,8 @@ def jsonld(obj):
     return '<script type="application/ld+json">' + json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "</script>\n"
 
 ORG = {"@type": "Organization", "@id": SITE + "/#org", "name": "AROM TRADE", "url": SITE + "/",
-       "logo": SITE + "/icons/icon-512.png",
+       "logo": SITE + "/icons/icon-512.png", "email": "info@aromx.trade",
+       "contactPoint": [{"@type": "ContactPoint", "contactType": "customer support", "email": "info@aromx.trade", "url": "https://t.me/tentennnn0719", "availableLanguage": ["en", "km"]}],
        "description": "Trading journal, rule-based signals and USD news alerts for traders in Cambodia, in English and Khmer."}
 
 def app_jsonld(name, lang):
@@ -253,6 +254,12 @@ TRUST["about"] = {"path": "/about", "type": "AboutPage",
 <li>Broker sync only reads your account. The AROM Sync EA cannot place, change or close a trade, and the phone option uses your read-only investor password, which we never store.</li>
 <li>Plans are paid 30 days at a time with KHQR and never renew on their own.</li>
 </ul>
+<h2>Contact us</h2>
+<ul>
+<li>Email: <a href="mailto:info@aromx.trade">info@aromx.trade</a></li>
+<li>Telegram: <a href="https://t.me/tentennnn0719" rel="noopener">@tentennnn0719</a></li>
+</ul>
+<p>We answer in English and Khmer.</p>
 <p><a class="cta" href="{home}">{start}</a></p>
 """},
 "km": {"title": "អំពី AROM TRADE · កំណត់ហេតុជួញដូរ និងសញ្ញាសម្រាប់កម្ពុជា", "h1": "អំពី AROM TRADE",
@@ -280,6 +287,12 @@ TRUST["about"] = {"path": "/about", "type": "AboutPage",
 <li>ការភ្ជាប់ឈ្មួញកណ្តាលគ្រាន់តែអានគណនីរបស់អ្នក។ AROM Sync EA មិនអាចបើក កែ ឬបិទការជួញដូរបានទេ ហើយជម្រើសសម្រាប់ទូរស័ព្ទប្រើពាក្យសម្ងាត់អ្នកវិនិយោគ (អានតែប៉ុណ្ណោះ) ដែលយើងមិនដែលរក្សាទុក។</li>
 <li>គម្រោងត្រូវបង់ម្តង ៣០ ថ្ងៃតាម KHQR ហើយមិនបន្តដោយស្វ័យប្រវត្តិទេ។</li>
 </ul>
+<h2>ទាក់ទងយើង</h2>
+<ul>
+<li>អ៊ីមែល៖ <a href="mailto:info@aromx.trade">info@aromx.trade</a></li>
+<li>Telegram៖ <a href="https://t.me/tentennnn0719" rel="noopener">@tentennnn0719</a></li>
+</ul>
+<p>យើងឆ្លើយតបជាភាសាខ្មែរ និងអង់គ្លេស។</p>
 <p><a class="cta" href="{home}">{start}</a></p>
 """}}
 
@@ -522,7 +535,7 @@ def trust_page(name, lang):
 </main>
 <footer><div class="in">
 <span>AROM TRADE · {ESC(ui["edu"])}</span>
-<a href="{L("/about", lang)}"{nav_cur("/about")}>{ui["about"]}</a><a href="{L("/methodology", lang)}"{nav_cur("/methodology")}>{ui["method"]}</a><a href="{L("/track-record", lang)}"{nav_cur("/track-record")}>{ui["track"]}</a><a href="{L("/risk", lang)}"{nav_cur("/risk")}>{ui["risk"]}</a>
+<a href="{L("/about", lang)}"{nav_cur("/about")}>{ui["about"]}</a><a href="{L("/methodology", lang)}"{nav_cur("/methodology")}>{ui["method"]}</a><a href="{L("/track-record", lang)}"{nav_cur("/track-record")}>{ui["track"]}</a><a href="{L("/risk", lang)}"{nav_cur("/risk")}>{ui["risk"]}</a><a href="mailto:info@aromx.trade">info@aromx.trade</a><a href="https://t.me/tentennnn0719" rel="noopener">Telegram</a>
 </div></footer>
 {T.get("js", "")}</body>
 </html>
