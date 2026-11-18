@@ -7291,6 +7291,13 @@ const AiEng = (() => {
     m5:       {key:'m5',       base:300,  htf:900,   valid:900,   rr:[1, 2, 3],     session:true,  maxBars:48,  eName:'M5',  hName:'M15'},
     intraday: {key:'intraday', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1'},
     swing:    {key:'swing',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true},
+    // Extra Elite setups, SHADOW research (logged to ai_signals with their result, never posted, on the public symbols). Switch one on for members only after ~30+ signals hold up.
+    //   brt = breakout + retest of an HTF swing level in the trend direction · lsr = liquidity sweep reversal at an HTF swing · srb = Asia-range breakout in London / New York
+    intraday_brt: {key:'intraday_brt', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'brt', lvlAge:5 * 86400,  win:24, shadow:true, pub:true, one:true},
+    intraday_lsr: {key:'intraday_lsr', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'lsr', lvlAge:5 * 86400,  shadow:true, pub:true, one:true},
+    intraday_srb: {key:'intraday_srb', base:900,  htf:3600,  valid:3600,  rr:[1, 2, 3],     session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'srb', shadow:true, pub:true, one:true},
+    swing_brt:    {key:'swing_brt',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'brt', lvlAge:20 * 86400, win:24, shadow:true, pub:true, one:true},
+    swing_lsr:    {key:'swing_lsr',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'lsr', lvlAge:20 * 86400, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
     for(let i = 0; i < a.length; i++){ if(i < n - 1){ o[i] = null; continue; }
@@ -7322,7 +7329,7 @@ const AiEng = (() => {
     P.e20 = ema(c, 20); P.e50 = ema(c, 50); P.rsi = rsiF(c); P.atr = atrF(h, l, c);
     const hc = htf.map(x => x.c); P.h50 = ema(hc, 50); P.h200 = ema(hc, 200);
     if(M.daily){ P.d1 = agg(bars, 86400, M.base, 0.75); const dc = P.d1.map(x => x.c); P.dE = ema(dc, P.d1.length >= 60 ? 50 : 20); }
-    if(M.v3 || M.sweep) prepV3(P);
+    if(M.v3 || M.sweep || M.setup) prepV3(P);
     return P; }
 
   /* ---------- Scalping v3 helpers ----------
@@ -7462,7 +7469,92 @@ const AiEng = (() => {
 
   const SESSION = {from:7, to:17};          // UTC hours = 14:00–24:00 Cambodia (London + New York)
   // Evaluate the CLOSED candle at index i. news(tSec) -> true (clear) | false (blocked) | null (unknown)
+  // Higher-timeframe trend bias at closeT (same rule as Intraday / Swing: HTF close > EMA50 > EMA200 with EMA50 rising; swing also needs the daily close on the right side of its EMA)
+  function htfBias(P, closeT){
+    const M = P.M; let j = -1; for(let k = P.htf.length - 1; k >= 0; k--){ if(P.htf[k].t + M.htf <= closeT){ j = k; break; } }
+    let side = null;
+    if(j >= 3 && P.h200[j] != null){ const hc = P.htf[j].c, e50 = P.h50[j], e200 = P.h200[j], slope = e50 - P.h50[j - 3];
+      if(hc > e50 && e50 > e200 && slope > 0) side = 'BUY'; else if(hc < e50 && e50 < e200 && slope < 0) side = 'SELL'; }
+    if(side && M.daily && P.d1){ let d = -1; for(let k = P.d1.length - 1; k >= 0; k--){ if(P.d1[k].t + 86400 <= closeT){ d = k; break; } }
+      if(d >= 0 && P.dE[d] != null){ const dc = P.d1[d].c; if((side === 'BUY' && dc < P.dE[d]) || (side === 'SELL' && dc > P.dE[d])) side = null; } }
+    return side;
+  }
+  /* ---------- Extra setups (shadow research). Closes, highs and lows only, never opens. ----------
+     brt: an HTF swing high (buys) / low (sells) in the trend direction was closed through within the last `win` entry candles; price came back to it
+          (touch within 0.25 ATR in the last 3 candles) without closing back through; this candle closes away from it and beyond the previous close.
+     lsr: this candle trades through an HTF swing low (buys) / high (sells) that is also the extreme of the last 48 entry candles, by at least 0.1 ATR,
+          and closes back inside, after the previous close was inside.
+          Counter-trend is allowed; the HTF bias is recorded in feat so it can be studied.
+     srb: (intraday) the Asia range = 00:00–07:00 UTC; the first close beyond it between 07:00 and 16:00 UTC, stop at the middle of the range.
+     All: stop beyond the structure, risk 0.5–3 ATR (srb 0.5–4), session (intraday: London / New York), no high-impact USD news within ±30 min. */
+  function evalSetup(P, i, news){
+    const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A = P.atr[i];
+    const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key};
+    if(i < 120 || A == null || P.e50[i] == null){ out.grade = 'n/a'; return out; }
+    const add = (key, pass, val, core) => out.checks.push({key, pass:!!pass, val, core});
+    const bias = htfBias(P, closeT), tol = 0.25 * A, feat = {setup:M.setup, bias:bias || 'range'};
+    let side = null, stopBase = null, maxRisk = 3;
+    if(M.setup === 'brt' && bias){
+      const L = bias === 'BUY', lv = P.sw.filter(s => s.known <= closeT && s.side === (L ? 'H' : 'L') && s.t >= closeT - M.lvlAge).reverse();
+      for(const s of lv){
+        let bk = -1; for(let k = Math.max(1, i - M.win); k < i; k++){ if(m[k].t + M.base <= s.known) continue; if(L ? m[k].c > s.p && m[k - 1].c <= s.p : m[k].c < s.p && m[k - 1].c >= s.p){ bk = k; break; } }
+        if(bk < 0) continue;
+        let held = true, ext = L ? Infinity : -Infinity, fresh = false;
+        for(let k = bk + 1; k <= i; k++){ ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h); if(L ? m[k].c < s.p - tol : m[k].c > s.p + tol){ held = false; break; }
+          if(k >= i - 3 && (L ? m[k].l <= s.p + tol : m[k].h >= s.p - tol)) fresh = true; }
+        if(!held || !fresh) continue;
+        if(L ? b.c > s.p && b.c > m[i - 1].c : b.c < s.p && b.c < m[i - 1].c){ side = bias; stopBase = L ? Math.min(ext, s.p - tol) : Math.max(ext, s.p + tol); feat.lvlAgeH = +((closeT - s.t) / 3600).toFixed(1); feat.brkBars = i - bk; break; }
+      }
+    }
+    if(M.setup === 'lsr'){
+      const lv = P.sw.filter(s => s.known <= closeT && s.t >= closeT - M.lvlAge).reverse();
+      for(const s of lv){
+        const L = s.side === 'L';
+        // liquidity sits at the obvious extreme: the swing must be the low (buys) / high (sells) of the previous 48 entry candles
+        let ex = L ? Infinity : -Infinity; for(let k = Math.max(0, i - 48); k < i; k++) ex = L ? Math.min(ex, m[k].l) : Math.max(ex, m[k].h);
+        if(L ? ex < s.p - 0.1 * A : ex > s.p + 0.1 * A) continue;
+        if(L ? m[i - 1].c > s.p && b.l < s.p - 0.1 * A && b.c > s.p : m[i - 1].c < s.p && b.h > s.p + 0.1 * A && b.c < s.p){
+          side = L ? 'BUY' : 'SELL'; stopBase = L ? b.l : b.h; feat.sweepA = +((L ? s.p - b.l : b.h - s.p) / A).toFixed(2); feat.lvlAgeH = +((closeT - s.t) / 3600).toFixed(1); feat.withBias = bias === side; break; }
+      }
+    }
+    if(M.setup === 'srb'){
+      maxRisk = 4;
+      const day0 = Math.floor(b.t / 86400) * 86400, hr = (b.t + M.base - day0) / 3600;
+      if(hr > 7 && hr <= 16){
+        let hi = -Infinity, lo = Infinity, nA = 0, broke = false;
+        for(let k = i - 1; k >= 0 && m[k].t >= day0; k--){ if(m[k].t < day0 + 7 * 3600){ hi = Math.max(hi, m[k].h); lo = Math.min(lo, m[k].l); nA++; } }
+        if(nA >= 20){
+          for(let k = i - 1; k >= 0 && m[k].t >= day0 + 7 * 3600; k--) if(m[k].c > hi || m[k].c < lo) broke = true;   // first break of the day only
+          const w = hi - lo;
+          if(!broke && w >= 2 * A && w <= 12 * A){
+            if(b.c > hi){ side = 'BUY'; stopBase = (hi + lo) / 2; } else if(b.c < lo){ side = 'SELL'; stopBase = (hi + lo) / 2; }
+            feat.rangeA = +(w / A).toFixed(2); feat.withBias = !!side && bias === side;
+          }
+        }
+      }
+    }
+    out.side = side; const L = side === 'BUY';
+    add('bias', M.setup !== 'brt' || !!bias, bias || 'range', true);
+    add('setup', !!side, side ? M.setup : null, true);
+    if(!side){ out.grade = 'No setup'; return out; }
+    const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
+    add('session', (P.allWeek || (wd >= 1 && wd <= 5)) && (!M.session || (hr >= SESSION.from && hr < SESSION.to)), M.session ? null : 'any', true);
+    const nz = news ? news(closeT) : true;
+    add('news', nz === true, nz === null ? 'unknown' : null, true);
+    const entry = b.c, sl = M.setup === 'srb' ? stopBase : L ? stopBase - 0.25 * A : stopBase + 0.25 * A, risk = Math.abs(entry - sl);
+    add('risk', (L ? sl < entry : sl > entry) && risk >= 0.5 * A && risk <= maxRisk * A, +(risk / A).toFixed(2), true);
+    out.score = out.checks.filter(x => x.pass).length; out.max = out.checks.length;
+    out.grade = out.checks.every(x => x.pass) ? 'A+' : 'C';
+    if(out.grade === 'A+'){
+      const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
+      out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:f(entry + R * M.rr[2] * risk),
+        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:M.setup, mode:M.key, rr:M.rr, maxBars:M.maxBars,
+        feat:{...feat, riskA:+(risk / A).toFixed(2), hr:d.getUTCHours()}};
+    }
+    return out;
+  }
   function evalAt(P, i, news){
+    if(P.M && P.M.setup) return evalSetup(P, i, news);
     if(P.M && P.M.sweep) return evalSweep(P, i, news);
     if(P.M && P.M.v3) return evalV3(P, i, news);
     const M = P.M || MODES.m5, m = P.m, b = m[i], closeT = b.t + M.base, A = P.atr[i];
