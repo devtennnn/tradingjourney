@@ -7410,6 +7410,12 @@ const AiEng = (() => {
     intraday_qm:   {key:'intraday_qm',   base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'qm',   lvlAge:5 * 86400,  shadow:true, pub:true, one:true},
     swing_msnr:    {key:'swing_msnr',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'msnr', lvlAge:20 * 86400, shadow:true, pub:true, one:true},
     swing_qm:      {key:'swing_qm',      base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'qm',   lvlAge:20 * 86400, shadow:true, pub:true, one:true},
+    // Classic chart patterns, SHADOW research: head & shoulders (+ inverse), triple / double top & bottom, ascending / descending / symmetrical triangle,
+    // rising / falling wedge, bull / bear flag. Pivots on the entry timeframe. Intraday enters on the first retest of the broken line, swing on the breakout candle.
+    // Backtest (after spread): all patterns together about break-even (M15 retest +0.13R n=30 gold / +0.07R n=37 BTC; H1 break −0.08R n=274 gold / −0.07R n=356 BTC).
+    // Only candidate: BTC H1 symmetrical triangle breakout +0.39R n=82 (95% 0.03–0.77), but gold lost on the same pattern, so it must prove itself here first.
+    intraday_pat:  {key:'intraday_pat',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'pat', entry:'retest', patWin:160, patAge:24, shadow:true, pub:true, one:true},
+    swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
     for(let i = 0; i < a.length; i++){ if(i < n - 1){ o[i] = null; continue; }
@@ -7443,7 +7449,104 @@ const AiEng = (() => {
     if(M.daily){ P.d1 = agg(bars, 86400, M.base, 0.75); const dc = P.d1.map(x => x.c); P.dE = ema(dc, P.d1.length >= 60 ? 50 : 20); }
     if(M.v3 || M.sweep || M.setup) prepV3(P);
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
+    if(M.setup === 'pat') prepPat(P);
     return P; }
+  /* ---------- Classic chart patterns (entry timeframe) ----------
+     Pivots: a high (low) above (below) the 3 candles on each side; known once the 3 right-hand candles have closed. Consecutive pivots on the same side
+     keep the extreme, so the sequence alternates high / low. A pattern is read from the last 3–5 alternating pivots and must still be young (patAge candles). */
+  function prepPat(P){
+    const m = P.m, k = 3; P.pv = []; P.pe = {};
+    for(let i = k; i < m.length - k; i++){
+      let hi = true, lo = true;
+      for(let j = 1; j <= k; j++){ if(!(m[i].h > m[i - j].h && m[i].h >= m[i + j].h)) hi = false; if(!(m[i].l < m[i - j].l && m[i].l <= m[i + j].l)) lo = false; }
+      if(hi) P.pv.push({i, p:m[i].h, side:'H', known:i + k});
+      if(lo) P.pv.push({i, p:m[i].l, side:'L', known:i + k});
+    }
+  }
+  function patSeq(P, n){
+    const M = P.M, out = [];
+    for(const x of P.pv){ if(x.known > n) break; if(x.i < n - M.patWin) continue; const q = out[out.length - 1];
+      if(q && q.side === x.side){ if(x.side === 'H' ? x.p >= q.p : x.p <= q.p) out[out.length - 1] = x; } else out.push(x); }
+    return out;
+  }
+  // A pattern whose line is first CLOSED through on candle n -> {side, pat, line(x), stopBase, height} (cached)
+  function patEvent(P, n){
+    if(n in P.pe) return P.pe[n];
+    const M = P.M, m = P.m, A = P.atr[n]; let ev = null;
+    if(A && n > 30){
+      const seq = patSeq(P, n), c = m[n].c, c1 = m[n - 1].c;
+      const last = seq[seq.length - 1];
+      if(last && n - last.i <= M.patAge){
+        const s5 = seq.slice(-5), s4 = seq.slice(-4), s3 = seq.slice(-3);
+        const brk = (L, f) => L ? c > f(n) + 0.05 * A && c1 <= f(n - 1) : c < f(n) - 0.05 * A && c1 >= f(n - 1);
+        const quiet = (L, f, from) => { for(let x = from + 1; x < n; x++) if(L ? m[x].c > f(x) : m[x].c < f(x)) return false; return true; };
+        const line = (a, b) => x => a.p + (b.p - a.p) * (x - a.i) / (b.i - a.i);
+        // head & shoulders (top: H L H L H) / inverse (L H L H L): neckline through the two troughs (peaks)
+        if(!ev && s5.length === 5 && s5[4].side === last.side){
+          const top = last.side === 'H', [ls, t1, hd, t2, rs] = s5, nk = line(t1, t2), dir = top ? 1 : -1;
+          if(dir * (hd.p - Math.max(dir * ls.p, dir * rs.p) * dir) >= 0.5 * A && Math.abs(ls.p - rs.p) <= 1.2 * A
+             && dir * (ls.p - nk(ls.i)) >= A && dir * (rs.p - nk(rs.i)) >= A && brk(!top, nk) && quiet(!top, nk, rs.i))
+            ev = {side:top ? 'SELL' : 'BUY', pat:top ? 'hs' : 'ihs', line:nk, stopBase:rs.p, height:Math.abs(hd.p - nk(hd.i))};
+        }
+        // triple top / bottom: three peaks (troughs) within 0.8 ATR, neckline = the lowest trough (highest peak) between them
+        if(!ev && s5.length === 5 && s5[4].side === last.side){
+          const top = last.side === 'H', pk = [s5[0], s5[2], s5[4]], tr = [s5[1], s5[3]];
+          const ps = pk.map(x => x.p), spread = Math.max(...ps) - Math.min(...ps), nkP = top ? Math.min(tr[0].p, tr[1].p) : Math.max(tr[0].p, tr[1].p), nk = () => nkP;
+          const ext = top ? Math.max(...ps) : Math.min(...ps);
+          if(spread <= 0.8 * A && Math.abs(ext - nkP) >= 1.5 * A && brk(!top, nk) && quiet(!top, nk, s5[4].i))
+            ev = {side:top ? 'SELL' : 'BUY', pat:top ? 'ttop' : 'tbot', line:nk, stopBase:ext, height:Math.abs(ext - nkP)};
+        }
+        // double top / bottom
+        if(!ev && s3.length === 3 && s3[2].side === last.side){
+          const top = last.side === 'H', [a, t, b] = s3, nkP = t.p, nk = () => nkP, ext = top ? Math.max(a.p, b.p) : Math.min(a.p, b.p);
+          if(Math.abs(a.p - b.p) <= 0.5 * A && Math.abs(ext - nkP) >= 1.5 * A && b.i - a.i >= 8 && brk(!top, nk) && quiet(!top, nk, b.i))
+            ev = {side:top ? 'SELL' : 'BUY', pat:top ? 'dtop' : 'dbot', line:nk, stopBase:ext, height:Math.abs(ext - nkP)};
+        }
+        // triangles, wedges, flags: lines through the last two pivot highs and the last two pivot lows
+        if(!ev && s4.length === 4){
+          const hs = s4.filter(x => x.side === 'H'), ls = s4.filter(x => x.side === 'L'), up = line(hs[0], hs[1]), lo = line(ls[0], ls[1]);
+          const st = s4[0].i, span = n - st, w0 = up(st) - lo(st), w1 = up(n) - lo(n);
+          let inside = span >= 10 && w0 >= 1.5 * A && w1 > 0.2 * A;
+          for(let x = st + 1; inside && x < n; x++) if(m[x].c > up(x) + 0.3 * A || m[x].c < lo(x) - 0.3 * A) inside = false;
+          if(inside){
+            const du = (up(n) - up(st)) / A, dl = (lo(n) - lo(st)) / A, flat = v => Math.abs(v) < 0.6, conv = w1 < 0.8 * w0;
+            let pat = null, dirs = [];
+            if(flat(du) && dl >= 0.6){ pat = 'asctri'; dirs = ['BUY']; }
+            else if(flat(dl) && du <= -0.6){ pat = 'desctri'; dirs = ['SELL']; }
+            else if(du <= -0.6 && dl >= 0.6){ pat = 'symtri'; dirs = ['BUY', 'SELL']; }
+            else if(du >= 0.6 && dl >= 0.6 && conv){ pat = 'risewedge'; dirs = ['SELL']; }
+            else if(du <= -0.6 && dl <= -0.6 && conv){ pat = 'fallwedge'; dirs = ['BUY']; }
+            else if(Math.abs(du - dl) < 0.6 && Math.abs(du) >= 0.6 && st >= 12){
+              const pole = (m[st].c - m[st - 12].c) / A;
+              if(pole >= 3 && du < 0){ pat = 'bullflag'; dirs = ['BUY']; } else if(pole <= -3 && du > 0){ pat = 'bearflag'; dirs = ['SELL']; }
+            }
+            for(const d of dirs){ const L = d === 'BUY', f = L ? up : lo;
+              if(brk(L, f) && quiet(L, f, s4[3].i)){ const opp = [...s4].reverse().find(x => x.side === (L ? 'L' : 'H'));
+                ev = {side:d, pat, line:f, stopBase:opp.p, height:w0}; break; } }
+          }
+        }
+      }
+    }
+    if(ev) ev.n = n;
+    P.pe[n] = ev; return ev;
+  }
+  // First retest of a line broken in the last 12 candles: price came back within 0.25 ATR (last 3 candles) without closing back through it, and this candle closes away
+  function patRetest(P, i){
+    const m = P.m, A = P.atr[i], tol = 0.25 * A, b = m[i];
+    for(let k = i - 2; k >= Math.max(31, i - 12); k--){
+      const ev = patEvent(P, k); if(!ev) continue;
+      const L = ev.side === 'BUY', f = ev.line; let held = true, touch = false, ext = L ? Infinity : -Infinity;
+      for(let x = k + 1; x <= i; x++){ ext = L ? Math.min(ext, m[x].l) : Math.max(ext, m[x].h);
+        if(L ? m[x].c < f(x) - tol : m[x].c > f(x) + tol){ held = false; break; }
+        if(x >= i - 3 && (L ? m[x].l <= f(x) + tol : m[x].h >= f(x) - tol)) touch = true; }
+      for(let x = k + 1; held && x < i; x++){ const r = patEvent(P, x); if(r) held = false; }   // a newer pattern replaces it
+      if(!held || !touch) continue;
+      if(L ? b.c > f(i) && b.c > m[i - 1].c : b.c < f(i) && b.c < m[i - 1].c)
+        return {...ev, stopBase:L ? Math.min(ext, f(i) - tol) : Math.max(ext, f(i) + tol), brkBars:i - k};
+      return null;
+    }
+    return null;
+  }
   /* MSNR line-chart levels on the higher timeframe, from CLOSES only (2 closes each side, known once the 2 right-hand candles have closed).
      A-level = peak of an A shape (resistance), V-level = bottom of a V shape (support). P.legs = alternating A / V turning points (QM structure). */
   function prepLine(P){
@@ -7678,6 +7781,11 @@ const AiEng = (() => {
         if(touchReclaim(m, i, M.base, s.known, s.p, sup, A)){
           side = bias; stopBase = sup ? Math.min(s.p, b.l, m[i - 1].l) : Math.max(s.p, b.h, m[i - 1].h); feat.lvl = s.side; feat.lvlAgeH = +((closeT - s.t) / 3600).toFixed(1); break; }
       }
+    }
+    if(M.setup === 'pat'){
+      maxRisk = 4;
+      const ev = M.entry === 'break' ? patEvent(P, i) : patRetest(P, i);
+      if(ev){ side = ev.side; stopBase = ev.stopBase; feat.pat = ev.pat; feat.mmA = +(ev.height / A).toFixed(2); feat.mm = ev.height; feat.withBias = bias === side; if(ev.brkBars) feat.brkBars = ev.brkBars; }
     }
     if(M.setup === 'qm'){
       const legs = P.legs.filter(x => x.known <= closeT);
