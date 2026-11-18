@@ -2544,6 +2544,41 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
 .rf-feed .lv .rs{margin-left:auto;color:var(--r2)}
 @media(max-width:860px){.rf-grid{grid-template-columns:1fr;grid-template-areas:"prog" "link" "rules" "list" "sig"}.rf-prog{flex-direction:column;align-items:flex-start}.rf-stats{grid-template-columns:repeat(2,1fr)}.rf-stats div:nth-child(3){border-left:0;padding-left:0}}
 @media(prefers-reduced-motion:reduce){.rf-ring .val{transition:none}}
+/* ---- AI Desk: setup scanner + live track record ---- */
+.scn{margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,#132920,#0d1c16)}
+.scn-h,.tr-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.scn-h b,.tr-h b{font-size:13px;font-weight:800}
+.scn-meta,.tr-sub{font-size:11.5px;color:var(--muted)}
+.scn-grid{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:6px}
+.scn-grid .hd{font-size:11.5px;color:var(--muted);text-align:center;align-self:end}
+.scn-grid .rw{font-size:12px;font-weight:700;align-self:center;padding-right:4px}
+.scn-c{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;min-height:52px;border-radius:11px;border:1px solid #1f3a2c;background:#0b1812;color:var(--text);font:inherit;cursor:pointer;transition:border-color .2s}
+.scn-c:hover{border-color:rgba(185,242,90,.5)}.scn-c:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.scn-c.on{border-color:var(--lime);background:#11241a}
+.scn-c .g{font-weight:800;font-size:15px;line-height:1.1}.scn-c .d{font-size:10.5px;color:var(--muted)}
+.scn-c.gAp .g{color:var(--lime)}.scn-c.gA .g{color:#7fe0b0}.scn-c.gB .g{color:#f5c96a}.scn-c.gN .g{color:#6f8a7a}
+.scn-c .buy{color:#2ee6a0}.scn-c .sell{color:#ff5d73}
+.scn-leg{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45}
+.tr-box{margin:14px 0 6px;padding:14px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,#132920,#0d1c16)}
+.tr-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 12px}
+.tr-kpi{padding:10px 12px;border-radius:12px;background:#0b1812;border:1px solid #1f3a2c;min-width:0}
+.tr-kpi small{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}.tr-kpi b{font-size:18px;font-variant-numeric:tabular-nums}
+.tr-tbl{width:100%;min-width:0!important;border-collapse:collapse;font-size:12.5px}
+.tr-tbl th,.tr-tbl td{padding:7px 4px;border-bottom:1px solid #1f3a2c;text-align:right;font-variant-numeric:tabular-nums}
+.tr-tbl th{font-size:11px;color:var(--muted);font-weight:700}.tr-tbl th:first-child,.tr-tbl td:first-child{text-align:left}
+.tr-k{font-size:11.5px;color:var(--muted);margin:12px 0 6px}
+.tr-recent{display:flex;gap:6px;flex-wrap:wrap}
+.tr-pill{font-size:11.5px;padding:4px 9px;border-radius:999px;border:1px solid #1f3a2c;background:#0b1812;font-variant-numeric:tabular-nums}
+.tr-pos{color:#2ee6a0}.tr-neg{color:#ff5d73}
+.tr-note{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+.na-quiet .na-sum{display:none}
+@media(max-width:700px){
+  .an-desk{padding:16px 16px 14px!important;margin-bottom:8px!important}.an-desk .an-h1{font-size:24px;margin-top:8px}
+  #termSym,#termState{display:none}
+  .ai-wait{padding:4px}.ai-wait .rad{width:34px;height:34px;margin-bottom:6px}.ai-wait p{display:none}.ai-wait h4{font-size:13.5px;margin:0}
+  .scn{padding:10px}.scn-grid{gap:5px}.scn-c{min-height:46px;padding:6px 2px}.scn-grid .rw{font-size:11px}
+  .tr-top{grid-template-columns:repeat(2,minmax(0,1fr))}.tr-kpi b{font-size:16px}
+}
 </style>
 </head>
 <body data-page="pricing">
@@ -3021,6 +3056,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
       </div>
     </div>
     <div class="na-body">
+      <div class="scn" id="scnBox"><div class="scn-h"><b data-i18n="scnT">Setup scanner</b><span class="scn-meta" id="scnMeta"></span></div><div class="scn-grid" id="scnGrid"></div><div class="scn-leg" data-i18n="scnLegend">A+ = signal now · A = almost · B / C = forming · — = no clear trend. Tap a cell to open it.</div></div>
       <div class="ai-cockpit">
       <div class="term" id="term">
         <div class="term-top">
@@ -3101,6 +3137,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
       <div class="ai-hist" id="aiHist"></div>
     </div>
   </div>
+  <div class="tr-box" id="trBox"><div class="tr-h"><b data-i18n="trT">Live track record</b><span class="tr-sub" data-i18n="trSub">Signals the AROM Telegram bot sent in the last 30 days, with their real results</span></div><div id="trBody"></div></div>
   <div class="na-disc" data-i18n="aiDisc">Algorithmic analysis of real market candles, not financial advice. Scalping is high risk; signals can and do lose. Past setups do not guarantee future results. Always confirm on your own chart, use your broker's prices and risk only what you can afford to lose.</div>
 </section>
 <!-- Trade Finder & Timing (Elite): scanner, news monitor, entry timer, exit planner on real candles -->
@@ -4063,6 +4100,7 @@ let currentUser = null;
 /* ---------- 2. Bilingual Translations (EN / KM) ---------- */
 const T = {
   en: {
+    scnT:"Setup scanner",scnLegend:"A+ = signal now · A = almost · B / C = forming · — = no clear trend. Tap a cell to open it.",scnRange:"no trend",scnErr:"no data",scnBusy:"Scanning…",scnUpd:"Updated",trT:"Live track record",trSub:"Signals the AROM Telegram bot sent in the last 30 days, with their real results",trSignals:"Signals",trWin:"Win rate",trAvg:"Average per trade",trTotal:"Total",trMkt:"Market",trN:"Trades",trWinS:"Win",trAvgS:"Avg",trTotS:"Total",trRecent:"Last 10 results",trSince:"Since {d}.",trSmall:"Small sample: too early to judge.",trNote:"R = multiples of the risk; half closed at TP1 with the stop moved to entry. Before spread and fees. Past results do not guarantee future results.",trLoading:"Loading results…",trErr:"Results are unavailable right now.",
     tipAccount:"Switch account workspace",tipPre:"Pre-market routine checklist",tipSummary:"Executive summary card",tipCalc:"Position size & risk calculator",tipSettings:"Settings",tipLang:"Switch language (EN / ខ្មែរ)",tipLogin:"Log in or create an account",tipLogout:"Sign out",tipSynced:"Cloud synced",tipAdd:"Add a trade (N)",
     brandSub:"TRADING JOURNEY",workspace:"PERSONAL WORKSPACE",addTrade:"Add trade",settings:"Settings",allAccounts:"All accounts",
     authBtn:"Log In",logout:"Sign Out",authLogIn:"Log In",authSignup:"Sign Up",tabLogIn:"Log In",tabSignup:"Sign Up",lEmail:"Email Address",lPassword:"Password",
@@ -4125,6 +4163,7 @@ const T = {
     limitHit:"Daily loss limit reached: today's P/L is {pl} (limit {lim}). Stop trading and protect your capital."
   },
   km: {
+    scnT:"ម៉ាស៊ីនស្កេនការរៀបចំ",scnLegend:"A+ = មានសញ្ញាឥឡូវ · A = ជិតហើយ · B / C = កំពុងរៀបចំ · — = គ្មាននិន្នាការច្បាស់។ ចុចលើប្រអប់ដើម្បីបើក។",scnRange:"គ្មាននិន្នាការ",scnErr:"គ្មានទិន្នន័យ",scnBusy:"កំពុងស្កេន…",scnUpd:"ធ្វើបច្ចុប្បន្នភាព",trT:"លទ្ធផលពិតប្រាកដ",trSub:"សញ្ញាដែល bot Telegram របស់ AROM បានផ្ញើក្នុង ៣០ ថ្ងៃចុងក្រោយ ជាមួយលទ្ធផលពិត",trSignals:"សញ្ញា",trWin:"អត្រាឈ្នះ",trAvg:"ជាមធ្យមក្នុងមួយការជួញដូរ",trTotal:"សរុប",trMkt:"ទីផ្សារ",trN:"ការជួញដូរ",trWinS:"ឈ្នះ",trAvgS:"មធ្យម",trTotS:"សរុប",trRecent:"លទ្ធផល ១០ ចុងក្រោយ",trSince:"ចាប់ពី {d}។",trSmall:"គំរូតូច៖ នៅដំបូងពេកក្នុងការវាយតម្លៃ។",trNote:"R = ចំនួនដងនៃហានិភ័យ; បិទពាក់កណ្តាលនៅ TP1 ហើយផ្លាស់ Stop ទៅតម្លៃចូល។ មិនទាន់គិត spread និងថ្លៃសេវា។ លទ្ធផលអតីតកាលមិនធានាលទ្ធផលអនាគតទេ។",trLoading:"កំពុងផ្ទុកលទ្ធផល…",trErr:"មិនអាចបង្ហាញលទ្ធផលបានឥឡូវនេះទេ។",
     tipAccount:"ប្តូរគណនី",tipPre:"បញ្ជីពិនិត្យមុនបើកទីផ្សារ",tipSummary:"កាតសង្ខេបលទ្ធផល",tipCalc:"ម៉ាស៊ីនគណនាទំហំ Position និងហានិភ័យ",tipSettings:"ការកំណត់",tipLang:"ប្តូរភាសា (EN / ខ្មែរ)",tipLogin:"ចូលគណនី ឬបង្កើតគណនី",tipLogout:"ចាកចេញ",tipSynced:"បានធ្វើសមកាលកម្មលើ Cloud",tipAdd:"បន្ថែម Trade (N)",
     brandSub:"ទិនានុប្បវត្តិជួញដូរ",workspace:"កន្លែងធ្វើការផ្ទាល់ខ្លួន",addTrade:"បន្ថែម Trade",settings:"ការកំណត់",allAccounts:"គណនីទាំងអស់",
     authBtn:"ចូលគណនី",logout:"ចាកចេញ",authLogIn:"ចូលគណនី",authSignup:"ចុះឈ្មោះ",tabLogIn:"ចូលគណនី",tabSignup:"ចុះឈ្មោះ",lEmail:"អ៊ីមែល",lPassword:"ពាក្យសម្ងាត់",
@@ -6840,6 +6879,7 @@ function renderNewsAnalysis(){
   const strip = x => x.replace(/^<div class="na-grp">[\s\S]*?<\/div>/, '');
   const ordered = (up_.length ? [`<div class="na-grp">${esc(t('naUpcoming'))}</div>`].concat(up_.map(strip)) : []).concat(dn_.length ? [`<div class="na-grp">${esc(t('naReleased'))}</div>`].concat(dn_.map(strip).reverse()) : []);
   list.innerHTML = rows.length ? ordered.join('') : `<div class="news-empty">${esc(t('naNone'))}</div>`;
+  { const w = document.getElementById('naWrap'); if(w) w.classList.toggle('na-quiet', !rows.length); }
   // Next release card
   const nx = ev.find(e => e.ms > nowMs - 60000), nb = $('naNext');
   if(nb){ const NLk = newsLock('XAUUSD');
@@ -7680,6 +7720,7 @@ function modeTxt(x){
     .replace(/≥ 1\.5R/g, '≥ ' + Math.max(1.5, rr[0]) + 'R');
 }
 function modeApplyTexts(){
+  try{ scnRender(); trRender(); }catch(e){}
   document.querySelectorAll('#aiPanel [data-i18n], #wfPanel [data-i18n], #dkTabs [data-i18n]').forEach(e => { const k = e.dataset.i18n;
     if(k === 'aiSub') e.textContent = t('aiSub_' + AI.mode); else e.textContent = modeTxt(t(k)); });
   document.querySelectorAll('#aiMode button, #aiMode2 button').forEach(b => { b.classList.toggle('on', b.dataset.m === AI.mode); b.setAttribute('aria-pressed', b.dataset.m === AI.mode); const off = !!MODE_OFF[b.dataset.m]; b.classList.toggle('m-off', off); b.setAttribute('aria-disabled', off); if(off) b.title = t('modeOffToast'); });
@@ -7724,7 +7765,7 @@ async function aiFetch(){
     aiNotify();
     setTimeout(liveTick, 300);
   }catch(e){ AI.state = 'error'; AI.data = null; AI.last = null; AI.hist = []; }
-  aiRender(); aiSchedule();
+  aiRender(); aiSchedule(); try{ scnRun(); }catch(e){}
 }
 function aiSchedule(){
   clearTimeout(AI.timer);
@@ -9977,6 +10018,69 @@ if($('rfPage')){
 const PAGE = document.body.dataset.page || 'main';
 const PAGE_URL = {main:'/', analysis:'/analysis', journey:'/journey', news:'/news', refer:'/refer'};
 const SEC_PAGE = id => { const el = document.getElementById(id); if(!el) return 'main'; if(el.closest('.pg-jr')) return 'journey'; if(el.closest('.pg-nw')) return 'news'; return null; };
+/* ---------- Setup scanner (Elite): every market x strategy at a glance. Uses the same cached /api/candles the bot requests, so it adds no provider calls ---------- */
+const SCN = {res:{}, busy:false, at:0, timer:null};
+const SCN_SYMS = ['XAUUSD','BTCUSD','NQ'], SCN_MODES = ['scalp','intraday','swing'];
+async function scnRun(force){
+  if(typeof Prem === 'undefined' || !Prem.elite || SCN.busy || !$('scnGrid')) return;
+  if(!force && SCN.at && Date.now() - SCN.at < 240000){ scnRender(); return; }
+  SCN.busy = true; scnRender();
+  const cache = {}, jobs = []; SCN_SYMS.forEach(s => SCN_MODES.forEach(m => jobs.push([s, m])));
+  let k = 0;
+  const worker = async () => { while(k < jobs.length){ const [s, m] = jobs[k++], M = AiEng.MODES[m], tf = M.base / 60, key = s + '|' + tf;
+    try{ cache[key] = cache[key] || fetch('/api/candles?symbol=' + s + '&tf=' + tf).then(r => r.ok ? r.json() : null).catch(() => null);
+      const j = await cache[key]; if(!j || !Array.isArray(j.candles) || j.candles.length < 300) throw 0;
+      const P = AiEng.prep(j.candles, null, m, s), ev = AiEng.evalAt(P, j.candles.length - 1, aiNews);
+      SCN.res[s + '|' + m] = {g:ev.grade, side:ev.side};
+    }catch(e){ SCN.res[s + '|' + m] = {g:'err'}; }
+    scnRender(); } };
+  await Promise.all([worker(), worker(), worker()]);
+  SCN.busy = false; SCN.at = Date.now(); scnRender();
+  clearTimeout(SCN.timer); SCN.timer = setTimeout(() => { if(document.visibilityState === 'visible') scnRun(true); else SCN.at = 0; }, 300000);
+}
+function scnRender(){
+  const g = $('scnGrid'); if(!g) return;
+  const cell = (s, m) => { const r = SCN.res[s + '|' + m], on = s === AI.sym && m === AI.mode;
+    const gr = !r ? '…' : r.g === 'err' ? '!' : ['A+','A','B','C'].includes(r.g) ? r.g : '—';
+    const cls = r && r.g === 'A+' ? 'gAp' : r && r.g === 'A' ? 'gA' : r && r.g === 'B' ? 'gB' : 'gN';
+    const d = !r ? '' : r.g === 'err' ? esc(t('scnErr')) : r.side ? `<span class="${r.side === 'BUY' ? 'buy' : 'sell'}">${esc(r.side)}</span>` : esc(t('scnRange'));
+    return `<button type="button" class="scn-c ${cls}${on ? ' on' : ''}" data-s="${s}" data-m="${m}" aria-pressed="${on}" aria-label="${s} ${esc(t('mode_' + m))}: ${gr}"><span class="g">${gr}</span><span class="d">${d}</span></button>`; };
+  g.innerHTML = '<span></span>' + SCN_MODES.map(m => `<span class="hd">${esc(t('mode_' + m))}</span>`).join('') + SCN_SYMS.map(s => `<span class="rw">${s}</span>` + SCN_MODES.map(m => cell(s, m)).join('')).join('');
+  const mt = $('scnMeta'); if(mt) mt.textContent = SCN.busy ? t('scnBusy') : SCN.at ? t('scnUpd') + ' ' + aiHM.format(new Date(SCN.at)) + ' ICT' : '';
+}
+function scnOpen(s, m){
+  if(s !== AI.sym){ AI.sym = s; AI.data = null; AI.P = null; AI.last = null; AI.hist = []; if(typeof TERM !== 'undefined'){ TERM.off = 0; TERM.yAuto = true; TERM.key = ''; } }
+  if(m !== AI.mode) aiSetMode(m); else aiFetch();
+  scnRender();
+}
+/* ---------- Live track record: real results of the signals the Telegram bot sent (database function signal_track_record, aggregates only) ---------- */
+const TR = {data:null, at:0, busy:false, err:false};
+async function trLoad(){
+  if(!$('trBox')) return;
+  if(TR.busy || (TR.data && Date.now() - TR.at < 600000)){ trRender(); return; }
+  if(!supabaseClient){ TR.err = true; trRender(); return; }
+  TR.busy = true; trRender();
+  try{ const {data, error} = await supabaseClient.rpc('signal_track_record', {p_days:30}); if(error || !data) throw error || 0; TR.data = data; TR.at = Date.now(); TR.err = false; }catch(e){ TR.err = true; }
+  TR.busy = false; trRender();
+}
+function trRender(){
+  const body = $('trBody'); if(!body) return; const d = TR.data;
+  if(!d){ body.innerHTML = `<p class="tr-note">${esc(t(TR.err ? 'trErr' : 'trLoading'))}</p>`; return; }
+  const tot = d.total || {}, n = tot.n || 0, num = v => v == null ? null : +v;
+  const R = v => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + 'R';
+  const RT = v => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + 'R';
+  const cls = v => v > 0 ? 'tr-pos' : v < 0 ? 'tr-neg' : '';
+  const kp = (k, v, c) => `<div class="tr-kpi"><small>${esc(t(k))}</small><b class="${c || ''}">${v}</b></div>`;
+  const since = d.since ? aiICT.format(new Date(d.since)).split(',')[0] : '—';
+  const rows = (d.rows || []).map(r => `<tr><td>${esc(r.symbol)} · ${esc(t('mode_' + r.mode))}</td><td>${r.n}</td><td>${r.n ? Math.round(100 * r.wins / r.n) + '%' : '—'}</td><td class="${cls(num(r.avg_r))}">${R(num(r.avg_r))}</td><td class="${cls(num(r.total_r))}">${RT(num(r.total_r))}</td></tr>`).join('');
+  const rec = (d.recent || []).slice(0, 10).map(x => `<span class="tr-pill ${cls(num(x.r))}">${esc(x.symbol)} ${esc(x.side)} ${R(num(x.r))}</span>`).join('');
+  body.innerHTML = `<div class="tr-top">${kp('trSignals', n)}${kp('trWin', n ? Math.round(100 * tot.wins / n) + '%' : '—')}${kp('trAvg', R(num(tot.avg_r)), cls(num(tot.avg_r)))}${kp('trTotal', RT(num(tot.total_r)), cls(num(tot.total_r)))}</div>`
+    + (rows ? `<table class="tr-tbl"><thead><tr><th>${esc(t('trMkt'))}</th><th>${esc(t('trN'))}</th><th>${esc(t('trWinS'))}</th><th>${esc(t('trAvgS'))}</th><th>${esc(t('trTotS'))}</th></tr></thead><tbody>${rows}</tbody></table>` : '')
+    + (rec ? `<div class="tr-k">${esc(t('trRecent'))}</div><div class="tr-recent">${rec}</div>` : '')
+    + `<p class="tr-note">${esc(t('trSince').replace('{d}', since))} ${n < 30 ? esc(t('trSmall')) + ' ' : ''}${esc(t('trNote'))}</p>`;
+}
+setTimeout(() => { try{ trLoad(); }catch(e){} try{ const g = $('scnGrid'); if(g) g.addEventListener('click', e => { const b = e.target.closest('button[data-s]'); if(b) scnOpen(b.dataset.s, b.dataset.m); }); scnRender(); }catch(e){} }, 0);
+
 function goSection(id){
   const el = document.getElementById(id);
   if(el && el.offsetParent !== null){ const tb = $('dkTabs'), extra = tb && tb.offsetParent !== null && id !== 'anHero' ? tb.offsetHeight + 10 : 0; window.scrollTo({top: el.getBoundingClientRect().top + scrollY - $('topNav').offsetHeight - 18 - extra, behavior:'smooth'}); return; }
