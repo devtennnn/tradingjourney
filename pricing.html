@@ -7338,6 +7338,11 @@ const AiEng = (() => {
     intraday_srb: {key:'intraday_srb', base:900,  htf:3600,  valid:3600,  rr:[1, 2, 3],     session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'srb', shadow:true, pub:true, one:true},
     swing_brt:    {key:'swing_brt',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'brt', lvlAge:20 * 86400, win:24, shadow:true, pub:true, one:true},
     swing_lsr:    {key:'swing_lsr',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'lsr', lvlAge:20 * 86400, shadow:true, pub:true, one:true},
+    // MSNR (Malaysian SNR), SHADOW research: levels from the higher-timeframe LINE chart (closes only). msnr = first touch of a fresh A/V level in the storyline direction · qm = Quasimodo left-shoulder level
+    intraday_msnr: {key:'intraday_msnr', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'msnr', lvlAge:5 * 86400,  shadow:true, pub:true, one:true},
+    intraday_qm:   {key:'intraday_qm',   base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'qm',   lvlAge:5 * 86400,  shadow:true, pub:true, one:true},
+    swing_msnr:    {key:'swing_msnr',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'msnr', lvlAge:20 * 86400, shadow:true, pub:true, one:true},
+    swing_qm:      {key:'swing_qm',      base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'qm',   lvlAge:20 * 86400, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
     for(let i = 0; i < a.length; i++){ if(i < n - 1){ o[i] = null; continue; }
@@ -7370,7 +7375,31 @@ const AiEng = (() => {
     const hc = htf.map(x => x.c); P.h50 = ema(hc, 50); P.h200 = ema(hc, 200);
     if(M.daily){ P.d1 = agg(bars, 86400, M.base, 0.75); const dc = P.d1.map(x => x.c); P.dE = ema(dc, P.d1.length >= 60 ? 50 : 20); }
     if(M.v3 || M.sweep || M.setup) prepV3(P);
+    if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     return P; }
+  /* MSNR line-chart levels on the higher timeframe, from CLOSES only (2 closes each side, known once the 2 right-hand candles have closed).
+     A-level = peak of an A shape (resistance), V-level = bottom of a V shape (support). P.legs = alternating A / V turning points (QM structure). */
+  function prepLine(P){
+    const H = P.htf, step = P.M.htf; P.lv = []; P.legs = [];
+    for(let k = 2; k < H.length - 2; k++){ const c = H[k].c, known = H[k + 2].t + step;
+      if(c > H[k - 1].c && c > H[k - 2].c && c >= H[k + 1].c && c >= H[k + 2].c) P.lv.push({p:c, t:H[k].t, known, side:'A'});
+      else if(c < H[k - 1].c && c < H[k - 2].c && c <= H[k + 1].c && c <= H[k + 2].c) P.lv.push({p:c, t:H[k].t, known, side:'V'}); }
+    for(const x of P.lv){ const q = P.legs[P.legs.length - 1];
+      if(q && q.side === x.side){ if(x.side === 'A' ? x.p >= q.p : x.p <= q.p) P.legs[P.legs.length - 1] = x; } else P.legs.push(x); }
+  }
+  // fresh = no entry candle has come within 0.1 ATR of the level since it was known (wick touches count); then candle i is the first touch
+  function firstTouch(m, i, base, from, lvl, sup, tol){
+    for(let k = i - 1; k >= 0 && m[k].t + base > from; k--) if(sup ? m[k].l <= lvl + tol : m[k].h >= lvl - tol) return false;
+    return sup ? m[i].l <= lvl + tol : m[i].h >= lvl - tol;
+  }
+  // MSNR entry: the first touch is this candle (and it closes back on the right side) or the previous candle (which closed on the level or
+  // slightly through it, not more than 0.5 ATR) and this candle closes back on the right side = touch, then reclaim.
+  function touchReclaim(m, i, base, from, lvl, sup, A){
+    const back = (k) => (sup ? m[k].c > lvl : m[k].c < lvl);
+    if(!back(i)) return false;
+    if(firstTouch(m, i, base, from, lvl, sup, 0.1 * A)) return true;
+    return i > 0 && firstTouch(m, i - 1, base, from, lvl, sup, 0.1 * A) && !back(i - 1) && (sup ? m[i - 1].c >= lvl - 0.5 * A : m[i - 1].c <= lvl + 0.5 * A);
+  }
 
   /* ---------- Scalping v3 helpers ----------
      Swing points on the M5 trend chart (2 candles each side, known only once the 2 right-hand candles have closed).
@@ -7510,11 +7539,12 @@ const AiEng = (() => {
   const SESSION = {from:7, to:17};          // UTC hours = 14:00–24:00 Cambodia (London + New York)
   // Evaluate the CLOSED candle at index i. news(tSec) -> true (clear) | false (blocked) | null (unknown)
   // Higher-timeframe trend bias at closeT (same rule as Intraday / Swing: HTF close > EMA50 > EMA200 with EMA50 rising; swing also needs the daily close on the right side of its EMA)
-  function htfBias(P, closeT){
+  // structure = true (MSNR storyline): only EMA50 vs EMA200 and the EMA50 slope, so a deep pullback to a support level does not switch the story off
+  function htfBias(P, closeT, structure){
     const M = P.M; let j = -1; for(let k = P.htf.length - 1; k >= 0; k--){ if(P.htf[k].t + M.htf <= closeT){ j = k; break; } }
     let side = null;
     if(j >= 3 && P.h200[j] != null){ const hc = P.htf[j].c, e50 = P.h50[j], e200 = P.h200[j], slope = e50 - P.h50[j - 3];
-      if(hc > e50 && e50 > e200 && slope > 0) side = 'BUY'; else if(hc < e50 && e50 < e200 && slope < 0) side = 'SELL'; }
+      if((structure || hc > e50) && e50 > e200 && slope > 0) side = 'BUY'; else if((structure || hc < e50) && e50 < e200 && slope < 0) side = 'SELL'; }
     if(side && M.daily && P.d1){ let d = -1; for(let k = P.d1.length - 1; k >= 0; k--){ if(P.d1[k].t + 86400 <= closeT){ d = k; break; } }
       if(d >= 0 && P.dE[d] != null){ const dc = P.d1[d].c; if((side === 'BUY' && dc < P.dE[d]) || (side === 'SELL' && dc > P.dE[d])) side = null; } }
     return side;
@@ -7526,13 +7556,15 @@ const AiEng = (() => {
           and closes back inside, after the previous close was inside.
           Counter-trend is allowed; the HTF bias is recorded in feat so it can be studied.
      srb: (intraday) the Asia range = 00:00–07:00 UTC; the first close beyond it between 07:00 and 16:00 UTC, stop at the middle of the range.
+     msnr: MSNR storyline: the HTF trend sets the side; the first touch of a FRESH line-chart level (V-level for buys, A-level for sells) where this candle closes back on the right side.
+     qm:   Quasimodo on the HTF line chart: low, high, lower low, higher high (or the mirror); the first return to the left-shoulder close (QML) with a close back on the right side.
      All: stop beyond the structure, risk 0.5–3 ATR (srb 0.5–4), session (intraday: London / New York), no high-impact USD news within ±30 min. */
   function evalSetup(P, i, news){
     const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A = P.atr[i];
     const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key};
     if(i < 120 || A == null || P.e50[i] == null){ out.grade = 'n/a'; return out; }
     const add = (key, pass, val, core) => out.checks.push({key, pass:!!pass, val, core});
-    const bias = htfBias(P, closeT), tol = 0.25 * A, feat = {setup:M.setup, bias:bias || 'range'};
+    const bias = htfBias(P, closeT, M.setup === 'msnr'), tol = 0.25 * A, feat = {setup:M.setup, bias:bias || 'range'};
     let side = null, stopBase = null, maxRisk = 3;
     if(M.setup === 'brt' && bias){
       const L = bias === 'BUY', lv = P.sw.filter(s => s.known <= closeT && s.side === (L ? 'H' : 'L') && s.t >= closeT - M.lvlAge).reverse();
@@ -7573,8 +7605,25 @@ const AiEng = (() => {
         }
       }
     }
+    if(M.setup === 'msnr' && bias){
+      const sup = bias === 'BUY', lv = P.lv.filter(s => s.known <= closeT && s.side === (sup ? 'V' : 'A') && s.t >= closeT - M.lvlAge && (sup ? s.p < b.c : s.p > b.c)).reverse();
+      for(const s of lv){
+        if(touchReclaim(m, i, M.base, s.known, s.p, sup, A)){
+          side = bias; stopBase = sup ? Math.min(s.p, b.l, m[i - 1].l) : Math.max(s.p, b.h, m[i - 1].h); feat.lvl = s.side; feat.lvlAgeH = +((closeT - s.t) / 3600).toFixed(1); break; }
+      }
+    }
+    if(M.setup === 'qm'){
+      const legs = P.legs.filter(x => x.known <= closeT);
+      if(legs.length >= 4){
+        const [a, b2, c, d] = legs.slice(-4);
+        // bullish QM: V a, A b2, lower V c (breaks a), higher A d (breaks b2) -> buy the return to a.  bearish: mirror -> sell the return to a.
+        const bull = a.side === 'V' && c.p < a.p && d.p > b2.p, bear = a.side === 'A' && c.p > a.p && d.p < b2.p;
+        if((bull || bear) && d.known >= closeT - M.lvlAge && touchReclaim(m, i, M.base, d.known, a.p, bull, A)){
+          side = bull ? 'BUY' : 'SELL'; stopBase = bull ? Math.min(a.p, b.l, m[i - 1].l) : Math.max(a.p, b.h, m[i - 1].h); feat.qml = a.p; feat.withBias = bias === side; feat.lvlAgeH = +((closeT - a.t) / 3600).toFixed(1); }
+      }
+    }
     out.side = side; const L = side === 'BUY';
-    add('bias', M.setup !== 'brt' || !!bias, bias || 'range', true);
+    add('bias', (M.setup !== 'brt' && M.setup !== 'msnr') || !!bias, bias || 'range', true);
     add('setup', !!side, side ? M.setup : null, true);
     if(!side){ out.grade = 'No setup'; return out; }
     const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
