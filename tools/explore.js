@@ -8,14 +8,15 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const a0 = html.indexOf('const AiEng = (() => {'), SRC = html.slice(a0, html.indexOf('\n})();', a0) + 6);
 const m1 = fs.readFileSync(FILE, 'utf8').split('\n').map(l => l.split(',').map(Number)).filter(r => r.length >= 5 && isFinite(r[0])).map(([t, o, h, l, c]) => ({ t, o, h, l, c })).sort((x, y) => x.t - y.t);
 
-const MOM_B = "else if(body >= .55 * rng && b.c > p.h) trig = 'momentum';", MOM_S = "else if(body >= .55 * rng && b.c < p.l) trig = 'momentum';";
+const MOM_B = " else if(!M.noMom && b.c > Math.max(c1, c2, c3)) trig = 'thrust';", MOM_S = " else if(!M.noMom && b.c < Math.min(c1, c2, c3)) trig = 'thrust';";
 const VARIANTS = {
   'base (live)': [],
-  'no momentum trigger': [[MOM_B, ''], [MOM_S, '']],
+  'no thrust trigger (reclaim only)': [[MOM_B, ''], [MOM_S, '']],
   'conf = 3 (all level types)': [["conf >= 2 ? 'A+'", "conf >= 3 ? 'A+'"]],
-  'stop +0.3 ATR (not 0.1)': [['base - .1 * A5', 'base - .3 * A5'], ['base + .1 * A5', 'base + .3 * A5']],
+  'stop +0.3 ATR (not 0.1)': [['(M.stopPad || .1)', '.3']],
   'risk >= 0.5 ATR': [['risk >= .3 * A5', 'risk >= .5 * A5']],
-  'no momentum + stop +0.3': [[MOM_B, ''], [MOM_S, ''], ['base - .1 * A5', 'base - .3 * A5'], ['base + .1 * A5', 'base + .3 * A5']],
+  'stop +0.3 & risk >= 0.5 ATR': [['(M.stopPad || .1)', '.3'], ['risk >= .3 * A5', 'risk >= .5 * A5']],
+  'no thrust + stop +0.3': [[MOM_B, ''], [MOM_S, ''], ['(M.stopPad || .1)', '.3']],
 };
 function engine(patches) {
   let s = SRC; for (const [x, y] of patches) { if (!s.includes(x)) throw new Error('patch not found: ' + x); s = s.split(x).join(y); }
@@ -53,6 +54,10 @@ const splitOld = w => { const t1 = w.hit[1], t2 = w.hit[2]; if (t1 == null) retu
   if (t2 != null) return 1.5;   // (stop-to-entry after TP1 assumed; if price hit entry before TP2 it is +0.5, approximated by checking stop bar)
   return w.stopK != null ? 0.5 : 0.5 + 0.5 * Math.max(0, Math.min(1, w.mv)); };
 const split = w => w.rs;
+function stab(W){ const a = W.map(w => split(w) - SPREAD / w.risk), n = a.length, h = Math.floor(n / 2), m = x => x.reduce((p, c) => p + c, 0) / (x.length || 1);
+  let seed = 7; const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296, bs = [];
+  for (let k = 0; k < 2000; k++) { let t = 0; for (let j = 0; j < n; j++) t += a[Math.floor(rnd() * n)]; bs.push(t / n); } bs.sort((x, y) => x - y);
+  return ' [' + f(m(a.slice(0, h))) + '|' + f(m(a.slice(h))) + ' 95%CI ' + f(bs[50]) + '..' + f(bs[1949]) + ']'; }
 const med = a => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
 const f = (x, d = 2) => (x >= 0 ? '+' : '') + x.toFixed(d);
 
@@ -65,7 +70,7 @@ for (const [name, patches] of Object.entries(VARIANTS)) {
   if (!W.length) { console.log(name.padEnd(30), '   0'); continue; }
   const cost = w => SPREAD / w.risk, avg = fn => W.reduce((a, w) => a + fn(w) - cost(w), 0) / W.length;
   console.log(name.padEnd(30), String(W.length).padStart(4), f(med(W.map(w => w.mfe))).padStart(7), (100 * W.filter(w => w.hit[1] != null).length / W.length).toFixed(0).padStart(5) + '%',
-    f(avg(split)).padStart(7), f(avg(w => full(w, 1))).padStart(7), f(avg(w => full(w, 1.5))).padStart(6), f(avg(w => full(w, 2))).padStart(6), f(avg(w => full(w, 3))).padStart(6));
+    f(avg(split)).padStart(7) + stab(W), f(avg(w => full(w, 1))).padStart(7), f(avg(w => full(w, 1.5))).padStart(6), f(avg(w => full(w, 2))).padStart(6), f(avg(w => full(w, 3))).padStart(6));
 }
 
 // Diagnostic: the SAME entries traded in the OPPOSITE direction with the same risk (random-ish baseline is ~45% reaching 1R before a 1R stop)
