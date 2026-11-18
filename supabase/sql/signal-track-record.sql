@@ -15,7 +15,7 @@ as $$
       case mode when 'intraday' then 1.5 when 'swing' then 2 else 1 end as rr1,
       case mode when 'intraday' then 3   when 'swing' then 4 else 2 end as rr2
     from ai_signals
-    where mode in ('scalp', 'intraday', 'swing') and status = 'closed'
+    where mode in ('scalp', 'intraday', 'swing') and status = 'closed' and coalesce((feat->>'shadow')::boolean, false) = false
       and to_timestamp(t) >= now() - make_interval(days => least(greatest(coalesce(p_days, 30), 1), 365))
   ), r as (
     select *, case when result = 'sl' then -1.0
@@ -36,7 +36,7 @@ as $$
                                         'avg_r', round(avg(rv)::numeric, 2), 'total_r', round(sum(rv)::numeric, 1)) from r),
     'rows', coalesce((select json_agg(g order by g.mode, g.symbol) from g), '[]'::json),
     'recent', coalesce((select json_agg(x) from (select symbol, mode, side, t, result, round(rv::numeric, 2) as r from r order by t desc limit 12) x), '[]'::json),
-    'open', (select count(*) from ai_signals where mode in ('scalp', 'intraday', 'swing') and status = 'open')
+    'open', (select count(*) from ai_signals where mode in ('scalp', 'intraday', 'swing') and status = 'open' and coalesce((feat->>'shadow')::boolean, false) = false)
   );
 $$;
 revoke all on function public.signal_track_record(int) from public;
