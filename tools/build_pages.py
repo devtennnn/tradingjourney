@@ -77,7 +77,7 @@ def jsonld(obj):
     return '<script type="application/ld+json">' + json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "</script>\n"
 
 ORG = {"@type": "Organization", "@id": SITE + "/#org", "name": "AROM TRADE", "url": SITE + "/",
-       "logo": SITE + "/icons/icon-512.png", "email": "info@aromx.trade",
+       "logo": SITE + "/icons/icon-512.png", "email": "info@aromx.trade", "sameAs": ["https://t.me/aromxtrade"],
        "contactPoint": [{"@type": "ContactPoint", "contactType": "customer support", "email": "info@aromx.trade", "url": "https://t.me/tentennnn0719", "availableLanguage": ["en", "km"]}],
        "description": "Trading journal, rule-based signals and USD news alerts for traders in Cambodia, in English and Khmer."}
 
@@ -258,6 +258,7 @@ TRUST["about"] = {"path": "/about", "type": "AboutPage",
 <ul>
 <li>Email: <a href="mailto:info@aromx.trade">info@aromx.trade</a></li>
 <li>Telegram: <a href="https://t.me/tentennnn0719" rel="noopener">@tentennnn0719</a></li>
+<li>Telegram channel (news and updates): <a href="https://t.me/aromxtrade" rel="noopener">@aromxtrade</a></li>
 </ul>
 <p>We answer in English and Khmer.</p>
 <p><a class="cta" href="{home}">{start}</a></p>
@@ -291,6 +292,7 @@ TRUST["about"] = {"path": "/about", "type": "AboutPage",
 <ul>
 <li>អ៊ីមែល៖ <a href="mailto:info@aromx.trade">info@aromx.trade</a></li>
 <li>Telegram៖ <a href="https://t.me/tentennnn0719" rel="noopener">@tentennnn0719</a></li>
+<li>ឆានែល Telegram (ព័ត៌មាន និងបច្ចុប្បន្នភាព)៖ <a href="https://t.me/aromxtrade" rel="noopener">@aromxtrade</a></li>
 </ul>
 <p>យើងឆ្លើយតបជាភាសាខ្មែរ និងអង់គ្លេស។</p>
 <p><a class="cta" href="{home}">{start}</a></p>
@@ -535,7 +537,7 @@ def trust_page(name, lang):
 </main>
 <footer><div class="in">
 <span>AROM TRADE · {ESC(ui["edu"])}</span>
-<a href="{L("/about", lang)}"{nav_cur("/about")}>{ui["about"]}</a><a href="{L("/methodology", lang)}"{nav_cur("/methodology")}>{ui["method"]}</a><a href="{L("/track-record", lang)}"{nav_cur("/track-record")}>{ui["track"]}</a><a href="{L("/risk", lang)}"{nav_cur("/risk")}>{ui["risk"]}</a><a href="mailto:info@aromx.trade">info@aromx.trade</a><a href="https://t.me/tentennnn0719" rel="noopener">Telegram</a>
+<a href="{L("/about", lang)}"{nav_cur("/about")}>{ui["about"]}</a><a href="{L("/methodology", lang)}"{nav_cur("/methodology")}>{ui["method"]}</a><a href="{L("/track-record", lang)}"{nav_cur("/track-record")}>{ui["track"]}</a><a href="{L("/risk", lang)}"{nav_cur("/risk")}>{ui["risk"]}</a><a href="mailto:info@aromx.trade">info@aromx.trade</a><a href="https://t.me/tentennnn0719" rel="noopener">Telegram</a><a href="https://t.me/aromxtrade" rel="noopener">@aromxtrade</a>
 </div></footer>
 {T.get("js", "")}</body>
 </html>
