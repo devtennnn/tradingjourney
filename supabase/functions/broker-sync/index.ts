@@ -7,13 +7,17 @@
 //          { action: "update", id, label?, auto_import? } · { action: "remove", id }
 // The plain sync code is never stored (only SHA-256). One code is bound to the first MT login that uses it.
 // Closed trades are copied into the member's journal (public.trades) when auto_import is on. Imported journal rows are kept if the account is removed.
+// Phone-only members (no PC / VPS for the EA): { action: "connect_metaapi", platform, login, server, password, label? }
+//   The INVESTOR (read-only) password goes straight to MetaApi (cloud MT terminal, secret METAAPI_TOKEN) and is never stored or logged here.
+//   Cron every 2 min: GET ?run=poll&key=<ai_bot_config.cron_secret> reads each MetaApi account and feeds the same ingest() as the EA.
+//   Ultra lapses -> the MetaApi account is undeployed (stops billing); Ultra back -> redeployed. Remove -> deleted at MetaApi.
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { parsePayload, journalRow, stats, newToken, hashToken, validToken, MAX_ACCOUNTS } from "./lib.mjs";
+import { parsePayload, journalRow, stats, newToken, hashToken, validToken, MAX_ACCOUNTS, MA_MAX, maForm, maPayload, maStatus } from "./lib.mjs";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-arom-token", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-const PUBLIC = "id,label,platform,token_hint,login,server,company,currency,leverage,balance,equity,margin,free_margin,floating,auto_import,ea_version,last_sync_at,created_at";
+const PUBLIC = "id,label,platform,token_hint,login,server,company,currency,leverage,balance,equity,margin,free_margin,floating,auto_import,ea_version,last_sync_at,created_at,source,ma_state,ma_error";
 const isUltra = (p) => !!p && (p.is_admin === true || (!!p.ultra_until && new Date(p.ultra_until) > new Date()));
 const clip = (s, n) => String(s ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, n);
 
@@ -28,6 +32,11 @@ async function fromEA(req, token) {
   if (acc.last_sync_at && Date.now() - Date.parse(acc.last_sync_at) < 15_000) return json({ error: "slow_down", ack: acc.last_deal_at || 0 }, 429);
   const p = parsePayload(b); if (p.error) return json({ error: p.error }, 400);
   if (acc.login && (acc.login !== p.account.login || (acc.server && p.account.server && acc.server !== p.account.server))) return json({ error: "account_mismatch" }, 409);
+  return json(await ingest(acc, p));
+}
+
+/** One sync (EA or MetaApi): account numbers, open positions, new closed trades (+ journal), equity point. */
+async function ingest(acc, p) {
   const a = p.account, now = new Date().toISOString();
   // account + open positions (replaced each sync: the EA always sends the full list)
   await db.from("broker_accounts").update({ login: a.login, server: a.server, company: a.company, currency: a.currency, leverage: a.leverage, balance: a.balance, equity: a.equity,
@@ -52,13 +61,75 @@ async function fromEA(req, token) {
   // equity curve: at most one point per 10 minutes
   const { data: last } = await db.from("broker_snapshots").select("at").eq("account_id", acc.id).order("at", { ascending: false }).limit(1).maybeSingle();
   if (!last || Date.now() - Date.parse(last.at) > 600_000) await db.from("broker_snapshots").insert({ account_id: acc.id, balance: a.balance, equity: a.equity });
-  return json({ ok: true, ack, imported, positions: p.positions.length });
+  return { ok: true, ack, imported, positions: p.positions.length };
 }
+
+// ---- MetaApi ----
+const MA_TOKEN = () => Deno.env.get("METAAPI_TOKEN") || "";
+const MA_PROV = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai";
+const maClient = (region) => `https://mt-client-api-v1.${/^[a-z-]{2,30}$/.test(region || "") ? region : "new-york"}.agiliumtrade.ai`;
+async function ma(method, url, body, extra = {}) {
+  const r = await fetch(url, { method, headers: { "auth-token": MA_TOKEN(), "Content-Type": "application/json", Accept: "application/json", ...extra }, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20_000) });
+  const txt = await r.text(); let j = null; try { j = txt ? JSON.parse(txt) : null; } catch { /* not json */ }
+  return { status: r.status, ok: r.ok, j, retry: Number(r.headers.get("retry-after")) || 0 };
+}
+const maErr = (r) => clip((r.j && (r.j.message || r.j.error)) || "MetaApi " + r.status, 160);
+async function maCreate(f, name) {
+  const tx = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+  const body = { name, type: "cloud-g2", login: f.login, password: f.password, server: f.server, platform: f.platform, magic: 0 };
+  for (let i = 0; i < 4; i++) {   // 202 = MetaApi is still looking up the broker server: retry with the same transaction id
+    const r = await ma("POST", MA_PROV + "/users/current/accounts", body, { "transaction-id": tx });
+    if (r.status !== 202) return r;
+    await new Promise((ok) => setTimeout(ok, Math.min(8, Math.max(2, r.retry || 3)) * 1000));
+  }
+  return { status: 202, ok: false, j: { message: "busy" } };
+}
+
+async function pollMetaApi() {
+  const { data: rows } = await db.from("broker_accounts").select("*").eq("source", "metaapi").not("ma_id", "is", null).limit(100);
+  if (!rows || !rows.length) return { ok: true, accounts: 0 };
+  if (!MA_TOKEN()) return { ok: false, error: "metaapi_not_configured" };
+  let synced = 0;
+  for (const acc of rows) {
+    try {
+      const { data: prof } = await db.from("profiles").select("is_admin,ultra_until").eq("id", acc.user_id).maybeSingle();
+      const base = MA_PROV + "/users/current/accounts/" + encodeURIComponent(acc.ma_id);
+      if (!isUltra(prof)) {   // Ultra ended: stop the cloud terminal so it stops costing money; data stays visible
+        if (acc.ma_state !== "paused") { await ma("POST", base + "/undeploy"); await db.from("broker_accounts").update({ ma_state: "paused" }).eq("id", acc.id); }
+        continue;
+      }
+      const st = await ma("GET", base);
+      if (st.status === 404) { await db.from("broker_accounts").update({ ma_state: "failed", ma_error: "MetaApi account not found" }).eq("id", acc.id); continue; }
+      if (!st.ok) continue;
+      const state = maStatus(st.j);
+      if (state === "paused") { await ma("POST", base + "/deploy"); await db.from("broker_accounts").update({ ma_state: "connecting", ma_error: null }).eq("id", acc.id); continue; }
+      if (state !== "live") { await db.from("broker_accounts").update({ ma_state: state, ma_region: st.j.region || acc.ma_region, ma_error: state === "connecting" ? null : clip(st.j.connectionStatus || st.j.state, 60) }).eq("id", acc.id); continue; }
+      const cl = maClient(st.j.region || acc.ma_region) + "/users/current/accounts/" + encodeURIComponent(acc.ma_id);
+      const to = new Date(Date.now() + 3600_000).toISOString(), from = new Date(((Number(acc.last_deal_at) || Math.floor(Date.now() / 1000) - 30 * 86400) - 2 * 86400) * 1000).toISOString();
+      const [info, pos, deals] = await Promise.all([ma("GET", cl + "/account-information"), ma("GET", cl + "/positions"), ma("GET", cl + `/history-deals/time/${from}/${to}`)]);
+      if (!info.ok || !pos.ok || !deals.ok) { await db.from("broker_accounts").update({ ma_state: "connecting", ma_error: maErr(!info.ok ? info : !pos.ok ? pos : deals) }).eq("id", acc.id); continue; }
+      const p = parsePayload(maPayload(info.j, pos.j, Array.isArray(deals.j) ? deals.j : (deals.j && deals.j.deals) || [], acc));
+      if (p.error) { await db.from("broker_accounts").update({ ma_error: "unreadable account data" }).eq("id", acc.id); continue; }
+      p.account.ea_version = "metaapi";
+      await ingest(acc, p);
+      await db.from("broker_accounts").update({ ma_state: "live", ma_error: null, ma_region: st.j.region || acc.ma_region }).eq("id", acc.id);
+      synced++;
+    } catch (e) { console.error("broker-sync poll:", acc.id, String(e?.message ?? e).slice(0, 160)); }
+  }
+  return { ok: true, accounts: rows.length, synced };
+}
+async function cronKey() { const { data } = await db.from("ai_bot_config").select("value").eq("key", "cron_secret").maybeSingle(); return (data && data.value) || ""; }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return json({ error: "method" }, 405);
   try {
+    const url = new URL(req.url);
+    if (url.searchParams.get("run") === "poll") {
+      const key = await cronKey();
+      if (!key || url.searchParams.get("key") !== key) return json({ error: "unauthorized" }, 401);
+      return json(await pollMetaApi());
+    }
+    if (req.method !== "POST") return json({ error: "method" }, 405);
     const token = req.headers.get("x-arom-token");
     if (token) return await fromEA(req, token.trim());
     // ---- website (member JWT) ----
@@ -70,10 +141,14 @@ Deno.serve(async (req) => {
     const own = async (id) => { const { data } = await db.from("broker_accounts").select(PUBLIC + ",user_id").eq("id", String(id || "")).maybeSingle(); return data && data.user_id === user.id ? data : null; };
     if (action === "list") {   // allowed after Ultra ends so members can still see / remove what they connected
       const { data } = await db.from("broker_accounts").select(PUBLIC).eq("user_id", user.id).order("created_at");
-      return json({ ok: true, ultra: isUltra(prof), accounts: data || [] });
+      return json({ ok: true, ultra: isUltra(prof), metaapi: !!MA_TOKEN(), accounts: data || [] });
     }
     if (action === "remove") {
       const a = await own(b.id); if (!a) return json({ error: "not_found" }, 404);
+      if (a.source === "metaapi") {   // delete the cloud terminal first so it stops billing
+        const { data: m } = await db.from("broker_accounts").select("ma_id").eq("id", a.id).single();
+        if (m && m.ma_id && MA_TOKEN()) { const r = await ma("DELETE", MA_PROV + "/users/current/accounts/" + encodeURIComponent(m.ma_id)); if (!r.ok && r.status !== 404) return json({ error: "metaapi_error" }, 502); }
+      }
       await db.from("broker_accounts").delete().eq("id", a.id);
       return json({ ok: true });
     }
@@ -86,6 +161,26 @@ Deno.serve(async (req) => {
       const { data, error } = await db.from("broker_accounts").insert({ user_id: user.id, label, token_hash: await hashToken(token), token_hint: token.slice(-4) }).select(PUBLIC).single();
       if (error) return json({ error: "server_error" }, 500);
       return json({ ok: true, token, account: data });
+    }
+    if (action === "connect_metaapi") {
+      if (!MA_TOKEN()) return json({ error: "metaapi_not_configured" }, 503);
+      const f = maForm(b); if (f.error) return json({ error: f.error }, 400);
+      const { data: mine } = await db.from("broker_accounts").select("source,login,server").eq("user_id", user.id);
+      if ((mine || []).length >= MAX_ACCOUNTS) return json({ error: "too_many_accounts", limit: MAX_ACCOUNTS }, 409);
+      if ((mine || []).filter((x) => x.source === "metaapi").length >= MA_MAX) return json({ error: "too_many_phone", limit: MA_MAX }, 409);
+      if ((mine || []).some((x) => x.login === f.login && x.server === f.server)) return json({ error: "already_connected" }, 409);
+      const r = await maCreate(f, "arom-" + user.id.slice(0, 8) + "-" + f.login);
+      f.password = "";
+      if (!r.ok || !r.j || !r.j.id) {
+        const m = maErr(r); console.error("broker-sync connect:", r.status, m);
+        return json({ error: /password|credential|auth/i.test(m) ? "bad_password" : /server/i.test(m) ? "bad_server" : r.status === 202 ? "metaapi_busy" : "metaapi_error", detail: m }, r.status >= 500 ? 502 : 400);
+      }
+      await ma("POST", MA_PROV + "/users/current/accounts/" + encodeURIComponent(r.j.id) + "/deploy");
+      const hidden = newToken(crypto.getRandomValues(new Uint8Array(20)));   // never shown: MetaApi accounts sync from our side, not with a code
+      const { data, error } = await db.from("broker_accounts").insert({ user_id: user.id, label: f.label, platform: f.platform, login: f.login, server: f.server, token_hash: await hashToken(hidden), token_hint: "cloud",
+        source: "metaapi", ma_id: r.j.id, ma_state: "connecting" }).select(PUBLIC).single();
+      if (error) { await ma("DELETE", MA_PROV + "/users/current/accounts/" + encodeURIComponent(r.j.id)); return json({ error: "server_error" }, 500); }
+      return json({ ok: true, account: data });
     }
     if (action === "update") {
       const a = await own(b.id); if (!a) return json({ error: "not_found" }, 404);

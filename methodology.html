@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How AROM TRADE signals work · Rules, risk and results</title>
+<meta name="description" content="The rules behind AROM TRADE signals: the checklist a setup must pass, the news lock, stops and targets, how wins and losses are counted, and shadow mode.">
+<link rel="canonical" href="https://aromx.trade/methodology">
+<link rel="alternate" hreflang="en" href="https://aromx.trade/methodology">
+<link rel="alternate" hreflang="km" href="https://aromx.trade/km/methodology">
+<link rel="alternate" hreflang="x-default" href="https://aromx.trade/methodology">
+<meta name="theme-color" content="#07120d">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AROM TRADE">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://aromx.trade/methodology">
+<meta property="og:title" content="How AROM TRADE signals work · Rules, risk and results">
+<meta property="og:description" content="The rules behind AROM TRADE signals: the checklist a setup must pass, the news lock, stops and targets, how wins and losses are counted, and shadow mode.">
+<meta property="og:image" content="https://aromx.trade/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://aromx.trade/#org","name":"AROM TRADE","url":"https://aromx.trade/","logo":"https://aromx.trade/icons/icon-512.png","description":"Trading journal, rule-based signals and USD news alerts for traders in Cambodia, in English and Khmer."},{"@type":"WebPage","@id":"https://aromx.trade/methodology#page","url":"https://aromx.trade/methodology","name":"How AROM TRADE signals work","description":"The rules behind AROM TRADE signals: the checklist a setup must pass, the news lock, stops and targets, how wins and losses are counted, and shadow mode.","inLanguage":"en","isPartOf":{"@type":"WebSite","@id":"https://aromx.trade/#site","name":"AROM TRADE","url":"https://aromx.trade/"},"publisher":{"@id":"https://aromx.trade/#org"},"dateModified":"2026-11-18"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"AROM TRADE","item":"https://aromx.trade/"},{"@type":"ListItem","position":2,"name":"How AROM TRADE signals work","item":"https://aromx.trade/methodology"}]}]}</script>
+<style>
+:root{--bg:#07120d;--card:#0d1c16;--line:#1f3a2c;--text:#e9f3ec;--muted:#93ab9c;--lime:#b9f25a}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 Inter,"Kantumruy Pro",system-ui,-apple-system,Segoe UI,sans-serif}
+html[lang="km"] body{font-family:"Kantumruy Pro",Inter,system-ui,sans-serif;line-height:1.8}
+a{color:var(--lime)}
+.top{position:sticky;top:0;z-index:5;background:rgba(7,18,13,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .in{max-width:880px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-weight:800;letter-spacing:.5px}
+.brand img{width:28px;height:28px;border-radius:7px}
+.top nav{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;font-size:14px}
+.top nav a{color:var(--muted);text-decoration:none}.top nav a:hover,.top nav a[aria-current]{color:var(--text)}
+.top .lang{border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--text)!important}
+main{max-width:880px;margin:0 auto;padding:36px 16px 56px}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.12;letter-spacing:-.02em;margin:0 0 14px}
+html[lang="km"] h1{letter-spacing:0;line-height:1.4}
+h2{font-size:21px;margin:34px 0 10px;line-height:1.3}
+.lead{font-size:18px;color:#c9dccf;margin:0 0 8px}
+p,li{color:#d3e2d8}ul{padding-left:20px}li{margin:6px 0}
+.card{border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,#132920,#0d1c16);padding:16px;margin:18px 0}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:12px;background:#0b1812;padding:10px 12px;min-width:0}
+.kpi small{display:block;color:var(--muted);font-size:12px}.kpi b{font-size:20px;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-size:12px;font-weight:700}
+.pos{color:#2ee6a0}.neg{color:#ff5d73}.note{font-size:14px;color:var(--muted)}
+.cta{display:inline-block;margin-top:8px;background:var(--lime);color:#0b1813;font-weight:800;text-decoration:none;border-radius:999px;padding:10px 18px}
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+footer .in{max-width:880px;margin:0 auto;padding:18px 16px;display:flex;gap:8px 18px;flex-wrap:wrap}
+footer a{color:var(--muted);text-decoration:none}footer a:hover{color:var(--lime)}
+@media(max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.top nav{margin-left:0;width:100%}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+<a class="brand" href="/"><img src="/icons/icon-192.png" alt="" width="28" height="28">AROM TRADE</a>
+<nav aria-label="AROM TRADE"><a href="/journey">Journal</a><a href="/analysis">AI Desk</a><a href="/pricing">Pricing</a><a class="lang" href="/km/methodology" hreflang="km" lang="km">ខ្មែរ</a></nav>
+</div></header>
+<main>
+<h1>How AROM TRADE signals work</h1>
+
+<p class="lead">Every AROM TRADE signal comes from a fixed set of rules applied to real market candles. The engine either finds a setup that passes every rule, or it stays quiet.</p>
+<h2>Three trading styles</h2>
+<ul>
+<li><b>Scalping</b> works on the 5-minute and 1-minute charts. Trades last minutes to a few hours.</li>
+<li><b>Intraday</b> and <b>Swing</b> work on higher timeframes and hold trades longer, from hours to days.</li>
+</ul>
+<h2>The checklist</h2>
+<p>A signal is graded A+ only when every rule in its checklist passes, and the AI Desk shows the checklist each signal passed. The scalping checklist, for example:</p>
+<ul>
+<li>5-minute trend: EMA 20 and EMA 50 agree, and the slope confirms it.</li>
+<li>The 1-minute EMA 20 and EMA 50 agree with the 5-minute trend.</li>
+<li>Price pulls back into a key level: a support or resistance zone, a trendline, or a breakout being retested.</li>
+<li>A candle closes through the trigger at that level.</li>
+<li>No high-impact USD news within 30 minutes.</li>
+<li>The stop sits beyond the zone, between 0.3 and 1.5 times the 5-minute ATR.</li>
+<li>There is at least 2R of room to the next zone.</li>
+</ul>
+<h2>News lock</h2>
+<p>Signals pause 30 minutes before and 15 minutes after high-impact USD news, when prices can jump both ways.</p>
+<h2>Stops and targets</h2>
+<p>Each signal gives an entry, a stop loss and its targets. R is the distance from entry to stop, and the targets depend on the style. After TP1 the stop moves to the entry price.</p>
+<table><thead><tr><th>Style</th><th>TP1</th><th>TP2</th></tr></thead><tbody>
+<tr><td>Scalping</td><td>1R</td><td>2R</td></tr><tr><td>Intraday</td><td>1.5R</td><td>3R</td></tr><tr><td>Swing</td><td>2R</td><td>4R</td></tr></tbody></table>
+<h2>How results are counted</h2>
+<ul>
+<li>Stop hit before TP1: <b>−1R</b>.</li>
+<li>TP1 reached: half the position closes at TP1 and the stop moves to entry, so the trade scores at least half of TP1: <b>+0.5R</b> scalping, <b>+0.75R</b> intraday, <b>+1R</b> swing.</li>
+<li>TP2 reached: the second half closes at TP2: <b>+1.5R</b> scalping, <b>+2.25R</b> intraday, <b>+3R</b> swing in total.</li>
+</ul>
+<p>Results are counted before spread and fees, and your broker's prices can differ slightly from ours. The live numbers are on the <a href="/track-record">track record</a> page.</p>
+<h2>Shadow mode</h2>
+<p>A new strategy starts in shadow mode. Its signals are recorded and scored but not sent to members. It is published only after about 30 signals show that it holds up.</p>
+<h2>What rules cannot do</h2>
+<p>Rules remove guesswork; they do not remove risk. Signals lose often, and past results do not predict future ones. Please read the <a href="/risk">risk disclosure</a>.</p>
+
+</main>
+<footer><div class="in">
+<span>AROM TRADE · Education only, not financial advice.</span>
+<a href="/about">About</a><a href="/methodology" aria-current="page">How signals work</a><a href="/track-record">Track record</a><a href="/risk">Risk disclosure</a>
+</div></footer>
+</body>
+</html>

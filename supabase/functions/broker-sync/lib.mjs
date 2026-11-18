@@ -75,3 +75,64 @@ export async function hashToken(t) {
   return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 export const validToken = (t) => /^arom_[0-9a-f]{40}$/.test(String(t || ""));
+
+// ---- MetaApi (phone-only members: cloud MT terminal logged in with the INVESTOR password, which can only read) ----
+export const MA_MAX = 1;   // MetaApi bills per connected account, so one phone-only account per member
+const sec = (iso) => { const t = Date.parse(iso); return Number.isFinite(t) ? Math.floor(t / 1000) : null; };
+const maSide = (t) => /BUY/.test(String(t || "")) ? "BUY" : /SELL/.test(String(t || "")) ? "SELL" : null;
+
+/** Checks the phone-only connect form. Returns clean fields or an error code. The password is passed through, never stored. */
+export function maForm(b) {
+  const login = clip(b && b.login, 24), server = clip(b && b.server, 80), password = String((b && b.password) || "");
+  const platform = String((b && b.platform) || "").toLowerCase() === "mt4" ? "mt4" : "mt5";
+  if (!/^\d{3,20}$/.test(login)) return { error: "bad_login" };
+  if (server.length < 3 || !/^[\w .\-()#&]+$/.test(server)) return { error: "bad_server" };
+  if (password.length < 4 || password.length > 64 || /[\u0000-\u001f]/.test(password)) return { error: "bad_password" };
+  return { login, server, password, platform, label: clip(b && b.label, 30) || platform.toUpperCase() + " " + login };
+}
+
+/**
+ * MetaApi REST answers -> the same payload the EA sends, so parsePayload / ingest stay one code path.
+ * info: account-information · positions: positions · deals: history-deals (a closed trade = all deals of one positionId).
+ */
+export function maPayload(info, positions, deals, acc) {
+  const open = new Set((positions || []).map((p) => String(p.id)));
+  const by = {};
+  for (const d of deals || []) {
+    if (!d || d.positionId == null || !maSide(d.type)) continue;            // skips balance / credit rows
+    const k = String(d.positionId); (by[k] || (by[k] = [])).push(d);
+  }
+  const closed = [];
+  for (const [id, ds] of Object.entries(by)) {
+    if (open.has(id)) continue;                                              // still open (partly closed): wait for the final close
+    const ins = ds.filter((d) => /IN$/.test(String(d.entryType || "")) && !/INOUT/.test(String(d.entryType))), outs = ds.filter((d) => /OUT|OUT_BY|INOUT/.test(String(d.entryType || "")));
+    if (!outs.length) continue;
+    const first = ins[0] || ds[0], vol = outs.reduce((s, d) => s + (+d.volume || 0), 0) || +first.volume || 0;
+    const sum = (k) => ds.reduce((s, d) => s + (+d[k] || 0), 0);
+    const last = outs.reduce((a, d) => (Date.parse(d.time) > Date.parse(a.time) ? d : a));
+    closed.push({ position_id: id, symbol: first.symbol || last.symbol, type: maSide(first.type) || (maSide(last.type) === "BUY" ? "SELL" : "BUY"), volume: vol,
+      open_time: sec(first.time), close_time: sec(last.time), open_price: first.price,
+      close_price: outs.reduce((s, d) => s + (+d.price || 0) * (+d.volume || 0), 0) / (outs.reduce((s, d) => s + (+d.volume || 0), 0) || 1),
+      sl: first.stopLoss ?? last.stopLoss, tp: first.takeProfit ?? last.takeProfit, profit: sum("profit"), commission: sum("commission"), swap: sum("swap"), comment: first.comment || "" });
+  }
+  closed.sort((a, b) => a.close_time - b.close_time);
+  const i = info || {};
+  return {
+    v: "metaapi",
+    account: { platform: i.platform || acc.platform, login: String(i.login ?? acc.login), server: i.server || acc.server, company: i.broker || "", currency: i.currency,
+      leverage: i.leverage, balance: i.balance, equity: i.equity, margin: i.margin, free_margin: i.freeMargin, profit: (i.equity ?? 0) - (i.balance ?? 0) },
+    positions: (positions || []).map((p) => ({ ticket: p.id, symbol: p.symbol, type: maSide(p.type), volume: p.volume, open_price: p.openPrice, open_time: sec(p.time),
+      sl: p.stopLoss, tp: p.takeProfit, price: p.currentPrice, profit: p.profit ?? p.unrealizedProfit, swap: p.swap })),
+    deals: closed,
+  };
+}
+
+/** MetaApi account state -> what the member sees. */
+export function maStatus(st) {
+  const s = String((st && st.state) || ""), c = String((st && st.connectionStatus) || "");
+  if (s === "DEPLOYED" && c === "CONNECTED") return "live";
+  if (s === "DEPLOY_FAILED") return "failed";
+  if (s === "DEPLOYED" && c === "DISCONNECTED_FROM_BROKER") return "broker";
+  if (s === "UNDEPLOYED" || s === "UNDEPLOYING") return "paused";
+  return "connecting";
+}
