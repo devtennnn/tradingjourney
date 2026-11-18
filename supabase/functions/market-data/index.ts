@@ -4,6 +4,7 @@
 // 5 requests a second: every answer goes through a shared cache table (market_cache), a monthly budget guard and a burst limiter.
 //   POST { action: "quote",   symbol }                       -> { ok, quote, meta }
 //   POST { action: "candles", symbol, timeframe, limit? }    -> { ok, instrument, candles, meta }     timeframe: M1 M5 M15 M30 H1 H4 D1  (H4 is built from H1)
+//   POST { action: "candles", symbol, timeframe: "D1", history: true, limit? (up to 1000) } -> the same, with up to 1000 daily bars (own cache entry; used by arom-strategy)
 //   POST { action: "health" }  (admin)                       -> { ok, providers: [...] }
 // Rules: nothing is invented. Missing values stay null. When the quota guard or the provider fails, cached data is returned marked stale, else an error.
 // Index symbols are NOT offered by SiftingIO. NAS100 defaults to the NQ futures from the site's own feed (Yahoo, DELAYED, labelled; M1 M5 M15 H1 H4 only); { variant: "etf" } gives the QQQ ETF proxy.
@@ -135,8 +136,8 @@ async function getFuturesCandles(sym, tf, limit) {
     return { payload, from_cache: false, stale: false, fetched_at: new Date().toISOString() };
   } catch (_) { return old("provider_error"); }
 }
-async function getCandles(sym, tf, limit, key) {
-  const cfg = SYMBOLS[sym], T = TF[tf], ck = `c:${cfg.id}:${tf}`, hit = await cacheGet(ck);
+async function getCandles(sym, tf, limit, key, hist = false) {
+  const cfg = SYMBOLS[sym], T = TF[tf], ck = `c:${cfg.id}:${tf}${hist ? ":h" : ""}`, hit = await cacheGet(ck);   // hist = long daily history for the strategy lab: its own cache entry so a short request never shrinks it
   if (hit && ageS(hit.fetched_at) < T.ttl) return { payload: hit.payload, from_cache: true, stale: false, fetched_at: hit.fetched_at };
   const al = await allowance(), source = "siftingio";
   const serveOld = (why) => (hit ? { payload: hit.payload, from_cache: true, stale: true, fetched_at: hit.fetched_at, why } : { error: why });
@@ -213,8 +214,9 @@ export async function handler(req) {
     }
     if (action === "candles") {
       const tf = String(b.timeframe || "M15").toUpperCase(); if (!TF[tf]) return json({ error: "unknown_timeframe", timeframes: Object.keys(TF) }, 400);
-      const limit = Math.min(500, Math.max(20, parseInt(b.limit, 10) || 200));
-      const r = fut ? await getFuturesCandles(sym, tf, limit) : await getCandles(sym, tf, limit, key); if (r.error) return json({ error: r.error }, r.error === "symbol_not_found" ? 404 : 502);
+      const hist = b.history === true && tf === "D1" && !fut;   // opt-in: up to 1000 daily bars (about 3 to 4 years); everything else keeps the 500-bar cap
+      const limit = Math.min(hist ? 1000 : 500, Math.max(20, parseInt(b.limit, 10) || 200));
+      const r = fut ? await getFuturesCandles(sym, tf, limit) : await getCandles(sym, tf, limit, key, hist); if (r.error) return json({ error: r.error }, r.error === "symbol_not_found" ? 404 : 502);
       const c = r.payload.candles.slice(-limit), last = c[c.length - 1], age = last ? Math.round((Date.now() - Date.parse(last.timestamp)) / 1000) : null;
       return json({ ok: true, instrument: inst, timeframe: tf, candles: c, meta: { from_cache: r.from_cache, fetched_at: r.fetched_at, served_stale: r.stale, reason: r.why ?? null, count: c.length, dropped_invalid: r.payload.dropped, derived: r.payload.derived, truncated: !!r.payload.truncated,
         last_candle_at: last ? last.timestamp : null, last_candle_age_s: age, last_candle_complete: last ? last.complete : null, source: r.payload.source || "siftingio", is_delayed: r.payload.delayed === true ? true : null, enough_for_indicators: c.length >= 200 } });
