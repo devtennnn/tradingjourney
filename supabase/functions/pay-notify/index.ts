@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
 
   const { data: prof } = await db.from("profiles").select("username,display_name,premium_until,elite_until,ultra_until").eq("id", p.user_id).maybeSingle();
   let email = ""; try { email = (await db.auth.admin.getUserById(p.user_id)).data.user?.email || ""; } catch { /* optional */ }
-  const plan = p.plan === "ultra" ? "ULTRA" : p.plan === "elite" ? "ELITE" : "PREMIUM", until = p.plan === "ultra" ? prof?.ultra_until : p.plan === "elite" ? prof?.elite_until : prof?.premium_until;
+  const course = p.plan === "course";   // AROM Academy: lifetime access, no end date to show
+  const plan = course ? "ACADEMY COURSE" : p.plan === "ultra" ? "ULTRA" : p.plan === "elite" ? "ELITE" : "PREMIUM", until = course ? null : p.plan === "ultra" ? prof?.ultra_until : p.plan === "elite" ? prof?.elite_until : prof?.premium_until;
   const via = p.approved_by ? "admin approval" : /^https:\/\//.test(String(p.payload || "")) ? "Anajak Pay" : "KHQR (Bakong)";
   const who = prof?.username ? "@" + prof.username : prof?.display_name || "user";
   const promo = p.promo_code ? ` · promo <b>${esc(p.promo_code)}</b> (−${money(Number(p.list_price ?? p.amount) - Number(p.amount))})` : "";
@@ -42,6 +43,7 @@ Deno.serve(async (req) => {
     `💰 <b>New payment · ${plan} · ${money(p.amount)}</b>`,
     `👤 ${esc(who)} · ${esc(maskEmail(email))}`,
     `🧾 <code>${esc(p.bill_number)}</code> · via ${via}${promo}`,
+    course ? "🎓 Lifetime course access" : "",
     until ? `📅 Plan active until <b>${esc(ict.format(new Date(until)))}</b> ICT` : "",
   ].filter(Boolean).join("\n");
 
@@ -62,17 +64,17 @@ Deno.serve(async (req) => {
   if (link?.chat_id) {
     const site = (Deno.env.get("SITE_URL") || "https://aromx.trade").replace(/\/$/, "");
     const when = until ? esc(ict.format(new Date(until))) : "";
-    const kh = plan === "ULTRA" ? "Ultra" : plan === "ELITE" ? "Elite" : "Premium";
+    const kh = course ? "វគ្គសិក្សា AROM Academy" : plan === "ULTRA" ? "Ultra" : plan === "ELITE" ? "Elite" : "Premium";
     const userText = [
       `✅ <b>Payment successful · ${plan} · ${money(p.amount)}</b>`,
-      when ? `Your plan is active until <b>${when}</b> (ICT).` : "Your plan is now active.",
+      course ? `Your course is unlocked for life: ${site}/course` : when ? `Your plan is active until <b>${when}</b> (ICT).` : "Your plan is now active.",
       "",
       `✅ <b>ការទូទាត់បានជោគជ័យ · ${kh} · ${money(p.amount)}</b>`,
-      when ? `គម្រោងរបស់អ្នកសកម្មរហូតដល់ <b>${when}</b> (ម៉ោងកម្ពុជា)។` : "គម្រោងរបស់អ្នកបានសកម្មហើយ។",
+      course ? `វគ្គសិក្សាបានបើកសម្រាប់អ្នករហូត: ${site}/course` : when ? `គម្រោងរបស់អ្នកសកម្មរហូតដល់ <b>${when}</b> (ម៉ោងកម្ពុជា)។` : "គម្រោងរបស់អ្នកបានសកម្មហើយ។",
       "",
       `<code>${esc(p.bill_number)}</code> · Thank you / អរគុណ 🙏`,
     ].join("\n");
-    out.user = (await send(link.chat_id, { text: userText, reply_markup: { inline_keyboard: [[{ text: "Open AROM TRADE", url: site }]] } })) ? "sent" : "failed";
+    out.user = (await send(link.chat_id, { text: userText, reply_markup: { inline_keyboard: [[{ text: course ? "Open the course" : "Open AROM TRADE", url: course ? site + "/course" : site }]] } })) ? "sent" : "failed";
   }
   return json({ ok: true, ...out });
 });
