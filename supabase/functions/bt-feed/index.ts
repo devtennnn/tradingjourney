@@ -11,8 +11,10 @@ const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
 const TF = { scalp: { bn: "1m", td: "1min", step: 60, site: 1 }, intraday: { bn: "15m", td: "15min", step: 900, site: 15 }, swing: { bn: "1h", td: "1h", step: 3600, site: 60 } };
 const NY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", hourCycle: "h23" });
-const goldOpen = (t) => { const p = NY.formatToParts(new Date(t * 1000)), wd = p.find((x) => x.type === "weekday").value, h = +p.find((x) => x.type === "hour").value;
-  if (wd === "Sat" || (wd === "Fri" && h >= 17) || (wd === "Sun" && h < 18)) return false; return h !== 17; };   // same rule as /api/candles
+const openHr = new Map();   // per UTC hour (formatToParts is slow; tens of thousands of candles)
+const goldOpen = (t) => { const k = Math.floor(t / 3600); let v = openHr.get(k); if (v !== undefined) return v;
+  const p = NY.formatToParts(new Date(k * 3600000)), wd = p.find((x) => x.type === "weekday").value, h = +p.find((x) => x.type === "hour").value;
+  v = !(wd === "Sat" || (wd === "Fri" && h >= 17) || (wd === "Sun" && h < 18) || h === 17); openHr.set(k, v); return v; };   // same rule as /api/candles
 
 async function binance(iv, from, to) {
   const out = []; let end = to * 1000;
@@ -29,7 +31,8 @@ async function twelve(iv, from, to, key) {
   const out = []; let end = null, calls = 0, err = null;
   for (let k = 0; k < 12; k++) {
     const u = `https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=${iv}&outputsize=5000&timezone=UTC&order=ASC${end ? "&end_date=" + encodeURIComponent(end) : ""}&apikey=${key}`;
-    const j = await (await fetch(u)).json(); calls++;
+    let j = await (await fetch(u)).json(); calls++;
+    if (!Array.isArray(j.values) && /minute/i.test(j.message || "")) { await new Promise((r) => setTimeout(r, 62000)); j = await (await fetch(u)).json(); calls++; }   // per-minute credit limit: wait once
     if (!Array.isArray(j.values) || !j.values.length) { err = j.message || null; break; }
     const bars = j.values.map((v) => ({ t: Math.floor(Date.parse(v.datetime.replace(" ", "T") + "Z") / 1000), o: +v.open, h: +v.high, l: +v.low, c: +v.close }));
     out.push(...bars);
@@ -69,7 +72,8 @@ Deno.serve(async (req) => {
   const u = new URL(req.url);
   const { data: k } = await db.from("ai_bot_config").select("value").eq("key", "cron_secret").maybeSingle();
   if (!k || u.searchParams.get("key") !== k.value) return json({ error: "unauthorized" }, 401);
-  const mode = u.searchParams.get("mode") || "scalp", tf = TF[mode]; if (!tf) return json({ error: "mode" }, 400);
+  const mode = u.searchParams.get("mode") || "scalp", MM = AiEng.MODES[mode];   // any engine mode; its entry timeframe picks the feed interval
+  const tf = MM && ({ 60: TF.scalp, 900: TF.intraday, 3600: TF.swing })[MM.base]; if (!tf) return json({ error: "mode" }, 400);
   const days = Math.min(+(u.searchParams.get("days") || 30), 400), spread = +(u.searchParams.get("spread") || 0.4);
   const tdKey = Deno.env.get("TWELVEDATA_API_KEY") || "";
   const to = Math.floor(Date.now() / 1000 / tf.step) * tf.step, from = to - days * 86400;
