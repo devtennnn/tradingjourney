@@ -636,6 +636,36 @@ button.auth-avatar:hover{border-color:var(--gold)}
 .adm-tabs button.on{color:var(--gold2);border-bottom-color:var(--gold)}
 .adm-body{flex:1;min-height:0;overflow:auto;padding-right:4px}
 .adm-pane{display:none}.adm-pane.on{display:block}
+/* Admin → Academy (lesson editor) */
+.ac-wrap{display:grid;grid-template-columns:minmax(230px,300px) minmax(0,1fr);gap:12px;align-items:start}
+.ac-side-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.ac-side-h h3{margin:0}
+.ac-list{display:flex;flex-direction:column;gap:3px;max-height:52vh;overflow:auto}
+.ac-chh{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:800;margin:10px 4px 4px}
+.ac-it{display:flex;gap:8px;align-items:center;width:100%;text-align:left;padding:8px 9px;border-radius:9px;border:1px solid transparent;background:none;color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.ac-it:hover{background:rgba(255,255,255,.04)}.ac-it.on{border-color:rgba(43,240,138,.35);background:rgba(43,240,138,.08)}
+.ac-it .n{flex:none;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.ac-it .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-pill{flex:none;font-size:9.5px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.07);color:var(--muted)}
+.ac-pill.free{background:rgba(43,240,138,.14);color:#8af7c2}.ac-pill.draft{background:rgba(255,207,112,.14);color:#ffcf70}
+.ac-certs{display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.ac-certs a{color:var(--text);text-decoration:none;display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.03)}
+.ac-certs a small{color:var(--muted)}
+.ac-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ac-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ac-ed .form-group{margin-bottom:10px}
+.ac-ed textarea.field{width:100%;box-sizing:border-box;min-height:260px;font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical}
+.ac-checks{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 12px;font-size:13.5px}.ac-checks label{display:flex;gap:7px;align-items:center;cursor:pointer}
+.ac-help{font-size:12px;color:var(--muted);margin:0 0 8px}.ac-help code{color:#8af7c2}
+.ac-tabs{display:flex;gap:6px;margin:6px 0 8px}.ac-tabs button{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}.ac-tabs button.on{color:#000412;background:#2bf08a;border-color:#2bf08a}
+.ac-prev{border:1px dashed var(--line);border-radius:12px;padding:14px 16px;max-height:420px;overflow:auto}
+.ac-q{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.02)}
+.ac-q-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:800;font-size:13px}
+.ac-opt{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;margin-top:6px}
+.ac-opt input[type=radio]{accent-color:#2bf08a;width:16px;height:16px}
+.ac-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.ac-acts .sp{flex:1}.ac-acts a.btn{text-decoration:none}
+.ac-msg{font-size:13px}.ac-msg.err{color:#ff8fa3}.ac-msg.ok{color:#8af7c2}
+@media(max-width:860px){.ac-wrap{grid-template-columns:1fr}.ac-g{grid-template-columns:repeat(2,minmax(0,1fr))}.ac-g2{grid-template-columns:1fr}.ac-opt{grid-template-columns:auto 1fr}.ac-opt input.km{grid-column:2}}
 .adm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .adm-kpi{padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(145deg,#11182c,#0b101d)}
 .adm-kpi small{display:block;font-size:10px;letter-spacing:1.2px;color:var(--muted);font-weight:800;text-transform:uppercase}
@@ -4097,6 +4127,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
       <button type="button" data-t="audit">Audit log</button>
       <button type="button" data-t="pay">Activations<span class="adm-badge" id="admPayBadge" hidden></span></button>
       <button type="button" data-t="promo">Promo codes</button>
+      <button type="button" data-t="course">Academy</button>
       <button type="button" data-t="aiq">AI report</button>
       <button type="button" data-t="nt">Notifications</button>
       <button type="button" data-t="int">Integrations</button>
@@ -4174,6 +4205,18 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
       </div>
       <div class="adm-pane" id="admSig" hidden><form id="sgForm"></form><div id="admSigList"></div></div>
       <div class="adm-pane" id="admInt"></div>
+      <div class="adm-pane" id="admCourse">
+        <div class="adm-kpis" id="acKpis"></div>
+        <div class="ac-wrap">
+          <div class="adm-card ac-side">
+            <div class="ac-side-h"><h3>Lessons</h3><button type="button" class="btn small" id="acNew">+ New lesson</button></div>
+            <div id="acList" class="ac-list"></div>
+            <h3 style="margin-top:18px">Recent certificates</h3>
+            <div id="acCerts" class="ac-certs"></div>
+          </div>
+          <div class="adm-card ac-ed" id="acEd"><p class="hint">Pick a lesson on the left, or add a new one.</p></div>
+        </div>
+      </div>
       <div class="adm-pane" id="admMt">
         <div class="adm-tools"><span class="hint">Take one page offline at a time. Visitors on that page see a maintenance screen with links to the pages that are still open. Admins keep full access.</span></div>
         <div class="mtx-grid" id="mtxList"><div class="adm-msg">Loading…</div></div>
@@ -4873,8 +4916,8 @@ function crOpen(id, scroll){
     const q = Array.isArray(b.quiz) ? b.quiz : null, d = CR.done[id];
     let html = meta + `<div class="cr-body">${crMd(crKm() ? (b.body_km || b.body_en) : b.body_en)}</div>`;
     if(q) html += `<form class="cr-quiz" id="crQuiz"><h4>${esc(t('crQuizT'))}</h4><p>${esc(t('crQuizP'))}</p>` +
-      q.map((qq, k) => `<fieldset class="cr-q"><legend>${k + 1}. ${esc(crKm() ? qq.q_km : qq.q_en)}</legend>` +
-        (crKm() ? qq.opts_km : qq.opts_en).map((o, j) => `<label class="cr-opt"><input type="radio" name="q${k}" value="${j}"><span>${esc(o)}</span></label>`).join('') + '</fieldset>').join('') +
+      q.map((qq, k) => `<fieldset class="cr-q"><legend>${k + 1}. ${esc(crKm() ? qq.q_km || qq.q_en : qq.q_en)}</legend>` +
+        (crKm() && Array.isArray(qq.opts_km) && qq.opts_km.length === qq.opts_en.length && qq.opts_km.every(Boolean) ? qq.opts_km : qq.opts_en).map((o, j) => `<label class="cr-opt"><input type="radio" name="q${k}" value="${j}"><span>${esc(o)}</span></label>`).join('') + '</fieldset>').join('') +
       `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button type="submit" class="btn">${esc(t('crCheck'))}</button><span class="cr-qres" id="crQres">${d && d.quiz_total ? esc(t('crScore').replace('{s}', d.quiz_score).replace('{n}', d.quiz_total)) : ''}</span></div></form>`;
     html += `<div class="cr-nav"><button type="button" class="btn secondary" id="crPrev" ${prev ? '' : 'disabled'}>← ${esc(t('crPrev'))}</button>` +
       (q ? '' : `<button type="button" class="btn" id="crDone">${esc(t(next ? (d ? 'crNext' : 'crDoneNext') : 'crFinish'))}${next ? ' →' : ''}</button>`) +
@@ -4963,14 +5006,14 @@ async function crCertDraw(canvas, c){
   g.fillText('12 lessons and 4 chapter quizzes on risk management, market structure, A+ setups and trading psychology', W / 2, 982);
   const date = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'numeric', month:'long', year:'numeric'}).format(new Date(c.issued_at));
   const foot = (label, val, x) => { g.textAlign = 'left'; g.fillStyle = '#8fa3b8'; g.font = '600 26px Inter, sans-serif'; g.fillText(label, x, 1150); g.fillStyle = '#eef3f8'; g.font = '700 40px Inter, sans-serif'; g.fillText(val, x, 1204); };
-  foot('DATE ISSUED', date, 190); foot('CERTIFICATE ID', c.code, 720);
+  foot('DATE ISSUED', date, 190);   // the certificate ID is not printed; the QR code carries the verify link
   try{ const q = qrMake(CR_VERIFY(c.code)), n = q.getModuleCount(), px = Math.floor(210 / (n + 4)), side = (n + 4) * px, x0 = W - 190 - side, y0 = 1040;
     g.fillStyle = '#fff'; g.fillRect(x0, y0, side, side); g.fillStyle = '#000412';
     for(let r = 0; r < n; r++) for(let k = 0; k < n; k++) if(q.isDark(r, k)) g.fillRect(x0 + (k + 2) * px, y0 + (r + 2) * px, px, px);
     g.textAlign = 'right'; g.fillStyle = '#8fa3b8'; g.font = '500 24px Inter, sans-serif'; g.fillText('Scan to verify', x0 - 24, y0 + side - 10);
   }catch(e){}
   g.textAlign = 'center'; g.fillStyle = '#5f7389'; g.font = '400 24px Inter, sans-serif';
-  g.fillText('Verify at aromx.trade/course?cert=' + c.code + '  ·  Education only, not financial advice', W / 2, 1300);
+  g.fillText('Scan the QR code to verify at aromx.trade  ·  Education only, not financial advice', W / 2, 1300);
 }
 async function crCertShowImg(c){
   const box = $('crCertOut'); if(!box) return;
@@ -9788,7 +9831,7 @@ function openAdmin(){
 function admShow(tab, force){
   Adm.tab = tab;
   document.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', promo:'admPromo', aiq:'admAiq', nt:'admNt', int:'admInt', mt:'admMt'};
+  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', promo:'admPromo', course:'admCourse', aiq:'admAiq', nt:'admNt', int:'admInt', mt:'admMt'};
   Object.entries(map).forEach(([k, id]) => $(id).classList.toggle('on', k === tab));
   if(tab === 'ov') admLoadOverview();
   else if(tab === 'users' && (force || !Adm.users.length)) admLoadUsers(true);
@@ -9796,12 +9839,132 @@ function admShow(tab, force){
   else if(tab === 'pay') admLoadPayments();
   else if(tab === 'aiq') admLoadAiq();
   else if(tab === 'promo') admLoadPromo();
+  else if(tab === 'course') acLoad();
   else if(tab === 'keys') admLoadKeys();
   else if(tab === 'nt') admLoadNotifs();
   else if(tab === 'int') admLoadInt();
   else if(tab === 'mt') mtAdmLoad();
   admClaimBadge();
 }
+
+/* ---------- Admin → Academy: edit AROM Academy lessons and chapter quizzes here (row-level security lets only admins write) ---------- */
+const AC = {list:[], cur:null, lang:'en', dirty:false};
+const acEsc = v => esc(v == null ? '' : v);
+async function acLoad(){
+  $('acList').innerHTML = '<p class="hint">Loading…</p>';
+  try{
+    const [l, st] = await Promise.all([
+      supabaseClient.from('course_lessons').select('*').order('chapter', {ascending:true}).order('ord', {ascending:true}),
+      supabaseClient.rpc('course_admin_stats')]);
+    if(l.error) throw l.error;
+    AC.list = (l.data || []).slice().sort((a, b) => a.chapter - b.chapter || a.ord - b.ord);
+    const s = st && st.data ? (typeof st.data === 'string' ? JSON.parse(st.data) : st.data) : null;
+    const kpi = (lbl, v, sub) => `<div class="adm-kpi"><small>${lbl}</small><b>${v}</b><span>${sub || ''}</span></div>`;
+    $('acKpis').innerHTML = kpi('Lessons', AC.list.filter(x => x.published).length, AC.list.filter(x => !x.published).length + ' drafts · ' + AC.list.filter(x => x.quiz).length + ' quizzes') +
+      kpi('Buyers', s ? s.buyers : '—', s ? '$' + Number(s.sales || 0).toFixed(2) + ' paid by KHQR' : 'run course-admin.sql') + kpi('Learners', s ? s.learners : '—', 'started at least one lesson') + kpi('Certificates', s ? s.certificates : '—', 'issued');
+    $('acCerts').innerHTML = s && s.recent && s.recent.length ? s.recent.map(c => `<a href="/course?cert=${encodeURIComponent(c.code)}" target="_blank" rel="noopener"><span>${acEsc(c.name)}</span><small>${acEsc(c.code)}</small></a>`).join('') : '<p class="hint">None yet.</p>';
+    acList();
+    if(AC.cur && AC.list.some(x => x.id === AC.cur)) acEdit(AC.list.find(x => x.id === AC.cur)); else if(!AC.cur && AC.list[0]) acEdit(AC.list[0]);
+  }catch(e){ console.error('Academy admin load failed:', e); $('acList').innerHTML = '<p class="hint">Could not load lessons.</p>'; }
+}
+function acList(){
+  let last = null, html = '';
+  AC.list.forEach(x => {
+    if(x.chapter !== last){ html += `<div class="ac-chh">Chapter ${x.chapter} · ${acEsc(x.chapter_en)}</div>`; last = x.chapter; }
+    html += `<button type="button" class="ac-it${x.id === AC.cur ? ' on' : ''}" data-id="${acEsc(x.id)}"><span class="n">${x.chapter}.${x.ord}</span><span class="t">${acEsc(x.title_en)}</span>${x.quiz ? '<span class="ac-pill">QUIZ</span>' : ''}${x.free ? '<span class="ac-pill free">FREE</span>' : ''}${x.published ? '' : '<span class="ac-pill draft">DRAFT</span>'}</button>`;
+  });
+  $('acList').innerHTML = html || '<p class="hint">No lessons yet.</p>';
+  $('acList').querySelectorAll('.ac-it').forEach(b => b.onclick = () => { if(AC.dirty && !confirm('Discard unsaved changes?')) return; acEdit(AC.list.find(x => x.id === b.dataset.id)); });
+}
+function acEdit(x){
+  const isNew = !x;
+  if(isNew){ const lastCh = AC.list.length ? AC.list[AC.list.length - 1] : null, ch = lastCh ? lastCh.chapter : 1;
+    x = {id:'', chapter:ch, ord:AC.list.filter(y => y.chapter === ch).length + 1, chapter_en:lastCh ? lastCh.chapter_en : '', chapter_km:lastCh ? lastCh.chapter_km : '', title_en:'', title_km:'', mins:5, free:false, published:false, body_en:'', body_km:'', quiz:null}; }
+  AC.cur = isNew ? null : x.id; AC.dirty = false; acList();
+  const f = (id, lbl, val, extra) => `<div class="form-group"><label>${lbl}</label><input class="field" id="${id}" value="${acEsc(val)}" ${extra || ''}></div>`;
+  $('acEd').innerHTML = `<h3>${isNew ? 'New lesson' : 'Edit lesson'}</h3>
+    <div class="ac-g">${f('acId', 'Lesson address (in the link)', x.id, isNew ? 'placeholder="risk-4" maxlength="40"' : 'readonly')}${f('acCh', 'Chapter', x.chapter, 'type="number" min="1" max="50"')}${f('acOrd', 'Order in chapter', x.ord, 'type="number" min="1" max="99"')}${f('acMins', 'Minutes', x.mins, 'type="number" min="1" max="120"')}</div>
+    <div class="ac-g2">${f('acChEn', 'Chapter title (English)', x.chapter_en, 'maxlength="80"')}${f('acChKm', 'Chapter title (ខ្មែរ)', x.chapter_km, 'maxlength="80"')}</div>
+    <div class="ac-g2">${f('acTEn', 'Lesson title (English)', x.title_en, 'maxlength="120"')}${f('acTKm', 'Lesson title (ខ្មែរ)', x.title_km, 'maxlength="120"')}</div>
+    <div class="ac-checks"><label><input type="checkbox" id="acFree" ${x.free ? 'checked' : ''}> Free preview (anyone can read it)</label><label><input type="checkbox" id="acPub" ${x.published ? 'checked' : ''}> Published (visible on /course)</label></div>
+    <p class="ac-help">Formatting: <code>## Heading</code> · <code>- list item</code> · <code>**bold**</code> · <code>&gt; tip box</code> · a blank line starts a new paragraph.</p>
+    <div class="ac-tabs" id="acLangT"><button type="button" data-l="en" class="on">English</button><button type="button" data-l="km">ខ្មែរ</button><button type="button" data-l="prev">Preview</button></div>
+    <textarea class="field" id="acBEn" spellcheck="true">${acEsc(x.body_en)}</textarea><textarea class="field" id="acBKm" hidden>${acEsc(x.body_km)}</textarea>
+    <div class="ac-prev cr-body" id="acPrev" hidden></div>
+    <h3 style="margin-top:18px">Chapter quiz <span class="hint" style="text-transform:none;letter-spacing:0">(optional · usually on the last lesson of a chapter · learners need 3/4 to pass)</span></h3>
+    <div id="acQuiz"></div><button type="button" class="btn secondary small" id="acQAdd">+ Add question</button>
+    <div class="ac-acts"><button type="button" class="btn" id="acSave">${isNew ? 'Create lesson' : 'Save changes'}</button>${isNew ? '' : `<a class="btn secondary" href="/course#${acEsc(x.id)}" target="_blank" rel="noopener">Open on site</a>`}<span class="ac-msg" id="acMsg"></span><span class="sp"></span>${isNew ? '' : '<button type="button" class="btn secondary" id="acDel" style="color:#ff8fa3">Delete</button>'}</div>`;
+  (x.quiz || []).forEach(q => acQAdd(q)); acQNum();
+  $('acQAdd').onclick = () => { acQAdd(null); acQNum(); AC.dirty = true; };
+  $('acLangT').querySelectorAll('button').forEach(b => b.onclick = () => {
+    $('acLangT').querySelectorAll('button').forEach(o => o.classList.toggle('on', o === b));
+    $('acBEn').hidden = b.dataset.l !== 'en'; $('acBKm').hidden = b.dataset.l !== 'km'; $('acPrev').hidden = b.dataset.l !== 'prev';
+    if(b.dataset.l === 'prev') $('acPrev').innerHTML = `<h3 class="cr-r-t">${acEsc(S.lang === 'km' ? $('acTKm').value || $('acTEn').value : $('acTEn').value)}</h3>` + crMd(S.lang === 'km' ? $('acBKm').value || $('acBEn').value : $('acBEn').value);
+  });
+  $('acEd').querySelectorAll('input,textarea').forEach(el => el.addEventListener('input', () => { AC.dirty = true; }));
+  $('acCh').addEventListener('change', () => { const same = AC.list.find(y => y.chapter === +$('acCh').value && y.id !== AC.cur); if(same){ $('acChEn').value = same.chapter_en; $('acChKm').value = same.chapter_km; } });
+  $('acSave').onclick = acSave;
+  const d = $('acDel'); if(d) d.onclick = () => acDelete(x);
+}
+function acQAdd(q){
+  q = q || {q_en:'', q_km:'', opts_en:['', '', ''], opts_km:['', '', ''], a:0};
+  const box = document.createElement('div'); box.className = 'ac-q';
+  const n = Date.now() + Math.random().toString(36).slice(2, 6);
+  const opt = k => `<div class="ac-opt"><input type="radio" name="acA${n}" value="${k}" ${q.a === k ? 'checked' : ''} title="Correct answer"><input class="field en" placeholder="Answer ${k + 1} (English)" value="${acEsc((q.opts_en || [])[k])}"><input class="field km" placeholder="ចម្លើយ ${k + 1} (ខ្មែរ)" value="${acEsc((q.opts_km || [])[k])}"></div>`;
+  box.innerHTML = `<div class="ac-q-h"><span class="qn">Question</span><button type="button" class="btn secondary small ac-qdel">Remove</button></div>
+    <div class="ac-g2"><input class="field qen" placeholder="Question (English)" value="${acEsc(q.q_en)}"><input class="field qkm" placeholder="សំណួរ (ខ្មែរ)" value="${acEsc(q.q_km)}"></div>
+    ${[0, 1, 2, 3].map(opt).join('')}<p class="ac-help" style="margin:6px 0 0">Tick the correct answer. Leave a row empty to use fewer answers (at least 2).</p>`;
+  box.querySelector('.ac-qdel').onclick = () => { box.remove(); acQNum(); AC.dirty = true; };
+  box.querySelectorAll('input').forEach(el => el.addEventListener('input', () => { AC.dirty = true; }));
+  $('acQuiz').appendChild(box);
+}
+function acQNum(){ $('acQuiz').querySelectorAll('.ac-q .qn').forEach((el, i) => { el.textContent = 'Question ' + (i + 1); }); }
+function acQuizRead(){
+  const out = [];
+  for(const [i, box] of [...$('acQuiz').querySelectorAll('.ac-q')].entries()){
+    const rows = [...box.querySelectorAll('.ac-opt')].map(r => ({en:r.querySelector('.en').value.trim(), km:r.querySelector('.km').value.trim(), on:r.querySelector('input[type=radio]').checked}));
+    const keep = rows.filter(r => r.en), qen = box.querySelector('.qen').value.trim();
+    if(!qen) throw new Error('Question ' + (i + 1) + ': write the question in English.');
+    if(keep.length < 2) throw new Error('Question ' + (i + 1) + ': give at least 2 answers.');
+    const a = keep.findIndex(r => r.on);
+    if(a < 0) throw new Error('Question ' + (i + 1) + ': tick the correct answer (on a row that has text).');
+    const qq = {q_en:qen, q_km:box.querySelector('.qkm').value.trim(), opts_en:keep.map(r => r.en), a};   // Khmer left empty = the course page shows the English text
+    if(keep.every(r => r.km)) qq.opts_km = keep.map(r => r.km);
+    out.push(qq);
+  }
+  return out.length ? out : null;
+}
+async function acSave(){
+  const msg = $('acMsg'), isNew = !AC.cur; msg.className = 'ac-msg'; msg.textContent = '';
+  try{
+    const id = $('acId').value.trim().toLowerCase();
+    if(!/^[a-z0-9][a-z0-9-]{1,39}$/.test(id)) throw new Error('Lesson address: 2 to 40 lowercase letters, digits or dashes (for example risk-4).');
+    if(isNew && AC.list.some(x => x.id === id)) throw new Error('A lesson with this address already exists.');
+    const row = {id, chapter:Math.max(1, parseInt($('acCh').value, 10) || 1), ord:Math.max(1, parseInt($('acOrd').value, 10) || 1), mins:Math.min(120, Math.max(1, parseInt($('acMins').value, 10) || 5)),
+      chapter_en:$('acChEn').value.trim(), chapter_km:$('acChKm').value.trim(), title_en:$('acTEn').value.trim(), title_km:$('acTKm').value.trim(),
+      free:$('acFree').checked, published:$('acPub').checked, body_en:$('acBEn').value.replace(/\r/g, '').trim(), body_km:$('acBKm').value.replace(/\r/g, '').trim(), quiz:acQuizRead()};
+    if(!row.chapter_en || !row.title_en) throw new Error('Write the chapter title and the lesson title in English.');
+    if(!row.body_en) throw new Error('The lesson text (English) is empty.');
+    $('acSave').disabled = true; msg.textContent = 'Saving…';
+    const r = isNew ? await supabaseClient.from('course_lessons').insert(row) : await supabaseClient.from('course_lessons').update(row).eq('id', id);
+    if(r.error) throw r.error;
+    // one chapter title for the whole chapter
+    const others = AC.list.filter(y => y.chapter === row.chapter && y.id !== id && (y.chapter_en !== row.chapter_en || y.chapter_km !== row.chapter_km));
+    if(others.length){ const r2 = await supabaseClient.from('course_lessons').update({chapter_en:row.chapter_en, chapter_km:row.chapter_km}).eq('chapter', row.chapter); if(r2.error) throw r2.error; }
+    AC.cur = id; AC.dirty = false; msg.className = 'ac-msg ok'; msg.textContent = 'Saved.'; toast('Lesson saved');
+    await acLoad(); try{ if(PAGE === 'course'){ CR.busy = false; crLoad(); } }catch(e){}
+  }catch(e){
+    const m = String((e && e.message) || e);
+    msg.className = 'ac-msg err'; msg.textContent = /row-level security|permission denied|42501/i.test(m) ? 'Not allowed: run supabase/sql/course-admin.sql in Supabase first.' : m;
+  }finally{ const b = $('acSave'); if(b) b.disabled = false; }
+}
+async function acDelete(x){
+  if(!confirm('Delete "' + x.title_en + '"? Learners lose their progress for this lesson. This cannot be undone.')) return;
+  const {error} = await supabaseClient.from('course_lessons').delete().eq('id', x.id);
+  if(error){ $('acMsg').className = 'ac-msg err'; $('acMsg').textContent = /row-level security|permission|42501/i.test(error.message) ? 'Not allowed: run supabase/sql/course-admin.sql in Supabase first.' : error.message; return; }
+  AC.cur = null; AC.dirty = false; toast('Lesson deleted'); acLoad();
+}
+document.getElementById('acNew') && (document.getElementById('acNew').onclick = () => { if(AC.dirty && !confirm('Discard unsaved changes?')) return; acEdit(null); });
 function admStamp(){ Adm.loadedAt = new Date(); $('admUpdated').textContent = 'Updated ' + new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(Adm.loadedAt) + ' ICT'; }
 
 async function intCall(action, extra){
