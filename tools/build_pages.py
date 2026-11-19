@@ -28,8 +28,10 @@ APP = [
     ("analysis", "/analysis", "analysis", 'id="anH1"'),
     ("pricing",  "/pricing",  "pricing",  'data-i18n-html="prH1"'),
     ("refer",    "/refer",    "refer",    'id="rfH"'),
+    ("profile",  "/profile",  "profile",  'id="pfH"'),   # private account page: noindex, not in the sitemap
 ]
-HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"']
+PRIVATE = {"profile"}
+HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"', 'id="pfH"']
 
 META = {
     "en": {
@@ -45,6 +47,8 @@ META = {
                      "AROM TRADE plans: Free, Premium $2.50, Elite $14.99 and Ultra $49.99 per 30 days. No auto-renew, pay with KHQR. Compare every feature."),
         "refer":    ("AROM TRADE — Refer & Earn",
                      "Invite 15 traders who join and use AROM TRADE and get 30 days of Elite free. Earn bonus signals when your referrals buy a plan."),
+        "profile":  ("AROM TRADE — My Profile",
+                     "Your AROM TRADE account: name, photo, password, plan and expiry, purchase history, Telegram and notification alerts."),
     },
     "km": {
         "index":    ("AROM TRADE — កំណត់ហេតុជួញដូរ និងសញ្ញា AI សម្រាប់មាស BTC និង Forex",
@@ -59,6 +63,8 @@ META = {
                      "គម្រោង AROM TRADE៖ Free, Premium $2.50, Elite $14.99 និង Ultra $49.99 ក្នុង ៣០ ថ្ងៃ។ មិនបន្តដោយស្វ័យប្រវត្តិ បង់តាម KHQR។ ប្រៀបធៀបមុខងារទាំងអស់។"),
         "refer":    ("AROM TRADE — ណែនាំមិត្ត និងទទួលរង្វាន់",
                      "អញ្ជើញអ្នកជួញដូរ ១៥ នាក់ដែលចូលរួម និងប្រើ AROM TRADE ហើយទទួល Elite ឥតគិតថ្លៃ ៣០ ថ្ងៃ។ ទទួលសញ្ញាបន្ថែមនៅពេលមិត្តទិញគម្រោង។"),
+        "profile":  ("AROM TRADE — ប្រវត្តិរូបរបស់ខ្ញុំ",
+                     "គណនី AROM TRADE របស់អ្នក៖ ឈ្មោះ រូបថត ពាក្យសម្ងាត់ គម្រោង និងថ្ងៃផុតកំណត់ ប្រវត្តិទិញ Telegram និងការជូនដំណឹង។"),
     },
 }
 
@@ -124,7 +130,7 @@ def head(s, name, path, lang):
     s = sub1(r'<meta property="og:description" content="[^"]*">', f'<meta property="og:description" content="{ESC(desc)}">', s, "og:description")
     s = sub1(r'<meta name="twitter:title" content="[^"]*">', f'<meta name="twitter:title" content="{ESC(title)}">', s, "twitter:title")
     s = sub1(r'<meta name="twitter:description" content="[^"]*">', f'<meta name="twitter:description" content="{ESC(desc)}">', s, "twitter:description")
-    block = alternates(path) + f'<meta property="og:locale" content="{"km_KH" if lang == "km" else "en_US"}">\n' + app_jsonld(name, lang)
+    block = ('<meta name="robots" content="noindex, nofollow">\n' if name in PRIVATE else "") + alternates(path) + f'<meta property="og:locale" content="{"km_KH" if lang == "km" else "en_US"}">\n' + app_jsonld(name, lang)
     s = sub1(r"<!--seo:head-->.*?<!--/seo:head-->", lambda m: "<!--seo:head-->\n" + block + "<!--/seo:head-->", s, "seo:head marker")
     return s
 
@@ -134,7 +140,7 @@ def translations(src):
          "process.stdout.write(JSON.stringify(new Function('return '+s.slice(a+10,b+2))()));"
     return json.loads(subprocess.run(["node", "-e", js], input=src, capture_output=True, text=True, check=True).stdout)
 
-KM_PATHS = ["/journey", "/news", "/refer", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
+KM_PATHS = ["/journey", "/news", "/refer", "/profile", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
 
 def markup_only(s, fn):
     """Apply fn to the HTML outside <script> and <style> blocks."""
@@ -580,7 +586,7 @@ def main():
     for name in TRUST:
         for lang in ("en", "km"):
             write(("km/" if lang == "km" else "") + name + ".html", trust_page(name, lang))
-    write("sitemap.xml", sitemap([p for _, p, _, _ in APP] + [TRUST[n]["path"] for n in TRUST]))
+    write("sitemap.xml", sitemap([p for n, p, _, _ in APP if n not in PRIVATE] + [TRUST[n]["path"] for n in TRUST]))
     print("built", len(APP) * 2, "app pages,", len(TRUST) * 2, "trust pages and sitemap.xml")
 
 if __name__ == "__main__":
