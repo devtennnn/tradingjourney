@@ -8259,15 +8259,59 @@ function termSession(nowS){
   return {k:'termClosed', on:false};
 }
 /* ---------- real-time feed: forming candle + live price (/api/live, 1-minute data, every 5 s) ---------- */
-const LIVE = {sym:'', m5:[], price:null, prev:null, off:0, at:0, ok:false, busy:false};
+const LIVE = {sym:'', m5:[], price:null, prev:null, off:0, at:0, ok:false, busy:false, polled:0};
+// polled every 2 s (gold: real-time spot tick + Twelve Data 1-minute candles). BTC also streams every trade from Binance (below), so its poll only refills closed minutes every 5 s.
 async function liveTick(){
+  wsSync();
   if(!Prem.elite || !AI.data || LIVE.busy || document.visibilityState !== 'visible' || !$('termCv')) return;
-  LIVE.busy = true;
+  if(wsFresh() && Date.now() - LIVE.polled < 5000) return;
+  LIVE.busy = true; LIVE.polled = Date.now();
   try{ const r = await fetch('/api/live?symbol=' + AI.sym, {cache:'no-store'}); if(!r.ok) throw new Error(r.status);
-    const j = await r.json(); if(j.symbol === AI.sym && AI.data) liveApply(j); }
-  catch(e){ LIVE.ok = false; }
+    const j = await r.json(); if(j.symbol === AI.sym && AI.data){ liveApply(j); if(wsFresh()) wsApply(true); } }
+  catch(e){ if(!wsFresh()) LIVE.ok = false; }
   LIVE.busy = false; termDraw();
 }
+/* ---------- BTC tick stream: Binance public WebSocket (free, no key, every trade, same idea as TradingView / MT5) ----------
+   BTCUSDT on Binance and the Twelve Data BTC/USD candles differ by a few dollars, so each tick is shifted by
+   (last closed candle close - Binance close of the same minute). Without that match no tick is applied and the 2-second poll is used. */
+const WS = {sock:null, sym:'', px:null, at:0, k:{}, retry:0, tmr:0, wait:0};
+const WS_SYM = {BTCUSD:'btcusdt'}, WS_HOSTS = ['wss://data-stream.binance.vision', 'wss://stream.binance.com:9443'];
+const wsFresh = () => !!(WS.sock && WS.sym === AI.sym && WS.px != null && Date.now() - WS.at < 5000);
+function wsSync(){
+  const want = Prem.elite && AI.data && document.visibilityState === 'visible' && $('termCv') && WS_SYM[AI.sym] && 'WebSocket' in window ? AI.sym : '';
+  if(WS.sym === want && (WS.sock || !want || Date.now() < (WS.wait || 0))) return;
+  if(WS.sock){ const o = WS.sock; WS.sock = null; o.onclose = null; try{ o.close(); }catch(_){} }
+  if(WS.sym !== want){ WS.k = {}; WS.px = null; }
+  WS.sym = want; if(!want) return;
+  const s = WS_SYM[want]; let ws;
+  try{ ws = new WebSocket(WS_HOSTS[WS.retry % WS_HOSTS.length] + '/stream?streams=' + s + '@aggTrade/' + s + '@kline_1m'); }catch(e){ WS.retry++; return; }
+  WS.sock = ws;
+  ws.onopen = () => { WS.retry = 0; };
+  ws.onmessage = ev => { let m; try{ m = JSON.parse(ev.data); }catch(_){ return; } const d = m.data || m;
+    if(d.e === 'aggTrade'){ WS.px = +d.p; WS.at = Date.now(); wsApply(); }
+    else if(d.e === 'kline' && d.k && d.k.x){ WS.k[Math.floor(d.k.t / 1000)] = +d.k.c; const ks = Object.keys(WS.k); if(ks.length > 30) delete WS.k[ks.sort()[0]]; } };
+  ws.onerror = () => { try{ ws.close(); }catch(_){} };
+  ws.onclose = () => { if(WS.sock !== ws) return; WS.sock = null; WS.retry++; WS.wait = Date.now() + Math.min(30000, 1000 * 2 ** Math.min(WS.retry, 5)); };   // liveTick (every 2 s) reconnects after the back-off
+  // closed 1-minute closes of the last 10 minutes, so the price alignment works from the first tick
+  fetch('https://data-api.binance.vision/api/v3/klines?symbol=' + s.toUpperCase() + '&interval=1m&limit=10').then(r => r.json())
+    .then(a => { if(Array.isArray(a) && WS.sym === want) a.slice(0, -1).forEach(k => { WS.k[Math.floor(k[0] / 1000)] = +k[4]; }); }).catch(() => {});
+}
+function wsApply(quiet){
+  if(!AI.data || WS.sym !== AI.sym || WS.px == null) return;
+  if(LIVE.sym !== AI.sym){ LIVE.sym = AI.sym; LIVE.price = null; LIVE.prev = null; LIVE.m5 = []; LIVE.spot = null; }   // the stream can start before the first poll answers
+  const c = AI.data.candles, last = c[c.length - 1], ST = aiM().base, ref = WS.k[last.t + ST - 60];
+  if(ref == null) return;
+  const px = WS.px + (last.c - ref), nowB = Math.floor(Date.now() / 1000 / ST) * ST;
+  if(nowB < last.t + ST) return;
+  let lk = LIVE.m5[LIVE.m5.length - 1];
+  if(!lk || lk.t < nowB){ const o = lk ? lk.c : last.c; lk = {t:nowB, o, h:Math.max(o, px), l:Math.min(o, px), c:px, live:true}; LIVE.m5.push(lk); }
+  else if(lk.t === nowB){ lk.c = px; lk.h = Math.max(lk.h, px); lk.l = Math.min(lk.l, px); }
+  if(px !== LIVE.price){ LIVE.prev = LIVE.price; LIVE.price = px; }
+  LIVE.at = Date.now(); LIVE.lag = 0; LIVE.ok = true; LIVE.kind = 'market'; LIVE.src = 'Binance BTCUSDT tick stream';
+  // redraw at most 4 times a second (Binance can send dozens of trades a second)
+  if(!quiet && !WS.tmr) WS.tmr = setTimeout(() => { WS.tmr = 0; if(!TERM.drag && document.visibilityState === 'visible') termDraw(); }, 250);
+}
+document.addEventListener('visibilitychange', () => { try{ wsSync(); }catch(_){} });
 // the true spot price, when the server sent one that is still fresh (under 3 minutes counting the time since it was fetched)
 function liveSpotOk(){ return !!(LIVE.spot && LIVE.sym === AI.sym && LIVE.spot.lag + (Date.now() - LIVE.at) / 1000 < 180); }
 function liveApply(j){
@@ -8335,7 +8379,7 @@ function termHeader(){
     const lagM = Math.round((LIVE.lag || 0) / 60), spotLive = on && liveSpotOk(), rt = on && ((LIVE.lag || 0) < 120 || spotLive);
     el.classList.toggle('on', rt); el.querySelector('small').textContent = rt ? 'LIVE' : on ? 'DELAYED ' + lagM + 'm' : 'OFFLINE';
     const kindL = LIVE.kind === 'spot' ? 'spot' : LIVE.kind === 'futures' ? 'futures' : 'market', lagTxt = (LIVE.lag || 0) < 120 ? (LIVE.lag || 0) + ' s' : lagM + ' min';
-    el.title = spotLive ? 'Live SPOT price (' + LIVE.spot.src + ', ' + Math.round(LIVE.spot.lag + (Date.now() - LIVE.at) / 1000) + ' s old). ' + (/^Twelve Data/.test(LIVE.src || '') ? 'The candles come from ' + LIVE.src + ' (real-time).' : 'The candles come from COMEX futures' + ((LIVE.lag || 0) >= 120 ? ' (about ' + lagTxt + ' behind, and trade a few dollars above spot)' : '') + '.') : rt ? 'Live ' + kindL + ' price (' + lagTxt + ' behind) · the forming candle updates every 5 seconds' : on ? 'Price feed is about ' + lagTxt + ' behind the exchange (free Yahoo ' + kindL + ' data). Updates every 5 seconds.' : 'Live feed unavailable';
+    el.title = spotLive ? 'Live SPOT price (' + LIVE.spot.src + ', ' + Math.round(LIVE.spot.lag + (Date.now() - LIVE.at) / 1000) + ' s old). ' + (/^Twelve Data/.test(LIVE.src || '') ? 'The candles come from ' + LIVE.src + ' (real-time).' : 'The candles come from COMEX futures' + ((LIVE.lag || 0) >= 120 ? ' (about ' + lagTxt + ' behind, and trade a few dollars above spot)' : '') + '.') : rt ? 'Live ' + kindL + ' price (' + lagTxt + ' behind) · ' + (wsFresh() ? 'tick by tick from ' + LIVE.src : 'the forming candle updates every 2 seconds') : on ? 'Price feed is about ' + lagTxt + ' behind the exchange (free Yahoo ' + kindL + ' data). Updates every 2 seconds.' : 'Live feed unavailable';
     $('termLivePx').textContent = LIVE.price != null && LIVE.sym === AI.sym ? (spotLive ? LIVE.spot.price : LIVE.price).toFixed(dp) : '—';
     const dc = AI.data && LIVE.price != null && LIVE.sym === AI.sym ? (() => { const m5 = AI.data.candles, day = Math.floor(Date.now() / 86400000) * 86400, first = m5.find(b => b.t >= day); return first ? LIVE.price - first.o : null; })() : null;
     $('termLiveChg').textContent = dc == null ? '' : (dc >= 0 ? '+' : '') + dc.toFixed(dp); $('termLiveChg').className = 'chg ' + (dc == null ? '' : dc >= 0 ? 'u' : 'd');
@@ -8635,7 +8679,7 @@ function termDraw(){
   termIndSync();
   if('ResizeObserver' in window) new ResizeObserver(() => termDraw()).observe(box);
   setInterval(() => { if(Prem.elite && AI.data) termHeader(); }, 30000);
-  setInterval(liveTick, 5000);                                                     // live price + forming candle
+  setInterval(liveTick, 2000);                                                     // live price + forming candle (BTC: tick stream, see wsSync)
   setInterval(() => { if(Prem.elite && AI.data && LIVE.price != null && document.visibilityState === 'visible' && !TERM.drag) termDraw(); }, 1000);   // candle countdown
 })();
 aiSync();

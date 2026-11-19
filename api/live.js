@@ -1,7 +1,7 @@
 // Vercel serverless function: GET /api/live?symbol=XAUUSD[&debug=1]
 // Real-time feed for the AI terminal: the last ~2 hours of 1-minute candles from Yahoo Finance,
 // used by the page to build the candle that is still forming (5m / 15m) and the live price.
-// Cached 4 s on the CDN so every viewer shares one upstream call. Nothing is generated here.
+// Cached 2 s on the CDN (the page polls every 2 s) so every viewer shares one upstream call. Nothing is generated here.
 //
 // Gold and silver have two Yahoo feeds: COMEX futures (GC=F / SI=F, can run ~10 minutes behind and trade at a premium to spot)
 // and spot (XAUUSD=X / XAGUSD=X, the same kind of price the broker and the candles show). Both are fetched and the FRESHER one is used,
@@ -91,7 +91,7 @@ module.exports = async (req, res) => {
       const td = tdR.value, sp = gaR.status === 'fulfilled' ? gaR.value : null, p = tdPrice(td, sp);
       const body = {symbol: key, source: td.source, kind: 'spot', price: p.price, time: p.time, lag: p.lag, m1: td.m1, at: now};
       if (sp && sp.lag <= 180 && Math.abs(sp.price - td.price) / td.price <= 0.015) body.spot = sp;
-      res.setHeader('Cache-Control', 'public, s-maxage=4, stale-while-revalidate=8');
+      res.setHeader('Cache-Control', 'public, s-maxage=2, stale-while-revalidate=4');
       if (debug) { res.setHeader('Cache-Control', 'no-store'); body.m1 = undefined; body.bars = td.bars; body.why = 'Twelve Data 1-minute spot candles' + (p.price === td.price ? '' : ' + spot tick'); body.spot_api = sp; body.errors = gaR.status === 'rejected' ? ['gold-api: ' + gaR.reason.message] : []; }
       return res.status(200).json(body);
     }
@@ -103,7 +103,7 @@ module.exports = async (req, res) => {
     const pick = choose(fut, spot);
     if (!pick) throw new Error(futR.reason && futR.reason.message || 'no feed');
     const u = pick.use, spotUsed = u === spot && !!SPOT[key];
-    res.setHeader('Cache-Control', 'public, s-maxage=4, stale-while-revalidate=8');
+    res.setHeader('Cache-Control', 'public, s-maxage=2, stale-while-revalidate=4');
     const realSpot = spotOk(gaR.status === 'fulfilled' ? gaR.value : null, fut);
     const body = {symbol: key, source: 'Yahoo Finance · ' + u.symbol, kind: spotUsed ? 'spot' : (SPOT[key] ? 'futures' : 'market'), price: u.price, time: u.time, lag: u.lag, m1: u.m1, at: now};
     if (realSpot) body.spot = realSpot;   // the page shows this as the headline price; candles stay on the feed above
