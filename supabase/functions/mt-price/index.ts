@@ -16,8 +16,10 @@ const json = (o, status = 200, cache = "no-store") => new Response(JSON.stringif
 
 let acct = null, acctAt = 0;            // {id, region, state, connectionStatus, broker}
 const cache = new Map();                // symbol -> {at, body}
-async function ma(url) {
-  const r = await fetch(url, { headers: { "auth-token": TOKEN(), Accept: "application/json" }, signal: AbortSignal.timeout(6000) });
+async function ma(url, ms = 8000) {
+  let r;
+  try { r = await fetch(url, { headers: { "auth-token": TOKEN(), Accept: "application/json" }, signal: AbortSignal.timeout(ms) }); }
+  catch (e) { return { ok: false, status: 0, j: null, t: "timeout / network: " + new URL(url).pathname.split("/").slice(-2).join("/") }; }
   const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch (_) { /* not json */ }
   return { ok: r.ok, status: r.status, j, t: t.slice(0, 300) };
 }
@@ -27,7 +29,7 @@ async function account() {
   const id = String((data && data.value) || "").trim();
   if (!/^[0-9a-f-]{20,64}$/i.test(id)) throw new Error("mt_price_account not configured");
   // the account lookup needs the management API; a token limited to market data may not have it, so fall back to the london region
-  const r = await ma(`${PROV}/users/current/accounts/${encodeURIComponent(id)}`);
+  const r = await ma(`${PROV}/users/current/accounts/${encodeURIComponent(id)}`, 10000);
   acct = r.ok && r.j ? { id, region: r.j.region, state: r.j.state, connectionStatus: r.j.connectionStatus, broker: r.j.server }
     : { id, region: "london", state: "unknown", connectionStatus: "lookup " + r.status + ": " + clip((r.j && r.j.message) || r.t), broker: null };
   acctAt = r.ok ? Date.now() : Date.now() - 9 * 60_000;   // retry a failed lookup after a minute
@@ -41,8 +43,16 @@ Deno.serve(async (req) => {
   if (!TOKEN()) return json({ error: "metaapi_not_configured" }, 503);
   try {
     const a = await account(), base = `${client(a.region)}/users/current/accounts/${encodeURIComponent(a.id)}`;
+    // ?deploy=1&key=<ai_bot_config.cron_secret>: start the cloud MT5 terminal (MetaApi bills while it is deployed). Admin / cron only.
+    if (url.searchParams.get("deploy") === "1") {
+      const { data: k } = await db.from("ai_bot_config").select("value").eq("key", "cron_secret").maybeSingle();
+      if (!k || !k.value || url.searchParams.get("key") !== k.value) return json({ error: "unauthorized" }, 401);
+      const r = await fetch(`${PROV}/users/current/accounts/${encodeURIComponent(a.id)}/deploy`, { method: "POST", headers: { "auth-token": TOKEN() }, signal: AbortSignal.timeout(15000) });
+      acctAt = 0;
+      return json({ deploy_status: r.status, detail: r.ok ? "deploying" : clip(await r.text()) }, r.ok ? 200 : 502);
+    }
     if (url.searchParams.get("debug") === "1") {
-      const s = await ma(`${base}/symbols`);
+      const s = await ma(`${base}/symbols`, 20000);
       const gold = Array.isArray(s.j) ? s.j.filter((x) => /XAU|GOLD/i.test(String(x))).slice(0, 20) : null;
       const t = TOKEN();
       return json({ token: { length: t.length, jwt_parts: t.split(".").length }, account: { region: a.region, state: a.state, connectionStatus: a.connectionStatus, server: a.broker }, symbols_status: s.status, gold_symbols: gold, symbols_error: s.ok ? null : clip((s.j && s.j.message) || s.t) });
