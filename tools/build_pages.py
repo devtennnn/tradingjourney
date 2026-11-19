@@ -380,8 +380,8 @@ TRACK_JS = r"""
 <script>
 (function(){
   var KM = document.documentElement.lang === 'km', box = document.getElementById('tr');
-  var TX = KM ? {sig:'សញ្ញា', win:'អត្រាឈ្នះ', avg:'R ជាមធ្យម', tot:'R សរុប', mkt:'ទីផ្សារ · របៀប', n:'ចំនួន', since:'កត់ត្រាចាប់ពី {d} · ធ្វើបច្ចុប្បន្នភាព {u}។', small:'សញ្ញាតិចជាង ៣០ ក្នុងមួយទីផ្សារ មិនអាចប្រាប់អ្វីច្រើនបានទេ។', err:'មិនអាចផ្ទុកលទ្ធផលបានទេ។ សូមព្យាយាមម្តងទៀតពេលក្រោយ។', none:'មិនទាន់មានសញ្ញាបានបិទនៅឡើយ។', scalp:'Scalping', intraday:'Intraday', swing:'Swing'}
-                : {sig:'Signals', win:'Win rate', avg:'Average R', tot:'Total R', mkt:'Market · style', n:'Signals', since:'Recorded since {d} · updated {u}.', small:'With fewer than 30 signals per market, a result says very little.', err:'The results could not load. Please try again later.', none:'No closed signals yet.', scalp:'Scalping', intraday:'Intraday', swing:'Swing'};
+  var TX = KM ? {sig:'សញ្ញា', win:'អត្រាឈ្នះ', avg:'R ជាមធ្យម', tot:'R សរុប', mkt:'ទីផ្សារ · របៀប', n:'ចំនួន', since:'កត់ត្រាចាប់ពី {d} · ធ្វើបច្ចុប្បន្នភាព {u}។', small:'សញ្ញាតិចជាង ៣០ ក្នុងមួយទីផ្សារ មិនអាចប្រាប់អ្វីច្រើនបានទេ។', err:'មិនអាចផ្ទុកលទ្ធផលបានទេ។ សូមព្យាយាមម្តងទៀតពេលក្រោយ។', none:'មិនទាន់មានសញ្ញាបានបិទនៅឡើយ។', scalp:'Scalping', intraday:'Intraday', swing:'Swing', swing_brt:'Swing breakout retest (beta)'}
+                : {sig:'Signals', win:'Win rate', avg:'Average R', tot:'Total R', mkt:'Market · style', n:'Signals', since:'Recorded since {d} · updated {u}.', small:'With fewer than 30 signals per market, a result says very little.', err:'The results could not load. Please try again later.', none:'No closed signals yet.', scalp:'Scalping', intraday:'Intraday', swing:'Swing', swing_brt:'Swing breakout retest (beta)'};
   var R = function(v){ v = +v || 0; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + 'R'; };
   var cls = function(v){ return +v > 0 ? 'pos' : +v < 0 ? 'neg' : ''; };
   var e = function(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };

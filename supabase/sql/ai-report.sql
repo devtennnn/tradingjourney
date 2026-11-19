@@ -1,4 +1,4 @@
--- AI signal report for the Admin dashboard (Admin -> AI report). Admin only. v2 NOT YET APPLIED (waiting for approval): apply as migration admin_ai_report_v2.
+-- AI signal report for the Admin dashboard (Admin -> AI report). Admin only. v2 applied (migration admin_ai_report_v2, run in the dashboard). BETA rows (feat.beta) count as posted, not shadow.
 -- Reads public.ai_signals between two instants and returns totals, by pair, by strategy, per day (ICT) and the signal list (max 500).
 -- Research (shadow) signals = shadow research modes (anything other than scalp / intraday / swing) and public modes logged in shadow for one
 -- symbol (feat.shadow = true, e.g. gold intraday while paused). They are left out unless p_research is true; each row and strategy says if it is shadow.
