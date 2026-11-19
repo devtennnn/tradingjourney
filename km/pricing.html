@@ -7402,7 +7402,9 @@ const AiEng = (() => {
      INTRADAY  H1 trend  → M15 entry · 1.5R / 3R / 4.5R runner · valid 1 hour · London/NY
      SWING     H4 trend + Daily filter → H1 entry · 2R / 4R / 6R runner · valid 4 hours · any weekday session */
   const MODES = {
-    scalp:    {key:'scalp',    base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true,
+    // minRisk: smallest stop per symbol (price units). Gold: $5, so the $0.40 spread stays under ~8 % of 1R (gold M1 backtest, 20 days clean Twelve Data:
+    // no minimum -0.28R n=106 · $4 -0.05R n=48 · $5 +0.13R n=31). Gold scalping is in shadow (ai_bot_config shadow_pairs) while this proves itself.
+    scalp:    {key:'scalp',    base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true, minRisk:{XAUUSD:5},
                keys:['bias','align','pullback','trigger','session','news','risk','room','sr','tline','retest']},
     // btcx: SHADOW research mode (BTC only, never posted). Scalping v3 without the momentum trigger and with a 0.3 ATR stop pad.
     // Backtest BTCUSD 20 days, $5 spread: n=52, +0.26R/trade, positive in both halves (+0.25R / +0.32R). One market, small sample: forward-test before trusting.
@@ -7414,6 +7416,12 @@ const AiEng = (() => {
     // one:true = a new intraday signal only when none is running on that symbol (16 Nov: three gold SELLs in 45 minutes on one move, all stopped)
     intraday: {key:'intraday', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', one:true},
     swing:    {key:'swing',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true},
+    // v2 = SHADOW candidates for the core modes (logged on the public symbols, never posted): A+ needs 3 of the 4 extra checks instead of all 4.
+    //   swing_v2 also drops the pin-bar trigger. Backtests (spread included): Swing gold 2y H1 +0.06R n=85 -> +0.18R n=275, BTC +0.18R n=85 -> +0.16R n=324;
+    //   1y Twelve Data: gold +0.05R n=29 -> +0.22R n=108, BTC +0.29R n=44 -> +0.11R n=156 (more signals, bigger drawdowns). Intraday 180d Twelve Data:
+    //   BTC +0.19R n=56 -> +0.22R n=180, gold worse (-0.14R). Replace the core mode only after ~30+ live signals hold up.
+    intraday_v2: {key:'intraday_v2', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', one:true, xNeed:3, shadow:true, pub:true},
+    swing_v2:    {key:'swing_v2',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, xNeed:3, trigs:['engulf', 'momentum'], shadow:true, pub:true},
     // Extra Elite setups, SHADOW research (logged to ai_signals with their result, never posted, on the public symbols). Switch one on for members only after ~30+ signals hold up.
     //   brt = breakout + retest of an HTF swing level in the trend direction · lsr = liquidity sweep reversal at an HTF swing · srb = Asia-range breakout in London / New York
     intraday_brt: {key:'intraday_brt', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'brt', lvlAge:5 * 86400,  win:24, shadow:true, pub:true, one:true},
@@ -7653,7 +7661,7 @@ const AiEng = (() => {
     // 7) Stop beyond the zone / swing: SL past the pullback extreme or the level, whichever is further; 0.3–1.5 × M5 ATR
     const base = level != null ? (L ? Math.min(ext, level - tol) : Math.max(ext, level + tol)) : ext;
     const entry = b.c, sl = L ? base - (M.stopPad || .1) * A5 : base + (M.stopPad || .1) * A5, risk = Math.abs(entry - sl);
-    add('risk', risk >= .3 * A5 && risk <= 1.5 * A5, +(risk / A5).toFixed(2), true);
+    add('risk', risk >= .3 * A5 && risk <= 1.5 * A5 && !(M.minRisk && M.minRisk[P.sym] && risk < M.minRisk[P.sym]), +(risk / A5).toFixed(2), true);
     // 8) Room: no opposing S/R zone before TP2 (2R)
     const opp = Z.filter(z => L ? z.lo > entry : z.hi < entry).sort((x, y) => L ? x.lo - y.lo : y.hi - x.hi)[0];
     const room = opp ? (L ? opp.lo - entry : entry - opp.hi) / risk : null;
@@ -7875,6 +7883,7 @@ const AiEng = (() => {
       else if(b.h - Math.max(b.o, b.c) >= 2 * body && b.c <= b.h - 0.66 * rng) trig = 'pin';
       else if(body >= 0.55 * rng && b.c < p.l) trig = 'momentum';
     }
+    if(trig && M.trigs && !M.trigs.includes(trig)) trig = null;   // v2 modes: allowed triggers only
     add('trigger', !!trig, trig, true);
     // 5) Session: London / New York for scalping & intraday; any weekday session for swing
     const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
@@ -7902,7 +7911,7 @@ const AiEng = (() => {
     const core = out.checks.filter(x => x.core), extra = out.checks.filter(x => !x.core);
     const coreOK = core.every(x => x.pass), extraN = extra.filter(x => x.pass).length;
     out.score = out.checks.filter(x => x.pass).length; out.max = out.checks.length;
-    out.grade = coreOK && extraN === extra.length ? 'A+' : coreOK && extraN >= 2 ? 'A' : out.score >= 7 ? 'B' : 'C';
+    out.grade = coreOK && extraN >= (M.xNeed || extra.length) ? 'A+' : coreOK && extraN >= 2 ? 'A' : out.score >= 7 ? 'B' : 'C';
     if(out.grade === 'A+'){
       const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
       out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:f(entry + R * M.rr[2] * risk),
@@ -8279,9 +8288,11 @@ async function liveTick(){
 const WS = {sock:null, sym:'', px:null, at:0, k:{}, retry:0, tmr:0, wait:0};
 const WS_SYM = {BTCUSD:'btcusdt', XAUUSD:'paxgusdt'}, WS_FRESH = {BTCUSD:5000, XAUUSD:20000}, WS_HOSTS = ['wss://data-stream.binance.vision', 'wss://stream.binance.com:9443'];
 const wsFresh = () => !!(WS.sock && WS.sym === AI.sym && WS.px != null && Date.now() - WS.at < (WS_FRESH[AI.sym] || 5000));
-// gold trades Sunday 22:00 to Friday 21:00 UTC with a daily break 21:00-22:00 UTC; outside that, no gold stream
-function wsOpen(sym){ if(sym !== 'XAUUSD') return true; const d = new Date(), wd = d.getUTCDay(), h = d.getUTCHours();
-  if(wd === 6 || (wd === 5 && h >= 21) || (wd === 0 && h < 22)) return false; return h !== 21; }
+// gold trades Sunday 18:00 to Friday 17:00 New York time with a daily break 17:00-18:00 (same rule as /api/candles); outside that, no gold stream
+const WS_NY = (() => { try{ return new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', weekday:'short', hour:'numeric', hourCycle:'h23'}); }catch(_){ return null; } })();
+function wsOpen(sym){ if(sym !== 'XAUUSD') return true; if(!WS_NY) return false;
+  const p = WS_NY.formatToParts(new Date()), wd = p.find(x => x.type === 'weekday').value, h = +p.find(x => x.type === 'hour').value;
+  if(wd === 'Sat' || (wd === 'Fri' && h >= 17) || (wd === 'Sun' && h < 18)) return false; return h !== 17; }
 function wsSync(){
   const want = Prem.elite && AI.data && document.visibilityState === 'visible' && $('termCv') && WS_SYM[AI.sym] && wsOpen(AI.sym) && 'WebSocket' in window ? AI.sym : '';
   if(WS.sym === want && (WS.sock || !want || Date.now() < (WS.wait || 0))) return;
@@ -9684,7 +9695,8 @@ $('aqSym').addEventListener('change', () => { Aq.sym = $('aqSym').value; admLoad
    R per trade = the bot's own accounting (half off at TP1, stop to entry; SL -1, TP1 rr1/2, TP2+ (rr1+rr2)/2, expired 0) minus spread / risk. */
 const AQ_MODE = {scalp:'Scalping', intraday:'Intraday', swing:'Swing', btcx:'BTC shadow (scalp)', intraday_brt:'Intraday · breakout retest', intraday_lsr:'Intraday · liquidity sweep',
   intraday_srb:'Intraday · session breakout', swing_brt:'Swing · breakout retest (beta on gold)', swing_lsr:'Swing · liquidity sweep', intraday_msnr:'Intraday · MSNR', intraday_qm:'Intraday · QM',
-  swing_msnr:'Swing · MSNR', swing_qm:'Swing · QM', intraday_pat:'Intraday · chart patterns', swing_pat:'Swing · chart patterns'};
+  swing_msnr:'Swing · MSNR', swing_qm:'Swing · QM', intraday_pat:'Intraday · chart patterns', swing_pat:'Swing · chart patterns',
+  intraday_v2:'Intraday v2 (3 of 4 extras)', swing_v2:'Swing v2 (3 of 4 extras, no pin bar)'};
 const BT_SPREAD = {XAUUSD:0.4, BTCUSD:15, NQ:1, EURUSD:0.00012, GBPUSD:0.00015, USDJPY:0.015, XAGUSD:0.03, OIL:0.04};
 function btFill(){
   const sel = $('btMode'); if(!sel || sel.options.length) return;

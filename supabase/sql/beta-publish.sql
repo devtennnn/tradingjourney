@@ -11,3 +11,11 @@
 insert into public.ai_bot_config(key, value) values ('publish_pairs', 'XAUUSD:swing_brt')
 on conflict (key) do update set value = excluded.value;
 -- Stop the beta:   update public.ai_bot_config set value = '' where key = 'publish_pairs';
+
+-- shadow_pairs = "SYMBOL:mode,..." -> a public mode keeps running for that symbol but only logs (feat.shadow = true), never posts.
+-- 19 Nov 2026: gold scalping moved to shadow. Backtest on Twelve Data gold M1 with closed-market candles removed, 20 days, $0.40 spread:
+--   n=106, -0.28R per trade (95% -0.49 to -0.08), both halves negative; live posted results 23 signals, -2R. Gold intraday has been shadow since 16 Nov.
+update public.ai_bot_config set value = 'XAUUSD:intraday,XAUUSD:scalp' where key = 'shadow_pairs';
+
+-- 19 Nov 2026: v2 shadow candidates for the core modes (logged on cfg.symbols, never posted). Compare with the core modes after ~30+ live signals.
+update public.ai_bot_config set value = value || ',intraday_v2,swing_v2' where key = 'modes' and value not like '%swing_v2%';

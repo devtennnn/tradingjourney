@@ -20,8 +20,25 @@ const TF = {
   15: {step: 900,  td: '15min', yi: '15m', yr: '30d', keep: 1500},
   60: {step: 3600, td: '1h',    yi: '60m', yr: '1y',  keep: 2400},
 };
+// Market hours (New York time, so daylight saving is handled): Twelve Data's XAU/USD feed keeps printing tiny candles while gold is closed
+// (measured over 100 days of H1: 29 % of the candles, average range $0.26 against $15.42 on a weekday). Those candles drag ATR, EMAs and the
+// daily filter down; a 2-year gold backtest of Swing breakout-retest fell from +0.33R to +0.14R per trade with them in. They are removed here.
+//   metals / index / oil (CME): closed Fri 17:00 -> Sun 18:00 New York, plus the daily 17:00-18:00 break
+//   forex: closed Fri 17:00 -> Sun 17:00 New York      crypto: never closed
+const NY = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', hourCycle: 'h23'});
+const KIND = {XAUUSD: 'cme', XAGUSD: 'cme', NQ: 'cme', OIL: 'cme', EURUSD: 'fx', GBPUSD: 'fx', USDJPY: 'fx', BTCUSD: 'crypto'};
+function marketClosed(key, t) {
+  const kind = KIND[key]; if (!kind || kind === 'crypto') return false;
+  const p = NY.formatToParts(new Date(t * 1000)), wd = p.find(x => x.type === 'weekday').value, h = +p.find(x => x.type === 'hour').value;
+  if (wd === 'Sat') return true;
+  if (wd === 'Fri' && h >= 17) return true;
+  if (wd === 'Sun') return h < (kind === 'fx' ? 17 : 18);
+  return kind === 'cme' && h === 17;
+}
+
 async function fromTwelveData(sym, key, tf) {
-  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym.td)}&interval=${tf.td}&outputsize=${tf.keep}&timezone=UTC&order=ASC&apikey=${key}`;
+  // always the maximum (same cost per call): after a weekend most of the last 3000 minute candles are closed-market ones and are dropped
+  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym.td)}&interval=${tf.td}&outputsize=5000&timezone=UTC&order=ASC&apikey=${key}`;
   const r = await fetch(url, {headers: {'User-Agent': 'arom-trade/1.0'}});
   const j = await r.json();
   if (!r.ok || j.status === 'error' || !Array.isArray(j.values)) throw new Error('twelvedata: ' + (j.message || r.status));
@@ -63,7 +80,7 @@ module.exports = async (req, res) => {
     try {
       const out = await p();
       // keep only whole 5-minute candles (Yahoo appends a live partial bar stamped with its last tick time)
-      out.candles = out.candles.filter(c => c.t % tf.step === 0);
+      out.candles = out.candles.filter(c => c.t % tf.step === 0 && !marketClosed(key, c.t));
       // drop the candle that is still forming
       const last = out.candles[out.candles.length - 1];
       if (last && last.t + tf.step > now) out.candles.pop();
@@ -76,3 +93,5 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   return res.status(502).json({error: 'no market data', details: errors});
 };
+
+module.exports.marketClosed = marketClosed;
