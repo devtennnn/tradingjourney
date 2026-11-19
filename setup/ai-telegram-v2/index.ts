@@ -91,7 +91,7 @@ async function newsFn() {
 }
 // Entry Timer checklist lines (same rules as Trade Finder → Time the trade on the website)
 const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING", sweep: "SWEEP (experimental)", btcx: "BTC SHADOW",
-  intraday_brt: "INTRADAY BREAKOUT RETEST", intraday_lsr: "INTRADAY SWEEP", intraday_srb: "INTRADAY SESSION BREAKOUT", swing_brt: "SWING BREAKOUT RETEST", swing_lsr: "SWING SWEEP",
+  intraday_brt: "INTRADAY BREAKOUT RETEST", intraday_lsr: "INTRADAY SWEEP", intraday_srb: "INTRADAY SESSION BREAKOUT", swing_brt: "SWING BREAKOUT RETEST · BETA", swing_lsr: "SWING SWEEP",
   intraday_msnr: "INTRADAY MSNR", intraday_qm: "INTRADAY QM", swing_msnr: "SWING MSNR", swing_qm: "SWING QM",
   intraday_pat: "INTRADAY CHART PATTERN", swing_pat: "SWING CHART PATTERN" };
 const pl = (n, u) => n + " " + u + (n === 1 ? "" : "s");
@@ -99,6 +99,14 @@ const dur = (sec) => sec >= 86400 ? pl(Math.round(sec / 86400), "day") : sec >= 
 function timerLines(ev, buy, s, M) {
   const c = Object.fromEntries(ev.checks.map((x) => [x.key, x]));
   const ok = (k) => (c[k] && c[k].pass ? "✅" : "▫️");
+  if (M.setup) return [
+    `${ok("bias")} ${M.hName}${M.daily ? " + Daily" : ""} trend ${buy ? "up" : "down"}`,
+    `${ok("setup")} ${({ brt: "Breakout of a swing level, retest held", lsr: "Liquidity sweep, closed back inside", srb: "Asia range breakout", msnr: "First touch of a fresh MSNR level", qm: "Quasimodo level retest", pat: "Chart pattern breakout" })[M.setup] || M.setup}`,
+    `${ok("session")} ${M.session ? "London / NY session" : "Weekday session"}`,
+    `${ok("news")} No high-impact news ±30 min`,
+    `${ok("risk")} Stop size ${c.risk && c.risk.val != null ? c.risk.val + "× ATR" : "OK"}`,
+    `⚠️ BETA strategy: risk 0.5% per trade`,
+  ];
   if (M.sweep) return [
     `${ok("sweep")} Liquidity sweep of a recent M1 swing ${buy ? "low" : "high"}, closed back inside`,
     `${ok("risk")} Stop beyond the sweep extreme`,
@@ -215,6 +223,9 @@ Deno.serve(async (req) => {
   const shadowSyms = String(cfg.shadow_symbols || "BTCUSD").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
   // shadow_pairs = "XAUUSD:intraday,…": a public mode keeps running on that symbol but only logs (feat.shadow = true), never posts, until switched back on
   const shadowPairs = new Set(String(cfg.shadow_pairs || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean));
+  // publish_pairs = "XAUUSD:swing_brt,…": a shadow research mode posts for that symbol as BETA (feat.beta = true). It pauses itself (logs only)
+  // when its posted results reach −8R, or after 30 closed signals with a negative average.
+  const publishPairs = new Set(String(cfg.publish_pairs || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean));
   const modes = String(cfg.modes || "scalp,intraday,swing").split(",").map((s) => s.trim()).filter((m) => AiEng.MODES[m]);
   const nowS = Math.floor(Date.now() / 1000), force = url.searchParams.get("all") === "1";
   // cron runs every minute: M1 scalping every run; M5+ modes on the old :01, :06, :11 … cadence, just after their entry candle closes
@@ -226,7 +237,8 @@ Deno.serve(async (req) => {
   // one candle download per symbol + timeframe per run: several modes share the same entry timeframe (protects the data provider quota)
   const cc = new Map(); const getCandles = (sym, M) => { const k = sym + "|" + M.base; if (!cc.has(k)) cc.set(k, candles(sym, M)); return cc.get(k); };
   for (const sym of new Set([...symbols, ...shadowSyms])) for (const mk of modes) {
-    const M = AiEng.MODES[mk], sh = !!M.shadow || shadowPairs.has(sym + ":" + mk.toUpperCase());
+    const pk = sym + ":" + mk.toUpperCase(), M = AiEng.MODES[mk], beta = !!M.shadow && publishPairs.has(pk);
+    let sh = (!!M.shadow && !beta) || shadowPairs.has(pk), betaOff = false;
     if (!(M.shadow && !M.pub ? shadowSyms : symbols).includes(sym)) continue;   // public modes and pub shadow modes: cfg.symbols · other shadow modes: cfg.shadow_symbols
     if (M.only && !M.only.test(sym)) continue;      // e.g. the sweep mode is BTC only
     const open = (openAll || []).filter((r) => r.symbol === sym && (r.mode || "scalp") === mk);
@@ -247,7 +259,8 @@ Deno.serve(async (req) => {
         const r = sim.res, hits = r === "open" || r === "sl" || r === "expired" ? 0 : +r.slice(2, 3);
         const closed = !(r === "open" || r.endsWith("+"));
         const msgs = [], tag = `${sym} ${row.side} @ ${fx(row.entry, sym)} · ${MLABEL[mk]}`;
-        if (!sh && !row.window_sent && nowS > Number(row.t) + M.valid && r === "open" && hits === 0) {
+        const quiet = sh || (beta && !row.tg_message_id);   // a BETA signal logged while paused was never posted: no follow-ups either
+        if (!quiet && !row.window_sent && nowS > Number(row.t) + M.valid && r === "open" && hits === 0) {
           try { await tg(`⌛ <b>Entry window closed</b> (${hm.format(new Date((Number(row.t) + M.valid) * 1000))} ICT)\nIn the trade? Keep the plan. Not in? Don't chase, wait for the next setup.\n${tag}`, row.tg_message_id, windowCardOf(sym, row, mk, M, hm.format(new Date((Number(row.t) + M.valid) * 1000)))); } catch (_) { /* keep going */ }
           await db.from("ai_signals").update({ window_sent: true }).eq("id", row.id);
         }
@@ -255,7 +268,7 @@ Deno.serve(async (req) => {
         if (closed && r === "sl") msgs.push("❌ <b>SL hit</b> (−1R)");
         else if (closed && r === "expired") msgs.push(`⏱ <b>Expired</b> — no TP or SL within ${dur(M.maxBars * M.base)}`);
         else if (closed && hits > 0 && hits < (Number(row.tp3) > 0 ? 3 : 2)) msgs.push(`⏹ <b>Closed</b> — price returned to the stop after TP${hits}`);
-        for (const x of (sh ? [] : msgs)) { try { await tg(`${x}\n${tag}`, row.tg_message_id, updCardOf(x, sym, row, mk, M, hits)); } catch (_) { /* keep going */ }
+        for (const x of (quiet ? [] : msgs)) { try { await tg(`${x}\n${tag}`, row.tg_message_id, updCardOf(x, sym, row, mk, M, hits)); } catch (_) { /* keep going */ }
           await push(cfg, { update: true, key: `upd|${sym}|${mk}|${row.t}|${plain(x).slice(0, 24)}`, symbol: sym, mode: mk, title: `${sym} ${row.side} · ${plain(x).split(" — ")[0]}`, body: tag }); }
         if (msgs.length || closed) {
           // realized R (spread excluded), half off at TP1 then stop at entry: SL -1 · TP1 only +rr1/2 · TP2 (rr1+rr2)/2 · expired 0  (scalping 1R/2R: +0.5 / +1.5)
@@ -269,6 +282,12 @@ Deno.serve(async (req) => {
       const q = M.base <= 60 ? AiEng.feedQuality(m) : null;
       out.feed = q;
       if (q && !q.ok && cfg.feed_guard === "on") { out.skipped = "feed quality (candle opens do not match previous closes)"; report.push(out); continue; }
+      // BETA guard: stop posting (log only) once the posted results of this pair fall to −8R, or average below 0 after 30 closed signals
+      if (beta && !sh) {
+        const { data: done } = await db.from("ai_signals").select("r_result").eq("symbol", sym).eq("mode", mk).eq("status", "closed").not("tg_message_id", "is", null);
+        const rs = (done || []).map((x) => Number(x.r_result) || 0), tot = rs.reduce((a, b) => a + b, 0);
+        if (tot <= -8 || (rs.length >= 30 && tot / rs.length < 0)) { betaOff = true; sh = true; out.beta = { paused: true, n: rs.length, total: +tot.toFixed(2) }; }
+      }
       // 2) new A+ on the last two closed candles; unique (symbol, mode, t) prevents double posts
       for (const i of [n - 1, n]) {
         const ev = AiEng.evalAt(P, i, news);
@@ -277,7 +296,7 @@ Deno.serve(async (req) => {
         if (nowS > s.validUntil) continue;
         if (M.one && openLeft > 0) continue;
         const { data: ins, error: e2 } = await db.from("ai_signals").upsert(
-          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source, feat: sh && !M.shadow ? { ...(s.feat || {}), shadow: true } : s.feat || null },
+          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source, feat: sh && !M.shadow ? { ...(s.feat || {}), shadow: true } : beta && !betaOff ? { ...(s.feat || {}), beta: true } : beta ? { ...(s.feat || {}), beta_paused: true } : s.feat || null },
           { onConflict: "symbol,mode,t", ignoreDuplicates: true }).select();
         if (e2) throw new Error(e2.message);
         if (!ins || !ins.length) continue;
