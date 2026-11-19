@@ -15,6 +15,7 @@ const ALLOWED = /^[A-Za-z0-9._#-]{2,20}$/;
 const json = (o, status = 200, cache = "no-store") => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": cache } });
 
 let acct = null, acctAt = 0;            // {id, region, state, connectionStatus, broker}
+let hostOk = null;                      // client API host that answered for this account (found by probing)
 const cache = new Map();                // symbol -> {at, body}
 async function ma(url, ms = 8000) {
   let r;
@@ -35,6 +36,14 @@ async function account() {
   acctAt = r.ok ? Date.now() : Date.now() - 9 * 60_000;   // retry a failed lookup after a minute
   return acct;
 }
+// MetaApi tells each user which domain its client API lives on (the SDK reads this too); try that first, then the plain regional host
+async function hosts(region) {
+  const out = [];
+  const d = await ma(`${PROV}/users/current/servers/mt-client-api`, 8000);
+  if (d.ok && d.j && d.j.domain) out.push(`https://${d.j.hostname || "mt-client-api-v1"}.${region}.${d.j.domain}`);
+  for (const dom of ["agiliumtrade.ai", "agiliumlabs.cloud"]) for (const r of [region, region + "-a", region + "-b"]) out.push(`https://mt-client-api-v1.${r}.${dom}`);
+  return { list: [...new Set(out)], discovery: d.ok ? d.j : { status: d.status, error: clip((d.j && d.j.message) || d.t) } };
+}
 const clip = (s) => String(s || "").replace(/\s*\([0-9a-f]{32}\)/, "").slice(0, 120);
 const sec = (iso) => { const t = Date.parse(iso); return isFinite(t) ? Math.floor(t / 1000) : null; };
 
@@ -42,7 +51,8 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   if (!TOKEN()) return json({ error: "metaapi_not_configured" }, 503);
   try {
-    const a = await account(), base = `${client(a.region)}/users/current/accounts/${encodeURIComponent(a.id)}`;
+    const a = await account(), path = `/users/current/accounts/${encodeURIComponent(a.id)}`;
+    let base = (hostOk || client(a.region)) + path;
     // ?deploy=1&key=<ai_bot_config.cron_secret>: start the cloud MT5 terminal (MetaApi bills while it is deployed). Admin / cron only.
     if (url.searchParams.get("deploy") === "1") {
       const { data: k } = await db.from("ai_bot_config").select("value").eq("key", "cron_secret").maybeSingle();
@@ -52,10 +62,12 @@ Deno.serve(async (req) => {
       return json({ deploy_status: r.status, detail: r.ok ? "deploying" : clip(await r.text()) }, r.ok ? 200 : 502);
     }
     if (url.searchParams.get("debug") === "1") {
-      const s = await ma(`${base}/symbols`, 20000);
+      const h = await hosts(a.region || "london"), tried = [];
+      let s = null;
+      for (const host of h.list) { const r = await ma(`${host}${path}/symbols`, 6000); tried.push({ host, status: r.status }); if (r.ok) { s = r; hostOk = host; break; } s = r; }
       const gold = Array.isArray(s.j) ? s.j.filter((x) => /XAU|GOLD/i.test(String(x))).slice(0, 20) : null;
       const t = TOKEN();
-      return json({ token: { length: t.length, jwt_parts: t.split(".").length }, account: { region: a.region, state: a.state, connectionStatus: a.connectionStatus, server: a.broker }, symbols_status: s.status, gold_symbols: gold, symbols_error: s.ok ? null : clip((s.j && s.j.message) || s.t) });
+      return json({ token: { length: t.length, jwt_parts: t.split(".").length }, account: { region: a.region, state: a.state, connectionStatus: a.connectionStatus, server: a.broker }, discovery: h.discovery, tried, host: hostOk, symbols_status: s.status, gold_symbols: gold, symbols_error: s.ok ? null : String((s.j && s.j.message) || s.t).slice(0, 400) });
     }
     const sym = String(url.searchParams.get("symbol") || "XAUUSD");
     if (!ALLOWED.test(sym)) return json({ error: "bad symbol" }, 400);
