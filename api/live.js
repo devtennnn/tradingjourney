@@ -1,7 +1,7 @@
 // Vercel serverless function: GET /api/live?symbol=XAUUSD[&debug=1]
 // Real-time feed for the AI terminal: the last ~2 hours of 1-minute candles from Yahoo Finance,
 // used by the page to build the candle that is still forming (5m / 15m) and the live price.
-// Cached 4 s on the CDN so every viewer shares one upstream call. Nothing is generated here.
+// Cached 2 s on the CDN (the page polls every 2 s) so every viewer shares one upstream call. Nothing is generated here.
 //
 // Gold and silver have two Yahoo feeds: COMEX futures (GC=F / SI=F, can run ~10 minutes behind and trade at a premium to spot)
 // and spot (XAUUSD=X / XAGUSD=X, the same kind of price the broker and the candles show). Both are fetched and the FRESHER one is used,
@@ -12,6 +12,26 @@ const SPOT = {XAUUSD: 'XAUUSD=X', XAGUSD: 'XAGUSD=X'};
 // so it is used for the headline PRICE only, checked against futures, and dropped silently if it is stale, odd or down.
 const GOLDAPI = {XAUUSD: 'XAU', XAGUSD: 'XAG'};
 const UA = {'User-Agent': 'Mozilla/5.0 (compatible; arom-trade/1.0)', Accept: 'application/json'};
+// Gold / silver: the Yahoo futures feed runs ~9-10 minutes late (measured 19 Nov: 562 s), so the forming candle on the terminal showed old prices.
+// For these the 1-minute candles now come from our own /api/candles?tf=1 (Twelve Data spot, the same feed the signals use, real-time and
+// CDN-cached, so this costs no extra Twelve Data credits), and the live price from gold-api.com spot when it is fresh and agrees.
+// If that is unavailable, the old Yahoo logic below runs unchanged.
+const TD_M1 = {XAUUSD: true, XAGUSD: true};
+
+async function tdM1(origin, key, now) {
+  const r = await fetch(`${origin}/api/candles?symbol=${key}&tf=1`, {headers: UA, signal: AbortSignal.timeout(4000)});
+  if (!r.ok) throw new Error('candles ' + r.status);
+  const j = await r.json();
+  if (!/^Twelve Data/.test(j.source || '') || !Array.isArray(j.candles) || !j.candles.length) throw new Error('candles not Twelve Data');
+  const m1 = j.candles.slice(-130).map(b => ({t: b.t, o: b.o, h: b.h, l: b.l, c: b.c})), last = m1[m1.length - 1], time = last.t + 60;
+  if (now - time > 240) throw new Error('candles stale (' + (now - time) + ' s)');
+  return {symbol: j.source.replace(/^Twelve Data · /, ''), source: j.source, price: last.c, time, lag: Math.max(0, now - time), m1, bars: m1.length};
+}
+/** live price for the Twelve Data feed: the spot API tick when it is fresher than the last closed candle and within 0.5 % of it */
+function tdPrice(td, spot) {
+  if (spot && spot.lag <= 90 && spot.time > td.time && Math.abs(spot.price - td.price) / td.price <= 0.005) return {price: spot.price, time: spot.time, lag: spot.lag};
+  return {price: td.price, time: td.time, lag: td.lag};
+}
 
 async function yahoo(sym, now) {
   const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1m&range=1d&includePrePost=true`, {headers: UA});
@@ -64,13 +84,26 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (!y) return res.status(400).json({error: 'unsupported symbol'});
   const now = Math.floor(Date.now() / 1000), debug = req.query && String(req.query.debug) === '1';
+  if (TD_M1[key]) {
+    const host = req.headers && (req.headers['x-forwarded-host'] || req.headers.host);
+    const [tdR, gaR] = await Promise.allSettled([host ? tdM1('https://' + host, key, now) : Promise.reject(new Error('no host')), goldApi(GOLDAPI[key], now)]);
+    if (tdR.status === 'fulfilled') {
+      const td = tdR.value, sp = gaR.status === 'fulfilled' ? gaR.value : null, p = tdPrice(td, sp);
+      const body = {symbol: key, source: td.source, kind: 'spot', price: p.price, time: p.time, lag: p.lag, m1: td.m1, at: now};
+      if (sp && sp.lag <= 180 && Math.abs(sp.price - td.price) / td.price <= 0.015) body.spot = sp;
+      res.setHeader('Cache-Control', 'public, s-maxage=2, stale-while-revalidate=4');
+      if (debug) { res.setHeader('Cache-Control', 'no-store'); body.m1 = undefined; body.bars = td.bars; body.why = 'Twelve Data 1-minute spot candles' + (p.price === td.price ? '' : ' + spot tick'); body.spot_api = sp; body.errors = gaR.status === 'rejected' ? ['gold-api: ' + gaR.reason.message] : []; }
+      return res.status(200).json(body);
+    }
+    if (debug) res.setHeader('X-Live-Fallback', String(tdR.reason && tdR.reason.message || 'td failed').slice(0, 120));
+  }
   try {
     const [futR, spotR, gaR] = await Promise.allSettled([yahoo(y, now), SPOT[key] ? yahoo(SPOT[key], now) : Promise.reject(new Error('no spot feed')), GOLDAPI[key] ? goldApi(GOLDAPI[key], now) : Promise.reject(new Error('no spot api'))]);
     const fut = futR.status === 'fulfilled' ? futR.value : null, spot = spotR.status === 'fulfilled' ? spotR.value : null;
     const pick = choose(fut, spot);
     if (!pick) throw new Error(futR.reason && futR.reason.message || 'no feed');
     const u = pick.use, spotUsed = u === spot && !!SPOT[key];
-    res.setHeader('Cache-Control', 'public, s-maxage=4, stale-while-revalidate=8');
+    res.setHeader('Cache-Control', 'public, s-maxage=2, stale-while-revalidate=4');
     const realSpot = spotOk(gaR.status === 'fulfilled' ? gaR.value : null, fut);
     const body = {symbol: key, source: 'Yahoo Finance · ' + u.symbol, kind: spotUsed ? 'spot' : (SPOT[key] ? 'futures' : 'market'), price: u.price, time: u.time, lag: u.lag, m1: u.m1, at: now};
     if (realSpot) body.spot = realSpot;   // the page shows this as the headline price; candles stay on the feed above
@@ -83,3 +116,4 @@ module.exports = async (req, res) => {
 };
 module.exports.choose = choose;
 module.exports.spotOk = spotOk;
+module.exports.tdPrice = tdPrice;
