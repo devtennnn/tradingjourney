@@ -180,12 +180,12 @@ def khmerize(s, km):
 
 # ---------------------------------------------------------------- trust pages
 SHELL_CSS = """
-:root{--bg:#07120d;--card:#0d1c16;--line:#1f3a2c;--text:#e9f3ec;--muted:#93ab9c;--lime:#b9f25a}
+:root{--bg:#06080f;--card:#090d18;--line:#141d35;--text:#e9edf3;--muted:#8fa3b8;--lime:#2bf08a}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 Inter,"Kantumruy Pro",system-ui,-apple-system,Segoe UI,sans-serif}
 html[lang="km"] body{font-family:"Kantumruy Pro",Inter,system-ui,sans-serif;line-height:1.8}
 a{color:var(--lime)}
-.top{position:sticky;top:0;z-index:5;background:rgba(7,18,13,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:5;background:rgba(6,8,15,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .top .in{max-width:880px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-weight:800;letter-spacing:.5px}
 .brand img{width:28px;height:28px;border-radius:7px}
@@ -196,17 +196,17 @@ main{max-width:880px;margin:0 auto;padding:36px 16px 56px}
 h1{font-size:clamp(30px,5vw,46px);line-height:1.12;letter-spacing:-.02em;margin:0 0 14px}
 html[lang="km"] h1{letter-spacing:0;line-height:1.4}
 h2{font-size:21px;margin:34px 0 10px;line-height:1.3}
-.lead{font-size:18px;color:#c9dccf;margin:0 0 8px}
-p,li{color:#d3e2d8}ul{padding-left:20px}li{margin:6px 0}
-.card{border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,#132920,#0d1c16);padding:16px;margin:18px 0}
+.lead{font-size:18px;color:#c9d1dc;margin:0 0 8px}
+p,li{color:#d3dae2}ul{padding-left:20px}li{margin:6px 0}
+.card{border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,#0e1324,#090d18);padding:16px;margin:18px 0}
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.kpi{border:1px solid var(--line);border-radius:12px;background:#0b1812;padding:10px 12px;min-width:0}
+.kpi{border:1px solid var(--line);border-radius:12px;background:#080b15;padding:10px 12px;min-width:0}
 .kpi small{display:block;color:var(--muted);font-size:12px}.kpi b{font-size:20px;font-variant-numeric:tabular-nums}
 table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
 th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-size:12px;font-weight:700}
 .pos{color:#2ee6a0}.neg{color:#ff5d73}.note{font-size:14px;color:var(--muted)}
-.cta{display:inline-block;margin-top:8px;background:var(--lime);color:#0b1813;font-weight:800;text-decoration:none;border-radius:999px;padding:10px 18px}
+.cta{display:inline-block;margin-top:8px;background:var(--lime);color:#000412;font-weight:800;text-decoration:none;border-radius:999px;padding:10px 18px}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 footer .in{max-width:880px;margin:0 auto;padding:18px 16px;display:flex;gap:8px 18px;flex-wrap:wrap}
 footer a{color:var(--muted);text-decoration:none}footer a:hover{color:var(--lime)}
@@ -510,7 +510,7 @@ def trust_page(name, lang):
 <title>{ESC(c["title"])}</title>
 <meta name="description" content="{ESC(c["desc"])}">
 <link rel="canonical" href="{url(path, lang)}">
-{alternates(path)}<meta name="theme-color" content="#07120d">
+{alternates(path)}<meta name="theme-color" content="#06080f">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta property="og:type" content="website">
