@@ -3,7 +3,7 @@
 //   ANAJAK PAY (hosted checkout, confirmed from inside Cambodia by a signed webhook, so no Bakong geo-block): set ANAJAK_SECRET and ANAJAK_PROFILE_ID.
 //   OWN KHQR + Bakong check (fallback when the Anajak secrets are not set): BAKONG_TOKEN and/or BAKONG_EMAIL (token renewed via /v1/renew_token).
 // The merchant details below are public (they are printed inside every own-KHQR) and are used as defaults when no secret overrides them.
-// Optional secrets: PLAN_PRICE (default 2.5), PLAN_PRICE_ELITE (default 14.99), PLAN_PRICE_ULTRA (default 49.99), PLAN_DAYS (default 30), QR_TTL_MIN (default 15),
+// Optional secrets: PLAN_PRICE (default 2.5), PLAN_PRICE_ELITE (default 14.99), PLAN_PRICE_ULTRA (default 49.99), COURSE_PRICE (default 19.99), PLAN_DAYS (default 30), QR_TTL_MIN (default 15),
 //   BAKONG_ACCOUNT_ID, BAKONG_ACCOUNT_TYPE (individual | merchant), BAKONG_MERCHANT_ID, BAKONG_ACQUIRING_BANK, MERCHANT_NAME, MERCHANT_CITY,
 //   BAKONG_API_URL (default https://api-bakong.nbc.gov.kh; use https://sit-api-bakong.nbc.gov.kh to test, or the URL of a relay in Cambodia), BAKONG_RELAY_KEY
 //
@@ -132,8 +132,10 @@ const PLANS: Record<string, { price: number; col: string; label: string }> = {
   premium: { price: Number(env("PLAN_PRICE", "2.5")), col: "premium_until", label: "Premium" },
   elite:   { price: Number(env("PLAN_PRICE_ELITE", "14.99")), col: "elite_until", label: "Elite" },
   ultra:   { price: Number(env("PLAN_PRICE_ULTRA", "49.99")), col: "ultra_until", label: "Ultra" },   // Ultra = Elite + Premium
+  // AROM Academy course: one payment, lifetime access. The database trigger payments_course_paid sets course_until when the row turns paid.
+  course:  { price: Number(env("COURSE_PRICE", "19.99")), col: "course_until", label: "Academy" },
 };
-const planOf = (v: unknown) => (v === "ultra" ? "ultra" : v === "elite" ? "elite" : "premium");
+const planOf = (v: unknown) => (v === "course" ? "course" : v === "ultra" ? "ultra" : v === "elite" ? "elite" : "premium");
 const DAYS = Number(env("PLAN_DAYS", "30"));
 const TTL_MS = Number(env("QR_TTL_MIN", "15")) * 60_000;
 const CURRENCY = "USD" as const;
@@ -314,6 +316,10 @@ Deno.serve(async (req) => {
     /* ---------- create ---------- */
     if (body.action === "create") {
       const plan = planOf(body.plan), P = PLANS[plan], promo = String(body.promo ?? "").trim();
+      if (plan === "course") {   // lifetime access: never sell it twice
+        const { data: pr } = await admin.from("profiles").select("course_until").eq("id", user.id).maybeSingle();
+        if ((pr as any)?.course_until && new Date((pr as any).course_until) > new Date()) return json({ error: "already_owned", plan });
+      }
       let quote: any = null;
       if (promo) {
         quote = await promoQuote(plan, promo);
@@ -414,7 +420,7 @@ Deno.serve(async (req) => {
       const { data: claimed } = await admin.from("payments")
         .update({ status: "paid", paid_at: new Date().toISOString(), bakong_hash: tx.hash ?? null })
         .eq("id", p.id).in("status", ["pending", "expired", "claimed"]).select().maybeSingle();
-      if (claimed) {
+      if (claimed && plan !== "course") {   // the course is granted for life by the database trigger, not extended by days
         const cur = await untilFor(col);
         const base = cur && new Date(cur) > new Date() ? new Date(cur) : new Date();
         const next = new Date(base.getTime() + DAYS * 86_400_000).toISOString();

@@ -29,9 +29,10 @@ APP = [
     ("pricing",  "/pricing",  "pricing",  'data-i18n-html="prH1"'),
     ("refer",    "/refer",    "refer",    'id="rfH"'),
     ("profile",  "/profile",  "profile",  'id="pfH"'),   # private account page: noindex, not in the sitemap
+    ("course",   "/course",   "course",   'id="crH"'),   # AROM Academy: outline + free preview public, paid lessons from the database
 ]
 PRIVATE = {"profile"}
-HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"', 'id="pfH"']
+HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"', 'id="pfH"', 'id="crH"']
 
 META = {
     "en": {
@@ -49,6 +50,8 @@ META = {
                      "Invite 15 traders who join and use AROM TRADE and get 30 days of Elite free. Earn bonus signals when your referrals buy a plan."),
         "profile":  ("AROM TRADE — My Profile",
                      "Your AROM TRADE account: name, photo, password, plan and expiry, purchase history, Telegram and notification alerts."),
+        "course":   ("AROM Academy — Gold Trading Course in English and Khmer",
+                     "Learn to trade gold with a plan: risk management, market structure, A+ setups and trading psychology. 12 short lessons and quizzes. Chapter 1 is free."),
     },
     "km": {
         "index":    ("AROM TRADE — កំណត់ហេតុជួញដូរ និងសញ្ញា AI សម្រាប់មាស BTC និង Forex",
@@ -63,6 +66,8 @@ META = {
                      "គម្រោង AROM TRADE៖ Free, Premium $2.50, Elite $14.99 និង Ultra $49.99 ក្នុង ៣០ ថ្ងៃ។ មិនបន្តដោយស្វ័យប្រវត្តិ បង់តាម KHQR។ ប្រៀបធៀបមុខងារទាំងអស់។"),
         "refer":    ("AROM TRADE — ណែនាំមិត្ត និងទទួលរង្វាន់",
                      "អញ្ជើញអ្នកជួញដូរ ១៥ នាក់ដែលចូលរួម និងប្រើ AROM TRADE ហើយទទួល Elite ឥតគិតថ្លៃ ៣០ ថ្ងៃ។ ទទួលសញ្ញាបន្ថែមនៅពេលមិត្តទិញគម្រោង។"),
+        "course":   ("AROM Academy — វគ្គសិក្សាជួញដូរមាស ជាភាសាខ្មែរ",
+                     "រៀនជួញដូរមាសដោយមានផែនការ៖ ការគ្រប់គ្រងហានិភ័យ រចនាសម្ព័ន្ធទីផ្សារ Setup A+ និងចិត្តវិទ្យាជួញដូរ។ 12 មេរៀនខ្លីៗ និង Quiz។ ជំពូកទី 1 ឥតគិតថ្លៃ។"),
         "profile":  ("AROM TRADE — ប្រវត្តិរូបរបស់ខ្ញុំ",
                      "គណនី AROM TRADE របស់អ្នក៖ ឈ្មោះ រូបថត ពាក្យសម្ងាត់ គម្រោង និងថ្ងៃផុតកំណត់ ប្រវត្តិទិញ Telegram និងការជូនដំណឹង។"),
     },
@@ -104,6 +109,12 @@ def app_jsonld(name, lang):
                                   offer("Premium", "2.50", "30 days. Chart uploads and market news analysis. No auto-renew."),
                                   offer("Elite", "14.99", "30 days. The full AI desk and signals. No auto-renew."),
                                   offer("Ultra", "49.99", "30 days. AROM Intelligence, an AI analyst. No auto-renew.")]})
+    if name == "course":
+        return jsonld({"@context": "https://schema.org", "@type": "Course", "name": "AROM Academy: trade gold with a plan",
+                       "description": "Risk management, market structure, A+ setups and trading psychology for gold traders. 12 lessons with chapter quizzes, in English and Khmer.",
+                       "url": url("/course", lang), "inLanguage": ["en", "km"], "provider": {"@id": SITE + "/#org"},
+                       "offers": {"@type": "Offer", "category": "Paid", "price": "19.99", "priceCurrency": "USD"},
+                       "hasCourseInstance": {"@type": "CourseInstance", "courseMode": "online", "courseWorkload": "PT70M"}})
     return ""
 
 def set_heading(s, attr, tag):
@@ -140,7 +151,7 @@ def translations(src):
          "process.stdout.write(JSON.stringify(new Function('return '+s.slice(a+10,b+2))()));"
     return json.loads(subprocess.run(["node", "-e", js], input=src, capture_output=True, text=True, check=True).stdout)
 
-KM_PATHS = ["/journey", "/news", "/refer", "/profile", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
+KM_PATHS = ["/journey", "/news", "/refer", "/profile", "/course", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
 
 def markup_only(s, fn):
     """Apply fn to the HTML outside <script> and <style> blocks."""

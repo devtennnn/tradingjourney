@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
     const { data: claimed } = await admin.from("payments")
       .update({ status: "paid", paid_at: new Date().toISOString(), bakong_hash: String(body.payment_details?.bakonghash ?? body.payment_details?.externalRef ?? "").slice(0, 120) || null })
       .eq("id", p.id).in("status", ["pending", "expired", "claimed"]).select().maybeSingle();
+    if (claimed && p.plan === "course") return J({ ok: true });   // course: lifetime access is set by the database trigger payments_course_paid
     if (claimed) {
       const plan = p.plan === "ultra" ? "ultra" : p.plan === "elite" ? "elite" : "premium", col = COL[plan];
       const cur = ((await admin.from("profiles").select(col).eq("id", p.user_id).maybeSingle()).data as any)?.[col] ?? null;
