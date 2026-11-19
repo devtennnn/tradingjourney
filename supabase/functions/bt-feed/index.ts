@@ -16,10 +16,11 @@ const goldOpen = (t) => { const k = Math.floor(t / 3600); let v = openHr.get(k);
   const p = NY.formatToParts(new Date(k * 3600000)), wd = p.find((x) => x.type === "weekday").value, h = +p.find((x) => x.type === "hour").value;
   v = !(wd === "Sat" || (wd === "Fri" && h >= 17) || (wd === "Sun" && h < 18) || h === 17); openHr.set(k, v); return v; };   // same rule as /api/candles
 
-async function binance(iv, from, to) {
+const SYM = { XAUUSD: { td: "XAU/USD", bn: "PAXGUSDT", spread: 0.4, closes: true }, BTCUSD: { td: "BTC/USD", bn: "BTCUSDT", spread: 15, closes: false } };
+async function binance(iv, from, to, bnSym = "PAXGUSDT") {
   const out = []; let end = to * 1000;
   for (let k = 0; k < 80 && end > from * 1000; k++) {
-    const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=PAXGUSDT&interval=${iv}&limit=1000&endTime=${end}`);
+    const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${bnSym}&interval=${iv}&limit=1000&endTime=${end}`);
     const a = await r.json(); if (!Array.isArray(a) || !a.length) break;
     for (const x of a) out.push({ t: Math.floor(x[0] / 1000), o: +x[1], h: +x[2], l: +x[3], c: +x[4] });
     end = a[0][0] - 1;
@@ -27,10 +28,10 @@ async function binance(iv, from, to) {
   const m = new Map(); for (const b of out) if (b.t >= from && b.t < to) m.set(b.t, b);
   return [...m.values()].sort((a, b) => a.t - b.t);
 }
-async function twelve(iv, from, to, key) {
+async function twelve(iv, from, to, key, tdSym = "XAU/USD") {
   const out = []; let end = null, calls = 0, err = null;
   for (let k = 0; k < 12; k++) {
-    const u = `https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=${iv}&outputsize=5000&timezone=UTC&order=ASC${end ? "&end_date=" + encodeURIComponent(end) : ""}&apikey=${key}`;
+    const u = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(tdSym)}&interval=${iv}&outputsize=5000&timezone=UTC&order=ASC${end ? "&end_date=" + encodeURIComponent(end) : ""}&apikey=${key}`;
     let j = await (await fetch(u)).json(); calls++;
     if (!Array.isArray(j.values) && /minute/i.test(j.message || "")) { await new Promise((r) => setTimeout(r, 62000)); j = await (await fetch(u)).json(); calls++; }   // per-minute credit limit: wait once
     if (!Array.isArray(j.values) || !j.values.length) { err = j.message || null; break; }
@@ -46,8 +47,9 @@ async function site(tf) {   // fallback without a Twelve Data key: what /api/can
   const j = await (await fetch(`https://aromx.trade/api/candles?symbol=XAUUSD&tf=${tf}`, { headers: { "User-Agent": "arom-bt" } })).json();
   return { bars: j.candles || [], src: j.source };
 }
-function run(bars, mode, spread, warm) {
-  const M = AiEng.MODES[mode], P = AiEng.prep(bars, null, mode, "XAUUSD"), sig = AiEng.scan(P), rr = M.rr, rows = [];
+function run(bars, mode, spread, warm, sym = "XAUUSD", ovr = null) {
+  if (ovr) { AiEng.MODES.__v = { ...AiEng.MODES[mode], ...ovr, key: "__v" }; mode = "__v"; }   // research knobs, e.g. {"xNeed":3}
+  const M = AiEng.MODES[mode], P = AiEng.prep(bars, null, mode, sym), sig = AiEng.scan(P), rr = M.rr, rows = [];
   for (const s of sig) {
     if (s.t < warm) continue;
     const r = s.out.res; if (r === "open" || /\+$/.test(r)) continue;
@@ -74,28 +76,30 @@ Deno.serve(async (req) => {
   if (!k || u.searchParams.get("key") !== k.value) return json({ error: "unauthorized" }, 401);
   const mode = u.searchParams.get("mode") || "scalp", MM = AiEng.MODES[mode];   // any engine mode; its entry timeframe picks the feed interval
   const tf = MM && ({ 60: TF.scalp, 900: TF.intraday, 3600: TF.swing })[MM.base]; if (!tf) return json({ error: "mode" }, 400);
-  const days = Math.min(+(u.searchParams.get("days") || 30), 400), spread = +(u.searchParams.get("spread") || 0.4);
+  const sym = SYM[(u.searchParams.get("sym") || "XAUUSD").toUpperCase()] ? (u.searchParams.get("sym") || "XAUUSD").toUpperCase() : "XAUUSD", S = SYM[sym];
+  let ovr = null; try { ovr = u.searchParams.get("ovr") ? JSON.parse(u.searchParams.get("ovr")) : null; } catch (_) { return json({ error: "ovr is not JSON" }, 400); }
+  const days = Math.min(+(u.searchParams.get("days") || 30), 400), spread = +(u.searchParams.get("spread") || S.spread);
   const tdKey = Deno.env.get("TWELVEDATA_API_KEY") || "";
   const to = Math.floor(Date.now() / 1000 / tf.step) * tf.step, from = to - days * 86400;
   try {
     let td, tdNote;
-    if (tdKey) { const r = await twelve(tf.td, from, to, tdKey); td = r.bars; tdNote = { source: "Twelve Data API", calls: r.calls, error: r.err }; }
+    if (tdKey) { const r = await twelve(tf.td, from, to, tdKey, S.td); td = r.bars; tdNote = { source: "Twelve Data API", calls: r.calls, error: r.err }; }
     else { const r = await site(tf.site); td = r.bars; tdNote = { source: "aromx.trade/api/candles (no TWELVEDATA_API_KEY in Supabase: short history)", feed: r.src }; }
     if (!td.length) return json({ error: "no Twelve Data bars", tdNote }, 502);
     // clean=1: drop Twelve Data candles while the gold market is closed (its XAU/USD feed keeps printing tiny weekend candles)
     const clean = u.searchParams.get("clean") === "1", tdRaw = td.length;
-    if (clean) td = td.filter((b) => goldOpen(b.t) && goldOpen(b.t + tf.step - 1));
+    if (clean && S.closes) td = td.filter((b) => goldOpen(b.t) && goldOpen(b.t + tf.step - 1));
     tdNote.clean = clean; tdNote.droppedClosed = tdRaw - td.length;
     const start = td[0].t, end = td[td.length - 1].t + tf.step;
-    const pxAll = await binance(tf.bn, start, end), px = pxAll.filter((b) => goldOpen(b.t) && goldOpen(b.t + tf.step - 1));
+    const pxAll = await binance(tf.bn, start, end, S.bn), px = S.closes ? pxAll.filter((b) => goldOpen(b.t) && goldOpen(b.t + tf.step - 1)) : pxAll;
     const warm = start + Math.min(3 * 86400, (end - start) * 0.1);   // both feeds start indicators at the same place; signals counted after warm-up
     // one feed per request keeps each run inside the Edge Function CPU limit: src=td | paxg (default td)
     const which = u.searchParams.get("src") === "paxg" ? "paxg" : "td";
-    const R = which === "td" ? run(td, mode, spread, warm) : run(px, mode, spread, warm);
+    const R = run(which === "td" ? td : px, mode, spread, warm, sym, ovr);
     const times = R.times; delete R.times;
     // average gap between the two feeds' closes on matching candles (PAXG premium / discount to spot)
     const mp = new Map(px.map((b) => [b.t, b.c])); let g = 0, gn = 0; for (const b of td) { const c = mp.get(b.t); if (c) { g += (c - b.c) / b.c; gn++; } }
-    return json({ mode, days: +((end - start) / 86400).toFixed(1), from: new Date(start * 1000).toISOString(), to: new Date(end * 1000).toISOString(), spread, tdNote,
+    return json({ mode, sym, ovr, days: +((end - start) / 86400).toFixed(1), from: new Date(start * 1000).toISOString(), to: new Date(end * 1000).toISOString(), spread, tdNote,
       src: which, result: { ...R, feed: feedQ(which === "td" ? td : px) }, signalTimes: times,
       paxgVsSpot: { premiumPct: gn ? +(100 * g / gn).toFixed(3) : null, matchedBars: gn, paxgBars: px.length, droppedClosedHours: pxAll.length - px.length } });
   } catch (e) { return json({ error: String(e.message || e) }, 500); }

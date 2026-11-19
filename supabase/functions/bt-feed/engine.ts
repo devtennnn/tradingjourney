@@ -1,4 +1,7 @@
 // @ts-nocheck
+// RESEARCH COPY of the A+ engine (bt-feed only): same rules as supabase/functions/ai-telegram/engine.ts, plus optional knobs read from the mode
+// (pad, rMin, rMax, xNeed, xMust, trigs, minRiskUsd, confNeed, hours). With no knobs set it behaves exactly like the production engine.
+
 /* AROM A+ Engine (shared with the website): Scalping v3 · Intraday · Swing */
 const AiEng = (() => {
   /* ---------- AROM A+ Engine v2: Scalping · Intraday · Swing ----------
@@ -259,7 +262,7 @@ const AiEng = (() => {
     // 7) Stop beyond the zone / swing: SL past the pullback extreme or the level, whichever is further; 0.3–1.5 × M5 ATR
     const base = level != null ? (L ? Math.min(ext, level - tol) : Math.max(ext, level + tol)) : ext;
     const entry = b.c, sl = L ? base - (M.stopPad || .1) * A5 : base + (M.stopPad || .1) * A5, risk = Math.abs(entry - sl);
-    add('risk', risk >= .3 * A5 && risk <= 1.5 * A5, +(risk / A5).toFixed(2), true);
+    add('risk', risk >= (M.rMin ?? .3) * A5 && risk <= (M.rMax ?? 1.5) * A5 && (!M.minRiskUsd || risk >= M.minRiskUsd), +(risk / A5).toFixed(2), true);
     // 8) Room: no opposing S/R zone before TP2 (2R)
     const opp = Z.filter(z => L ? z.lo > entry : z.hi < entry).sort((x, y) => L ? x.lo - y.lo : y.hi - x.hi)[0];
     const room = opp ? (L ? opp.lo - entry : entry - opp.hi) / risk : null;
@@ -270,7 +273,7 @@ const AiEng = (() => {
     add('retest', rt != null, null, false);
     const core = out.checks.filter(x => x.core), conf = out.checks.filter(x => !x.core && x.pass).length, coreOK = core.every(x => x.pass);
     out.score = out.checks.filter(x => x.pass).length; out.conf = conf;
-    out.grade = coreOK && conf >= 2 ? 'A+' : coreOK && conf >= 1 ? 'A' : out.score >= 7 ? 'B' : 'C';
+    out.grade = coreOK && conf >= (M.confNeed ?? 2) && (!M.hours || M.hours.includes(new Date(closeT * 1000).getUTCHours())) ? 'A+' : coreOK && conf >= 1 ? 'A' : out.score >= 7 ? 'B' : 'C';
     if(out.grade === 'A+'){
       const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
       out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:null,
@@ -481,6 +484,7 @@ const AiEng = (() => {
       else if(b.h - Math.max(b.o, b.c) >= 2 * body && b.c <= b.h - 0.66 * rng) trig = 'pin';
       else if(body >= 0.55 * rng && b.c < p.l) trig = 'momentum';
     }
+    if(trig && M.trigs && !M.trigs.includes(trig)) trig = null;
     add('trigger', !!trig, trig, true);
     // 5) Session: London / New York for scalping & intraday; any weekday session for swing
     const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
@@ -489,8 +493,8 @@ const AiEng = (() => {
     const nz = news ? news(closeT) : true;
     add('news', nz === true, nz === null ? 'unknown' : null, true);
     // 7) Risk: stop beyond the pullback extreme (+0.25 ATR); must be between 0.8 and 3 ATR
-    const entry = b.c, sl = L ? ext - 0.25 * A : ext + 0.25 * A, risk = Math.abs(entry - sl);
-    add('risk', risk >= 0.8 * A && risk <= 3 * A, +(risk / A).toFixed(2), true);
+    const entry = b.c, sl = L ? ext - (M.pad ?? 0.25) * A : ext + (M.pad ?? 0.25) * A, risk = Math.abs(entry - sl);
+    add('risk', risk >= (M.rMin ?? 0.8) * A && risk <= (M.rMax ?? 3) * A, +(risk / A).toFixed(2), true);
     // 8) RSI momentum in the healthy zone and turning in the trade direction
     const r = P.rsi[i], r1 = P.rsi[i - 1];
     add('rsi', L ? r >= 45 && r <= 70 && r > r1 : r >= 30 && r <= 55 && r < r1, r == null ? null : +r.toFixed(1), false);
@@ -508,7 +512,7 @@ const AiEng = (() => {
     const core = out.checks.filter(x => x.core), extra = out.checks.filter(x => !x.core);
     const coreOK = core.every(x => x.pass), extraN = extra.filter(x => x.pass).length;
     out.score = out.checks.filter(x => x.pass).length; out.max = out.checks.length;
-    out.grade = coreOK && extraN === extra.length ? 'A+' : coreOK && extraN >= 2 ? 'A' : out.score >= 7 ? 'B' : 'C';
+    out.grade = coreOK && extraN >= (M.xNeed ?? extra.length) && (!M.xMust || M.xMust.every(k => extra.find(x => x.key === k && x.pass))) ? 'A+' : coreOK && extraN >= 2 ? 'A' : out.score >= 7 ? 'B' : 'C';
     if(out.grade === 'A+'){
       const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
       out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:f(entry + R * M.rr[2] * risk),
