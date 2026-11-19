@@ -4963,14 +4963,14 @@ async function crCertDraw(canvas, c){
   g.fillText('12 lessons and 4 chapter quizzes on risk management, market structure, A+ setups and trading psychology', W / 2, 982);
   const date = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Phnom_Penh', day:'numeric', month:'long', year:'numeric'}).format(new Date(c.issued_at));
   const foot = (label, val, x) => { g.textAlign = 'left'; g.fillStyle = '#8fa3b8'; g.font = '600 26px Inter, sans-serif'; g.fillText(label, x, 1150); g.fillStyle = '#eef3f8'; g.font = '700 40px Inter, sans-serif'; g.fillText(val, x, 1204); };
-  foot('DATE ISSUED', date, 190); foot('CERTIFICATE ID', c.code, 720);
+  foot('DATE ISSUED', date, 190);   // the certificate ID is not printed; the QR code carries the verify link
   try{ const q = qrMake(CR_VERIFY(c.code)), n = q.getModuleCount(), px = Math.floor(210 / (n + 4)), side = (n + 4) * px, x0 = W - 190 - side, y0 = 1040;
     g.fillStyle = '#fff'; g.fillRect(x0, y0, side, side); g.fillStyle = '#000412';
     for(let r = 0; r < n; r++) for(let k = 0; k < n; k++) if(q.isDark(r, k)) g.fillRect(x0 + (k + 2) * px, y0 + (r + 2) * px, px, px);
     g.textAlign = 'right'; g.fillStyle = '#8fa3b8'; g.font = '500 24px Inter, sans-serif'; g.fillText('Scan to verify', x0 - 24, y0 + side - 10);
   }catch(e){}
   g.textAlign = 'center'; g.fillStyle = '#5f7389'; g.font = '400 24px Inter, sans-serif';
-  g.fillText('Verify at aromx.trade/course?cert=' + c.code + '  ·  Education only, not financial advice', W / 2, 1300);
+  g.fillText('Scan the QR code to verify at aromx.trade  ·  Education only, not financial advice', W / 2, 1300);
 }
 async function crCertShowImg(c){
   const box = $('crCertOut'); if(!box) return;
