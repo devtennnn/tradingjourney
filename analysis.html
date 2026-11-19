@@ -8278,9 +8278,11 @@ async function liveTick(){
 const WS = {sock:null, sym:'', px:null, at:0, k:{}, retry:0, tmr:0, wait:0};
 const WS_SYM = {BTCUSD:'btcusdt', XAUUSD:'paxgusdt'}, WS_FRESH = {BTCUSD:5000, XAUUSD:20000}, WS_HOSTS = ['wss://data-stream.binance.vision', 'wss://stream.binance.com:9443'];
 const wsFresh = () => !!(WS.sock && WS.sym === AI.sym && WS.px != null && Date.now() - WS.at < (WS_FRESH[AI.sym] || 5000));
-// gold trades Sunday 22:00 to Friday 21:00 UTC with a daily break 21:00-22:00 UTC; outside that, no gold stream
-function wsOpen(sym){ if(sym !== 'XAUUSD') return true; const d = new Date(), wd = d.getUTCDay(), h = d.getUTCHours();
-  if(wd === 6 || (wd === 5 && h >= 21) || (wd === 0 && h < 22)) return false; return h !== 21; }
+// gold trades Sunday 18:00 to Friday 17:00 New York time with a daily break 17:00-18:00 (same rule as /api/candles); outside that, no gold stream
+const WS_NY = (() => { try{ return new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', weekday:'short', hour:'numeric', hourCycle:'h23'}); }catch(_){ return null; } })();
+function wsOpen(sym){ if(sym !== 'XAUUSD') return true; if(!WS_NY) return false;
+  const p = WS_NY.formatToParts(new Date()), wd = p.find(x => x.type === 'weekday').value, h = +p.find(x => x.type === 'hour').value;
+  if(wd === 'Sat' || (wd === 'Fri' && h >= 17) || (wd === 'Sun' && h < 18)) return false; return h !== 17; }
 function wsSync(){
   const want = Prem.elite && AI.data && document.visibilityState === 'visible' && $('termCv') && WS_SYM[AI.sym] && wsOpen(AI.sym) && 'WebSocket' in window ? AI.sym : '';
   if(WS.sym === want && (WS.sock || !want || Date.now() < (WS.wait || 0))) return;
