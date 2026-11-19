@@ -3031,7 +3031,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
   <div class="pfp-head">
     <div><h1 id="pfH" data-i18n="pfPageH">ប្រវត្តិរូបរបស់ខ្ញុំ</h1><p data-i18n="pfPageP">គណនី គម្រោង Telegram និងការជូនដំណឹងរបស់អ្នក នៅកន្លែងតែមួយ។</p></div>
     <nav class="pfp-jump" id="pfpJump" aria-label="Profile sections">
-      <a href="#pfPlanCard" data-i18n="pfPlan">គម្រោង</a><a href="#pfTgCard">Telegram</a><a href="#pfAlertsCard" data-i18n="pfAlertsT">ការជូនដំណឹង</a><a href="#pfEditCard" data-i18n="pfProfile">ប្រវត្តិរូប</a><a href="#pfSetCard" data-i18n="pfSetT">ការកំណត់ Journal</a>
+      <a href="#pfPlanCard" data-i18n="pfPlan">គម្រោង</a><a href="#pfTgCard">Telegram</a><a href="#pfAlertsCard" data-i18n="pfAlertsT">ការជូនដំណឹង</a><a href="#pfEditCard" data-i18n="pfProfile">ប្រវត្តិរូប</a><a href="#pfSetCard" data-i18n="pfSetT">ការកំណត់ Journal</a><a href="#pfHistCard" data-i18n="pfHistT">ប្រវត្តិទិញ</a><a href="#pfPassCard" data-i18n="pfSecurity">ពាក្យសម្ងាត់</a>
     </nav>
   </div>
   <div class="pfp-guest" id="pfpGuest" hidden><p data-i18n="pfGuestP">ចូលគណនី ដើម្បីមើល និងប្តូរប្រវត្តិរូប គម្រោង Telegram និងការជូនដំណឹង។</p><button type="button" class="btn" id="pfpLogin" data-i18n="authBtn">ចូលគណនី</button></div>
@@ -4588,8 +4588,12 @@ function pfPageInit(){
   const alerts = pfCard('pfAlertsCard', 'pfAlertsT', 'pfAlertsP'); const al = $('alSet'); if(al){ al.hidden = false; al.style.marginTop = '12px'; alerts.appendChild(al); }
   const sets = pfCard('pfSetCard', 'pfSetT'); sets.classList.add('pfp-set');
   const sm = document.querySelector('#setModal .modal'); if(sm) [...sm.children].filter(x => !x.classList.contains('modal-head')).forEach(x => sets.appendChild(x));
-  A.append(...[$('pfSql'), body.querySelector('.pf-hero'), plan, hist, $('pfTgCard'), $('pfAcctCard')].filter(Boolean));
-  B.append(...[$('pfEditCard'), $('pfPassCard'), alerts, sets].filter(Boolean), ...[...body.children]);   // the cooldown note, admin and sign-out buttons follow
+  // most used first: on phones column A is read before column B, so A+B is the priority order
+  // A: who you are, plan and expiry, Telegram, alerts · B: profile details, trading account, journal settings, purchases, password (rarely changed), sign out
+  const pass = $('pfPassCard'); if(pass) pass.classList.add('pfp-sec');
+  A.append(...[$('pfSql'), body.querySelector('.pf-hero'), plan, $('pfTgCard'), alerts].filter(Boolean));
+  B.append(...[$('pfEditCard'), $('pfAcctCard'), sets, hist, pass].filter(Boolean));
+  B.append(...[...body.children]);   // what is left: the cooldown note, admin and sign-out buttons (read after the cards moved out)
   $('pfpLogin').onclick = () => $('openAuthBtn').click();
   pfPageReady = true; pfPageFill();
   if(location.hash) setTimeout(() => { const el = document.getElementById(location.hash.slice(1)); if(el && el.offsetParent) el.scrollIntoView(); }, 400);
