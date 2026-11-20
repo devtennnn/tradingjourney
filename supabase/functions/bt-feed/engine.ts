@@ -40,6 +40,10 @@ const AiEng = (() => {
     // Backtest (after spread): all patterns together about break-even (M15 retest +0.13R n=30 gold / +0.07R n=37 BTC; H1 break −0.08R n=274 gold / −0.07R n=356 BTC).
     // Only candidate: BTC H1 symmetrical triangle breakout +0.39R n=82 (95% 0.03–0.77), but gold lost on the same pattern, so it must prove itself here first.
     intraday_pat:  {key:'intraday_pat',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'pat', entry:'retest', patWin:160, patAge:24, shadow:true, pub:true, one:true},
+    // SMC (Smart Money Concepts), SHADOW research: in the HTF trend direction, the first return into a fresh zone of that side
+    // (bullish order block, bullish FVG, or a bearish FVG that price closed through = bullish IFVG; mirror for sells) and a close back out of it.
+    intraday_smc:  {key:'intraday_smc',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'smc', zAge:96, shadow:true, pub:true, one:true},
+    swing_smc:     {key:'swing_smc',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'smc', zAge:120, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
@@ -75,6 +79,7 @@ const AiEng = (() => {
     if(M.v3 || M.sweep || M.setup) prepV3(P);
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     if(M.setup === 'pat') prepPat(P);
+    if(M.setup === 'smc') P.smc = smcZones(bars, P.atr, {life:M.zAge * 3});
     return P; }
   /* ---------- Classic chart patterns (entry timeframe) ----------
      Pivots: a high (low) above (below) the 3 candles on each side; known once the 3 right-hand candles have closed. Consecutive pivots on the same side
@@ -354,6 +359,38 @@ const AiEng = (() => {
      msnr: MSNR storyline: the HTF trend sets the side; the first touch of a FRESH line-chart level (V-level for buys, A-level for sells) where this candle closes back on the right side.
      qm:   Quasimodo on the HTF line chart: low, high, lower low, higher high (or the mirror); the first return to the left-shoulder close (QML) with a close back on the right side.
      All: stop beyond the structure, risk 0.5–3 ATR (srb 0.5–4), session (intraday: London / New York), no high-impact USD news within ±30 min. */
+  /* ---------- Smart Money Concepts zones (shared by the chart and the smc setup) ----------
+     FVG  (fair value gap): candle k-1 and candle k+1 do not overlap. Bullish: low[k+1] > high[k-1], zone = high[k-1]..low[k+1]; bearish mirror.
+          Known when candle k+1 closes. Gaps under minGap x ATR are ignored (noise).
+     IFVG (inverse FVG): a candle CLOSES through an FVG's far side. From that candle the gap works the other way (bullish FVG -> bearish IFVG).
+     OB   (order block): the last opposite-colour candle before a displacement: within 3 candles price closes beyond the high (low) of the 10 candles
+          before it and the move from the OB's extreme is at least 1.5 ATR. Zone = that candle's high..low. Known when the displacement candle closes.
+     For every zone: touch = first later candle that trades into it, brk = first later candle that CLOSES beyond its far side (the zone is spent).
+     Only candles already closed at `known` are used, so a zone never looks into the future. */
+  function smcZones(m, A, o){
+    o = o || {}; const n = m.length, life = o.life || 400, minG = o.minGap == null ? 0.15 : o.minGap, W = o.obLook || 10, out = [];
+    const track = (z, from) => { z.touch = -1; z.brk = -1;
+      for(let k = from + 1; k < n && k <= from + life; k++){ const b = m[k];
+        if(z.touch < 0 && (z.dir === 'bull' ? b.l <= z.top : b.h >= z.bot)) z.touch = k;
+        if(z.dir === 'bull' ? b.c < z.bot : b.c > z.top){ z.brk = k; break; } }
+      return z; };
+    for(let k = 1; k < n - 1; k++){
+      const a = A[k] || A[k + 1]; if(!a) continue; const p = m[k - 1], x = m[k + 1];
+      if(x.l - p.h >= minG * a) out.push(track({kind:'fvg', dir:'bull', top:x.l, bot:p.h, i:k - 1, known:k + 1}, k + 1));
+      else if(p.l - x.h >= minG * a) out.push(track({kind:'fvg', dir:'bear', top:p.l, bot:x.h, i:k - 1, known:k + 1}, k + 1));
+    }
+    for(const z of out.slice()) if(z.brk > 0) out.push(track({kind:'ifvg', dir:z.dir === 'bull' ? 'bear' : 'bull', top:z.top, bot:z.bot, i:z.i, known:z.brk}, z.brk));
+    for(let k = W; k < n - 1; k++){
+      const c = m[k], a = A[k], nx = m[k + 1]; if(!a) continue;
+      if(c.c < c.o && nx.c > nx.o){ let hi = -Infinity; for(let q = k - W; q < k; q++) hi = Math.max(hi, m[q].h);
+        for(let q = k + 1; q <= Math.min(k + 3, n - 1); q++) if(m[q].c > hi && m[q].c - c.l >= 1.5 * a){ out.push(track({kind:'ob', dir:'bull', top:c.h, bot:c.l, i:k, known:q}, q)); break; } }
+      else if(c.c > c.o && nx.c < nx.o){ let lo = Infinity; for(let q = k - W; q < k; q++) lo = Math.min(lo, m[q].l);
+        for(let q = k + 1; q <= Math.min(k + 3, n - 1); q++) if(m[q].c < lo && c.h - m[q].c >= 1.5 * a){ out.push(track({kind:'ob', dir:'bear', top:c.h, bot:c.l, i:k, known:q}, q)); break; } }
+    }
+    return out.sort((a, b) => a.known - b.known);
+  }
+  // zones still alive after candle `at` (known by then, not closed through yet); newest first
+  function smcActive(Z, at){ return Z.filter(z => z.known <= at && (z.brk < 0 || z.brk > at)).sort((a, b) => b.known - a.known); }
   function evalSetup(P, i, news){
     const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A = P.atr[i];
     const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key};
@@ -412,6 +449,19 @@ const AiEng = (() => {
       const ev = M.entry === 'break' ? patEvent(P, i) : patRetest(P, i);
       if(ev){ side = ev.side; stopBase = ev.stopBase; feat.pat = ev.pat; feat.mmA = +(ev.height / A).toFixed(2); feat.mm = ev.height; feat.withBias = bias === side; if(ev.brkBars) feat.brkBars = ev.brkBars; }
     }
+    // smc: first return into a fresh zone of the trend side (formed within zAge candles, not touched before the last 3 candles, not closed through),
+    // this candle closes back out of it: above the zone middle and up on the candle and on the previous close (mirror for sells). Stop beyond the zone.
+    if(M.setup === 'smc' && bias && P.smc){
+      const L = bias === 'BUY', want = L ? 'bull' : 'bear';
+      for(const z of P.smc){
+        if(z.dir !== want || z.known > i - 1 || z.known < i - M.zAge || (z.brk >= 0 && z.brk <= i) || z.touch < 0 || z.touch > i || z.touch < i - 3) continue;
+        const mid = (z.top + z.bot) / 2;
+        if(L ? b.c > mid && b.c > b.o && b.c > m[i - 1].c : b.c < mid && b.c < b.o && b.c < m[i - 1].c){
+          let ext = L ? z.bot : z.top; for(let k = z.touch; k <= i; k++) ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h);
+          side = bias; stopBase = ext; feat.zone = z.kind; feat.zoneA = +((z.top - z.bot) / A).toFixed(2); feat.zAge = i - z.known; break;
+        }
+      }
+    }
     if(M.setup === 'qm'){
       const legs = P.legs.filter(x => x.known <= closeT);
       if(legs.length >= 4){
@@ -423,7 +473,7 @@ const AiEng = (() => {
       }
     }
     out.side = side; const L = side === 'BUY';
-    add('bias', (M.setup !== 'brt' && M.setup !== 'msnr') || !!bias, bias || 'range', true);
+    add('bias', (M.setup !== 'brt' && M.setup !== 'msnr' && M.setup !== 'smc') || !!bias, bias || 'range', true);
     add('setup', !!side, side ? M.setup : null, true);
     if(!side){ out.grade = 'No setup'; return out; }
     const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
@@ -546,7 +596,7 @@ const AiEng = (() => {
     }
     return out;
   }
-  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, MODES};
+  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, smcZones, smcActive, MODES};
 })();
 
 export default AiEng;

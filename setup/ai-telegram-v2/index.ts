@@ -93,7 +93,7 @@ async function newsFn() {
 const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING", sweep: "SWEEP (experimental)", btcx: "BTC SHADOW",
   intraday_brt: "INTRADAY BREAKOUT RETEST", intraday_lsr: "INTRADAY SWEEP", intraday_srb: "INTRADAY SESSION BREAKOUT", swing_brt: "SWING BREAKOUT RETEST · BETA", swing_lsr: "SWING SWEEP",
   intraday_msnr: "INTRADAY MSNR", intraday_qm: "INTRADAY QM", swing_msnr: "SWING MSNR", swing_qm: "SWING QM",
-  intraday_pat: "INTRADAY CHART PATTERN", swing_pat: "SWING CHART PATTERN",
+  intraday_pat: "INTRADAY CHART PATTERN", swing_pat: "SWING CHART PATTERN", intraday_smc: "INTRADAY SMC", swing_smc: "SWING SMC",
   intraday_v2: "INTRADAY V2", swing_v2: "SWING V2" };
 const pl = (n, u) => n + " " + u + (n === 1 ? "" : "s");
 const dur = (sec) => sec >= 86400 ? pl(Math.round(sec / 86400), "day") : sec >= 3600 ? pl(Math.round(sec / 3600), "hour") : Math.round(sec / 60) + " min";
