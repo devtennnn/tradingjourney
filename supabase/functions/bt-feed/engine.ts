@@ -23,6 +23,11 @@ const AiEng = (() => {
     // one:true = a new intraday signal only when none is running on that symbol (16 Nov: three gold SELLs in 45 minutes on one move, all stopped)
     intraday: {key:'intraday', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', one:true},
     swing:    {key:'swing',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true},
+    swing_v2:    {key:'swing_v2',    base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, xNeed:3, trigs:['engulf', 'momentum'], shadow:true, pub:true},
+    // swing_v2h = swing_v2 + the pullback must sit in an H4 order block / FVG / IFVG of the trade side (smcHtf). SHADOW research.
+    //   Backtest gold H1 (Twelve Data, spread included): swing_v2 signals WITH an H4 zone +0.93R n=137 vs WITHOUT +0.01R n=111 over 2 years;
+    //   last year alone +0.86R n=55 vs -0.24R n=54. BTC did not improve (+0.09R vs +0.28R), nor did intraday with H1 zones. Gold first; forward-test before trusting.
+    swing_v2h:   {key:'swing_v2h',   base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, xNeed:3, trigs:['engulf', 'momentum'], smcHtf:true, shadow:true, pub:true},
     // Extra Elite setups, SHADOW research (logged to ai_signals with their result, never posted, on the public symbols). Switch one on for members only after ~30+ signals hold up.
     //   brt = breakout + retest of an HTF swing level in the trend direction · lsr = liquidity sweep reversal at an HTF swing · srb = Asia-range breakout in London / New York
     intraday_brt: {key:'intraday_brt', base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'brt', lvlAge:5 * 86400,  win:24, shadow:true, pub:true, one:true},
@@ -79,6 +84,7 @@ const AiEng = (() => {
     if(M.v3 || M.sweep || M.setup) prepV3(P);
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     if(M.setup === 'pat') prepPat(P);
+    if(M.smcHtf && !P.smcH){ P.hAtrS = atrF(htf.map(x => x.h), htf.map(x => x.l), htf.map(x => x.c)); P.smcH = smcZones(htf, P.hAtrS, {life:300}); }
     if(M.setup === 'smc') P.smc = smcZones(bars, P.atr, {life:M.zAge * 3});
     else if(!M.v3 && !M.sweep){ P.smc = smcZones(bars, P.atr, {life:400});   // research: tag classic A+ signals with SMC confluence (smcTag)
       const H = htf; P.hAtrS = atrF(H.map(x => x.h), H.map(x => x.l), H.map(x => x.c)); P.smcH = smcZones(H, P.hAtrS, {life:300}); }
@@ -589,6 +595,7 @@ const AiEng = (() => {
     let hiLo = L ? -Infinity : Infinity; for(let k = i - 48; k < i; k++) hiLo = L ? Math.max(hiLo, m[k].h) : Math.min(hiLo, m[k].l);
     const room = L ? hiLo - entry : entry - hiLo;
     add('room', room <= 0 || room >= Math.max(1.5, M.rr[0]) * risk, null, false);
+    if(M.smcHtf){ const zt = smcTagHtf(P, closeT, L, ext, A); add('smc', !!zt, zt, true); }   // core check: required for A+
 
     const core = out.checks.filter(x => x.core), extra = out.checks.filter(x => !x.core);
     const coreOK = core.every(x => x.pass), extraN = extra.filter(x => x.pass).length;
