@@ -51,7 +51,7 @@ META = {
         "profile":  ("AROM TRADE — My Profile",
                      "Your AROM TRADE account: name, photo, password, plan and expiry, purchase history, Telegram and notification alerts."),
         "course":   ("AROM Academy — Gold Trading Course in English and Khmer",
-                     "Learn to trade gold with a plan: risk management, market structure, A+ setups and trading psychology. 12 short lessons and quizzes. Chapter 1 is free."),
+                     "Learn to trade gold with a plan: risk management, market structure, A+ setups, order blocks and FVG, and trading psychology. Short lessons and quizzes. Chapter 1 is free."),
     },
     "km": {
         "index":    ("AROM TRADE — កំណត់ហេតុជួញដូរ និងសញ្ញា AI សម្រាប់មាស BTC និង Forex",
@@ -67,7 +67,7 @@ META = {
         "refer":    ("AROM TRADE — ណែនាំមិត្ត និងទទួលរង្វាន់",
                      "អញ្ជើញអ្នកជួញដូរ ១៥ នាក់ដែលចូលរួម និងប្រើ AROM TRADE ហើយទទួល Elite ឥតគិតថ្លៃ ៣០ ថ្ងៃ។ ទទួលសញ្ញាបន្ថែមនៅពេលមិត្តទិញគម្រោង។"),
         "course":   ("AROM Academy — វគ្គសិក្សាជួញដូរមាស ជាភាសាខ្មែរ",
-                     "រៀនជួញដូរមាសដោយមានផែនការ៖ ការគ្រប់គ្រងហានិភ័យ រចនាសម្ព័ន្ធទីផ្សារ Setup A+ និងចិត្តវិទ្យាជួញដូរ។ 12 មេរៀនខ្លីៗ និង Quiz។ ជំពូកទី 1 ឥតគិតថ្លៃ។"),
+                     "រៀនជួញដូរមាសដោយមានផែនការ៖ ការគ្រប់គ្រងហានិភ័យ រចនាសម្ព័ន្ធទីផ្សារ Setup A+ Order Block និង FVG ព្រមទាំងចិត្តវិទ្យាជួញដូរ។ មេរៀនខ្លីៗ និង Quiz។ ជំពូកទី 1 ឥតគិតថ្លៃ។"),
         "profile":  ("AROM TRADE — ប្រវត្តិរូបរបស់ខ្ញុំ",
                      "គណនី AROM TRADE របស់អ្នក៖ ឈ្មោះ រូបថត ពាក្យសម្ងាត់ គម្រោង និងថ្ងៃផុតកំណត់ ប្រវត្តិទិញ Telegram និងការជូនដំណឹង។"),
     },
@@ -111,10 +111,10 @@ def app_jsonld(name, lang):
                                   offer("Ultra", "49.99", "30 days. AROM Intelligence, an AI analyst. No auto-renew.")]})
     if name == "course":
         return jsonld({"@context": "https://schema.org", "@type": "Course", "name": "AROM Academy: trade gold with a plan",
-                       "description": "Risk management, market structure, A+ setups and trading psychology for gold traders. 12 lessons with chapter quizzes, in English and Khmer.",
+                       "description": "Risk management, market structure, A+ setups, smart money concepts (order blocks, FVG) and trading psychology for gold traders. Short lessons with chapter quizzes, in English and Khmer.",
                        "url": url("/course", lang), "inLanguage": ["en", "km"], "provider": {"@id": SITE + "/#org"},
                        "offers": {"@type": "Offer", "category": "Paid", "price": "19.99", "priceCurrency": "USD"},
-                       "hasCourseInstance": {"@type": "CourseInstance", "courseMode": "online", "courseWorkload": "PT70M"}})
+                       "hasCourseInstance": {"@type": "CourseInstance", "courseMode": "online", "courseWorkload": "PT95M"}})
     return ""
 
 def set_heading(s, attr, tag):
