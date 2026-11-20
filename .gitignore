@@ -1,2 +1,4 @@
 aws/arom-api-lambda.zip
 aws/.build/
+setup/*.csv
+*.backup.csv

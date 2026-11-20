@@ -1,3 +1,5 @@
+-- WARNING: superseded. Do not re-run on the live database: later files (ultra-plan.sql, course.sql, security-fixes.sql) replaced some functions here
+-- (admin_approve_payment, plan_col, payments_plan_check, promo_quote_internal). Re-running this would undo those fixes.
 -- ULTRA plan ($49.99 / 30 days). Ultra includes everything in Elite and Premium.
 -- Run once in Supabase -> SQL Editor. Safe to re-run. Run AFTER khqr-all.sql (it replaces functions defined there).
 begin;

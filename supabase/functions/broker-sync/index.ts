@@ -169,17 +169,21 @@ Deno.serve(async (req) => {
       if ((mine || []).length >= MAX_ACCOUNTS) return json({ error: "too_many_accounts", limit: MAX_ACCOUNTS }, 409);
       if ((mine || []).filter((x) => x.source === "metaapi").length >= MA_MAX) return json({ error: "too_many_phone", limit: MA_MAX }, 409);
       if ((mine || []).some((x) => x.login === f.login && x.server === f.server)) return json({ error: "already_connected" }, 409);
+      // Reserve the slot in the database BEFORE the billed MetaApi call. A unique index (one metaapi row per user,
+      // see supabase/sql/security-fixes.sql) makes a second request at the same moment fail here instead of creating a second paid terminal.
+      const hidden = newToken(crypto.getRandomValues(new Uint8Array(20)));   // never shown: MetaApi accounts sync from our side, not with a code
+      const { data: slot, error: se } = await db.from("broker_accounts").insert({ user_id: user.id, label: f.label, platform: f.platform, login: f.login, server: f.server, token_hash: await hashToken(hidden), token_hint: "cloud", source: "metaapi", ma_state: "connecting" }).select("id").single();
+      if (se || !slot) { f.password = ""; return json({ error: se && se.code === "23505" ? "too_many_phone" : "server_error", limit: MA_MAX }, se && se.code === "23505" ? 409 : 500); }
       const r = await maCreate(f, "arom-" + user.id.slice(0, 8) + "-" + f.login);
       f.password = "";
       if (!r.ok || !r.j || !r.j.id) {
+        await db.from("broker_accounts").delete().eq("id", slot.id);
         const m = maErr(r); console.error("broker-sync connect:", r.status, m);
-        return json({ error: /password|credential|auth/i.test(m) ? "bad_password" : /server/i.test(m) ? "bad_server" : r.status === 202 ? "metaapi_busy" : "metaapi_error", detail: m }, r.status >= 500 ? 502 : 400);
+        return json({ error: /password|credential|auth/i.test(m) ? "bad_password" : /server/i.test(m) ? "bad_server" : r.status === 202 ? "metaapi_busy" : "metaapi_error" }, r.status >= 500 ? 502 : 400);
       }
       await ma("POST", MA_PROV + "/users/current/accounts/" + encodeURIComponent(r.j.id) + "/deploy");
-      const hidden = newToken(crypto.getRandomValues(new Uint8Array(20)));   // never shown: MetaApi accounts sync from our side, not with a code
-      const { data, error } = await db.from("broker_accounts").insert({ user_id: user.id, label: f.label, platform: f.platform, login: f.login, server: f.server, token_hash: await hashToken(hidden), token_hint: "cloud",
-        source: "metaapi", ma_id: r.j.id, ma_state: "connecting" }).select(PUBLIC).single();
-      if (error) { await ma("DELETE", MA_PROV + "/users/current/accounts/" + encodeURIComponent(r.j.id)); return json({ error: "server_error" }, 500); }
+      const { data, error } = await db.from("broker_accounts").update({ ma_id: r.j.id, ma_state: "connecting" }).eq("id", slot.id).select(PUBLIC).single();
+      if (error) { await ma("DELETE", MA_PROV + "/users/current/accounts/" + encodeURIComponent(r.j.id)); await db.from("broker_accounts").delete().eq("id", slot.id); return json({ error: "server_error" }, 500); }
       return json({ ok: true, account: data });
     }
     if (action === "update") {

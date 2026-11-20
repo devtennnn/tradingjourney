@@ -4759,6 +4759,7 @@ const MASK = '$•••••';
 const money = n => (n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const moneyT = n => PRIV ? MASK : money(n);   // for copied text, where blur is impossible
 const sgn = n => n>0?'positive':n<0?'negative':'';
+const impCls = v => ['High','Medium','Low','Holiday'].includes(v) ? v : 'Low';   // feed value used as a class: allow only known ones
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const loc = () => S.lang==='km'?'km-KH':'en-US';
 const num = v => (v===''||v==null||isNaN(+v))?null:+v;
@@ -6856,7 +6857,7 @@ function renderNews(){
       const past = !hol ? (now >= e.ms + 15*60000) : dk < todayKey;
       h += `<div class="news-row${past?' past':''}${isNow?' now':''}${i===nextIdx?' next':''}">
         <div class="news-time">${hol ? esc(t('newsAllDay')) : fmtTime.format(new Date(e.ms))}${isNow?` <span class="tag gold" style="font-size:9px">${esc(t('newsNow'))}</span>`:''}</div>
-        <div class="news-imp ${e.impact}"><i></i>${esc(t({High:'impHigh',Medium:'impMed',Low:'impLow',Holiday:'impHol'}[e.impact]))}</div>
+        <div class="news-imp ${impCls(e.impact)}"><i></i>${esc(t({High:'impHigh',Medium:'impMed',Low:'impLow',Holiday:'impHol'}[e.impact]))}</div>
         <div class="news-title">${esc(e.title)}</div>
         <div class="news-nums" style="display:contents">
           <div class="news-num"><small>${esc(t('newsFc'))}</small>${esc(e.forecast||'—')}</div>
@@ -6884,7 +6885,7 @@ function tickNews(){
   const cd = (dd?dd+'d ':'') + String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
   box.classList.add('show');
   box.classList.toggle('soon', nx.ms-now < 30*60000);
-  box.innerHTML = `<span class="news-imp ${nx.impact}"><i></i>${esc(t({High:'impHigh',Medium:'impMed',Low:'impLow'}[nx.impact]||'impLow'))}</span>
+  box.innerHTML = `<span class="news-imp ${impCls(nx.impact)}"><i></i>${esc(t({High:'impHigh',Medium:'impMed',Low:'impLow'}[nx.impact]||'impLow'))}</span>
     <span><b>${esc(t('newsNextEv'))}:</b> ${esc(nx.title)} · ${fmtTime.format(new Date(nx.ms))} ICT</span>
     <span class="cd">${esc(t('newsIn'))} ${cd}</span>`;
 }
@@ -7361,6 +7362,7 @@ async function qrCheck(manual){
     if(!data || data.error) throw new Error((data && data.error) || 'check');
     if(data.status === 'paid'){ await qrPaid(data); return 'paid'; }
     const b = data.bakong || 'ok', noAuto = b === 'geo_blocked' || b === 'no_token';
+    if(data.status === 'rejected'){ Qr.slow = true; qrShowClaim(false); qrStatus('qrNotFound', 'err'); return 'expired'; }   // an admin refused this payment
     if(data.status === 'claimed'){ Qr.slow = true; qrShowClaim(false); qrStatus('qrClaimed', 'ok'); return 'claimed'; }
     if(noAuto || b === 'rejected' || b === 'unreachable' || manual) qrShowClaim(true);        // the bank cannot confirm by itself: let the user ask the admin
     if(data.status === 'expired'){ if(manual) qrStatus(noAuto ? 'qrNoAuto' : 'qrNotFound', 'warn'); qrShowClaim(true, noAuto); return 'expired'; }
@@ -7747,7 +7749,7 @@ function renderNewsAnalysis(){
     if(past && !grpDone){ grpDone = true; head = `<div class="na-grp">${esc(t('naReleased'))}</div>`; }
     return head + `<div class="na-ev${res ? ' done' : ''}${live ? ' live' : ''}${past && !live ? ' past' : ''}" data-past="${past ? 1 : 0}">
       <div class="na-tm"><b>${time}</b><span>${live ? '⚠ ' + esc(t('naLockShort')) + '<br>' : ''}${esc(when)}</span></div>
-      <div><div class="ttl"><span class="news-imp ${e.impact}" style="display:inline-flex"><i></i>${esc(t(e.impact==='High'?'impHigh':'impMed'))}</span>${esc(e.title)}${lean}</div>
+      <div><div class="ttl"><span class="news-imp ${impCls(e.impact)}" style="display:inline-flex"><i></i>${esc(t(e.impact==='High'?'impHigh':'impMed'))}</span>${esc(e.title)}${lean}</div>
         <div class="na-fp"><span>${esc(t('newsFc'))} <b>${esc(e.forecast || '—')}</b></span><span>${esc(t('newsPrev'))} <b>${esc(e.previous || '—')}</b></span></div>
         ${scn}${past ? goldRx(e) : ''}</div>
       <div class="na-act">${canInput ? `<small>${esc(t('naActLbl'))}</small><input class="field" data-na="${esc(key)}" value="${esc(naActuals[key] || '')}" placeholder="${esc(t('naActPh'))}" aria-label="${esc(t('naActual'))}: ${esc(e.title)}" inputmode="decimal">` : ''}${res}</div>
@@ -7767,7 +7769,7 @@ function renderNewsAnalysis(){
       nb.className = 'na-next' + (NLk ? ' lock' : '');
       nb.innerHTML = `<small>${esc(t('naNext'))}</small>${NLk ? `<span class="lk">⚠ ${esc(t('nlTitle'))}</span>` : ''}
         <div class="t">${esc(nx.title)}</div><div class="cd">${d < 60000 ? esc(t('naNow')) : (hh ? hh + 'h ' : '') + String(mm).padStart(2, '0') + 'm'}</div>
-        <div class="m"><span class="news-imp ${nx.impact}" style="display:inline-flex"><i></i>${esc(t(nx.impact==='High'?'impHigh':'impMed'))}</span> · ${fmtTime.format(new Date(nx.ms))} ICT · ${esc(t('newsFc'))} ${esc(nx.forecast || '—')}</div>`; } }
+        <div class="m"><span class="news-imp ${impCls(nx.impact)}" style="display:inline-flex"><i></i>${esc(t(nx.impact==='High'?'impHigh':'impMed'))}</span> · ${fmtTime.format(new Date(nx.ms))} ICT · ${esc(t('newsFc'))} ${esc(nx.forecast || '—')}</div>`; } }
 
   // Summary: released results win; otherwise fall back to the (weaker) forecast lean.
   const useActual = released > 0, sc = useActual ? score : fcScore;
@@ -10600,7 +10602,7 @@ const ADM_ACT = {
 function admDetail(r){
   const d = r.detail || {};
   switch(r.action){
-    case 'signup': return `Signed up${d.username ? ' as @' + d.username : ''}`;
+    case 'signup': return `Signed up${d.username ? ' as @' + esc(d.username) : ''}`;
     case 'plan_upgrade': return `Paid ${admMoney(d.amount)} for <b class="gold">${esc(String(d.plan || '').toUpperCase())}</b>${d.bill ? ' · bill ' + esc(d.bill) : ''}${d.promo ? ' · promo ' + esc(d.promo) : ''}`;
     case 'promo_created': return `Code <b class="gold">${esc(d.code)}</b> · ${d.kind === 'percent' ? esc(String(d.value)) + '% off' : admMoney(d.value) + ' off'} · ${esc(d.plan || 'any')} plan${d.max_uses ? ' · max ' + esc(String(d.max_uses)) + ' uses' : ''}`;
     case 'promo_toggled': return `${esc(d.code)} ${d.active ? 'resumed' : 'paused'}`;
@@ -11276,6 +11278,7 @@ setTimeout(() => {
   $('alSet').addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.al; if(k){ AL.cfg[k] = e.target.checked; alSave(); pushSyncSoon(); }
     if(e.target.id === 'alMoveUsd'){ AL.cfg.moveUsd = Math.max(2, Math.min(100, +e.target.value || 10)); alSave(); pushSyncSoon(); } });
   $('alPaAdd').onclick = () => { const px = parseFloat($('alPaPx').value); if(!isFinite(px)){ toast(t('alPaBad'), true); return; }
+    if(AL.pa.length >= 20) AL.pa.shift();   // keep the newest 20 (the push server reads at most 20)
     AL.pa.push({id:Date.now().toString(36), sym:$('alPaSym').value, dir:$('alPaDir').value, px}); $('alPaPx').value = ''; alSave(); alPaPaint(); pushSyncSoon(); };
   $('alPaList').addEventListener('click', e => { const b = e.target.closest('[data-pa]'); if(!b) return; AL.pa = AL.pa.filter(a => a.id !== b.dataset.pa); alSave(); alPaPaint(); pushSyncSoon(); });
   $('alTest').onclick = async () => { alPush('market', null, t('alTestT'), t('alTestB'), null);
@@ -11344,7 +11347,7 @@ function ntPaint(){
     return `<div class="nt-item${r.read ? '' : ' unread'}" data-nt="${esc(r.id)}" tabindex="0" role="button">
       <div class="nt-ico ${r.type}${loss ? ' loss' : ''}">${NT_ICON[r.type] || NT_ICON.update}</div>
       <div><div class="nt-ttl">${esc(r.title)}</div>${r.body ? `<div class="nt-body">${esc(r.body)}</div>` : ''}
-        ${r.link ? `<a class="nt-link" href="${esc(r.link)}" target="_blank" rel="noopener noreferrer">${esc(t('ntOpen'))} →</a>` : ''}
+        ${r.link && /^(https?:\/\/|\/(?!\/))/i.test(r.link) ? `<a class="nt-link" href="${esc(r.link)}" target="_blank" rel="noopener noreferrer">${esc(t('ntOpen'))} →</a>` : ''}
         <div class="nt-meta"><span class="nt-type ${r.type}">${esc(t({update:'ntTypeUpdate', promotion:'ntTypePromotion', signal:'ntTypeSignal', market:'ntTypeMarket', news:'ntTypeNews'}[r.type] || 'ntTypeUpdate'))}</span><span>${esc(ntAgo(r.created_at))}</span></div></div>
     </div>`;
   }).join('');

@@ -15,7 +15,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const env = (k: string, d = "") => Deno.env.get(k) ?? d;
 const DAYS = Number(env("PLAN_DAYS", "30"));
-const COL: Record<string, string> = { premium: "premium_until", elite: "elite_until", ultra: "ultra_until" };
 const J = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 
 async function sha256hex(s: string): Promise<string> {
@@ -78,11 +77,9 @@ Deno.serve(async (req) => {
       .eq("id", p.id).in("status", ["pending", "expired", "claimed"]).select().maybeSingle();
     if (claimed && p.plan === "course") return J({ ok: true });   // course: lifetime access is set by the database trigger payments_course_paid
     if (claimed) {
-      const plan = p.plan === "ultra" ? "ultra" : p.plan === "elite" ? "elite" : "premium", col = COL[plan];
-      const cur = ((await admin.from("profiles").select(col).eq("id", p.user_id).maybeSingle()).data as any)?.[col] ?? null;
-      const base = cur && new Date(cur) > new Date() ? new Date(cur) : new Date();
-      const next = new Date(base.getTime() + DAYS * 86_400_000).toISOString();
-      const { error } = await admin.from("profiles").update({ [col]: next }).eq("id", p.user_id);
+      const plan = p.plan === "ultra" ? "ultra" : p.plan === "elite" ? "elite" : "premium";
+      // one SQL statement, so two payments settled at the same moment both count
+      const { error } = await admin.rpc("extend_plan", { p_user: p.user_id, p_plan: plan, p_days: DAYS });
       if (error) {   // undo the claim so the gateway's retry can try again; 5xx makes it retry
         console.error("webhook: could not extend plan", error.message);
         await admin.from("payments").update({ status: p.status, paid_at: null }).eq("id", p.id).eq("status", "paid");

@@ -17,6 +17,7 @@ const UA = {'User-Agent': 'Mozilla/5.0 (compatible; arom-trade/1.0)', Accept: 'a
 // CDN-cached, so this costs no extra Twelve Data credits), and the live price from gold-api.com spot when it is fresh and agrees.
 // If that is unavailable, the old Yahoo logic below runs unchanged.
 const TD_M1 = {XAUUSD: true, XAGUSD: true};
+const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://aromx.trade').replace(/\/+$/, '');
 
 async function tdM1(origin, key, now) {
   const r = await fetch(`${origin}/api/candles?symbol=${key}&tf=1`, {headers: UA, signal: AbortSignal.timeout(4000)});
@@ -85,8 +86,8 @@ module.exports = async (req, res) => {
   if (!y) return res.status(400).json({error: 'unsupported symbol'});
   const now = Math.floor(Date.now() / 1000), debug = req.query && String(req.query.debug) === '1';
   if (TD_M1[key]) {
-    const host = req.headers && (req.headers['x-forwarded-host'] || req.headers.host);
-    const [tdR, gaR] = await Promise.allSettled([host ? tdM1('https://' + host, key, now) : Promise.reject(new Error('no host')), goldApi(GOLDAPI[key], now)]);
+    // fixed origin: never build a server-side URL from a request header (this response is shared through the CDN cache)
+    const [tdR, gaR] = await Promise.allSettled([tdM1(SITE_ORIGIN, key, now), goldApi(GOLDAPI[key], now)]);
     if (tdR.status === 'fulfilled') {
       const td = tdR.value, sp = gaR.status === 'fulfilled' ? gaR.value : null, p = tdPrice(td, sp);
       const body = {symbol: key, source: td.source, kind: 'spot', price: p.price, time: p.time, lag: p.lag, m1: td.m1, at: now};

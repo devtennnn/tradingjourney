@@ -1,0 +1,15 @@
+# Files that must never be served from aromx.trade (source, setup notes, research data, tooling).
+# The site needs only the HTML pages, km/, api/, vendor/, icons/, logo/, downloads/, sw.js, manifest, robots and sitemap.
+.claude/
+setup/
+supabase/
+tools/
+aws/
+data/
+amplify.yml
+*.md
+*.sql
+*.csv
+*.png
+!icons/**
+!logo/**

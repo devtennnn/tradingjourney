@@ -82,7 +82,7 @@ function feedQ(bars) { const q = AiEng.feedQuality(bars, 3000); return { openGap
 Deno.serve(async (req) => {
   const u = new URL(req.url);
   const { data: k } = await db.from("ai_bot_config").select("value").eq("key", "cron_secret").maybeSingle();
-  if (!k || u.searchParams.get("key") !== k.value) return json({ error: "unauthorized" }, 401);
+  if (!k || !k.value || u.searchParams.get("key") !== k.value) return json({ error: "unauthorized" }, 401);   // empty secret never matches
   const mode = u.searchParams.get("mode") || "scalp", MM = AiEng.MODES[mode];   // any engine mode; its entry timeframe picks the feed interval
   const tf = MM && ({ 60: TF.scalp, 900: TF.intraday, 3600: TF.swing })[MM.base]; if (!tf) return json({ error: "mode" }, 400);
   const sym = SYM[(u.searchParams.get("sym") || "XAUUSD").toUpperCase()] ? (u.searchParams.get("sym") || "XAUUSD").toUpperCase() : "XAUUSD", S = SYM[sym];

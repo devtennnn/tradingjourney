@@ -1,3 +1,5 @@
+-- WARNING: superseded. Do not re-run on the live database: later files (ultra-plan.sql, course.sql, security-fixes.sql) replaced some functions here
+-- (admin_approve_payment, plan_col, payments_plan_check, promo_quote_internal). Re-running this would undo those fixes.
 -- Promo codes: percent / fixed discounts on a plan price, with limits, expiry and tracking.
 -- Run once in Supabase -> SQL Editor (project: tradejourney). Safe to re-run.
 create table if not exists public.promo_codes (

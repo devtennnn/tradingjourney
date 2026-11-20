@@ -1,3 +1,5 @@
+-- WARNING: superseded. Do not re-run on the live database: later files (ultra-plan.sql, course.sql, security-fixes.sql) replaced some functions here
+-- (admin_approve_payment, plan_col, payments_plan_check, promo_quote_internal). Re-running this would undo those fixes.
 -- KHQR payments: ALL 3 steps in one file. Paste into Supabase -> SQL Editor and click Run once. Safe to re-run.
 -- KHQR payments, step 1 of 3 (run once in Supabase -> SQL Editor). Re-runnable.
 -- Run the three files in this order:  1) khqr-payments.sql   2) khqr-manual-confirmation.sql   3) promo-codes.sql
