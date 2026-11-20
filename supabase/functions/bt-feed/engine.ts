@@ -393,7 +393,10 @@ const AiEng = (() => {
   // zones still alive after candle `at` (known by then, not closed through yet); newest first
   function smcActive(Z, at){ return Z.filter(z => z.known <= at && (z.brk < 0 || z.brk > at)).sort((a, b) => b.known - a.known); }
   /* Research tag (bt-feed only): which SMC zones of the trade side were alive at candle i and held the pullback extreme `ext`:
-     the extreme reached into the zone (within 0.1 ATR of its near edge) without going more than 0.5 ATR past its far side. Returns e.g. 'fvg+ob' or null. */
+     the extreme reached into the zone (within 0.1 ATR of its near edge) without going more than 0.5 ATR past its far side. Returns e.g. 'fvg+ob' or null.
+     Result (20 Nov 2026, Twelve Data, spread included; avg R with a zone vs without): swing gold 2y +0.60 n=55 vs +0.23 n=8 · swing BTC +0.24 n=78 vs +0.57 n=12 ·
+     swing_v2 gold +0.55 n=205 vs +0.38 n=43 · swing_v2 BTC +0.08 n=264 vs +0.47 n=63 · intraday_v2 gold 1y -0.11 n=244 vs +0.11 n=34 · BTC +0.12 n=304 vs +0.36 n=52.
+     80-90 % of A+ pullbacks already sit in such a zone, and the ones that do were NOT better in 5 of 6 tests (all intervals overlap): no SMC filter added to A+. */
   function smcTag(P, i, L, ext, A){
     if(!P.smc) return null; const want = L ? 'bull' : 'bear', got = new Set();
     for(const z of P.smc){ if(z.known > i - 1) break;
