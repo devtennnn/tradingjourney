@@ -4,6 +4,7 @@
 // GET ?key=..&mode=scalp|intraday|swing&days=30&spread=0.4&src=both
 // Returns statistics only (no candles). PAXG bars outside gold market hours are dropped so both feeds see the same sessions.
 // R per trade (spread excluded first): SL -1 · TP1 only +rr1/2 · TP2+ (rr1+rr2)/2 · expired 0; then spread/risk is subtracted.
+// Deployed build (v6+) imports this same engine from the repo at a pinned commit: https://raw.githubusercontent.com/devtennnn/tradingjourney/<sha>/supabase/functions/bt-feed/engine.ts
 import AiEng from "./engine.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -56,17 +57,19 @@ function run(bars, mode, spread, warm, sym = "XAUUSD", ovr = null) {
     const hits = r === "sl" || r === "expired" ? 0 : +r.slice(2, 3);
     let R = r === "sl" ? -1 : r === "expired" ? 0 : hits >= 2 ? (rr[0] + rr[1]) / 2 : rr[0] / 2;
     R -= spread / s.risk;
-    rows.push({ t: s.t, side: s.side, R, res: r, riskUsd: s.risk });
+    rows.push({ t: s.t, side: s.side, R, res: r, riskUsd: s.risk, zone: s.feat && s.feat.zone });
   }
   const n = rows.length, sum = rows.reduce((a, x) => a + x.R, 0), wins = rows.filter((x) => x.R > 0).length;
   const sd = n > 1 ? Math.sqrt(rows.reduce((a, x) => a + (x.R - sum / n) ** 2, 0) / (n - 1)) : 0;
   const half = (k) => { const h = rows.filter((_, i) => (k ? i >= n / 2 : i < n / 2)); const s2 = h.reduce((a, x) => a + x.R, 0); return { n: h.length, avg: h.length ? +(s2 / h.length).toFixed(3) : null }; };
   let peak = 0, cum = 0, dd = 0; for (const x of rows) { cum += x.R; peak = Math.max(peak, cum); dd = Math.max(dd, peak - cum); }
   const cnt = (f) => rows.filter(f).length;
+  const byZone = {}; for (const x of rows) { if (!x.zone) continue; const z = byZone[x.zone] || (byZone[x.zone] = { n: 0, sumR: 0 }); z.n++; z.sumR += x.R; }
+  for (const k in byZone) { byZone[k].avgR = +(byZone[k].sumR / byZone[k].n).toFixed(3); byZone[k].sumR = +byZone[k].sumR.toFixed(2); }
   return { bars: bars.length, signals: n, avgR: n ? +(sum / n).toFixed(3) : null, ci95: n > 1 ? [+(sum / n - 1.96 * sd / Math.sqrt(n)).toFixed(3), +(sum / n + 1.96 * sd / Math.sqrt(n)).toFixed(3)] : null,
     sumR: +sum.toFixed(2), winRate: n ? +(wins / n).toFixed(3) : null, maxDD: +dd.toFixed(2), halves: [half(0), half(1)],
     results: { sl: cnt((x) => x.res === "sl"), tp1: cnt((x) => x.res === "tp1"), tp2plus: cnt((x) => /^tp[23]$/.test(x.res)), expired: cnt((x) => x.res === "expired") },
-    medianRiskUsd: n ? +rows.map((x) => x.riskUsd).sort((a, b) => a - b)[Math.floor(n / 2)].toFixed(2) : null, times: rows.map((x) => x.t) };
+    byZone, medianRiskUsd: n ? +rows.map((x) => x.riskUsd).sort((a, b) => a - b)[Math.floor(n / 2)].toFixed(2) : null, times: rows.map((x) => x.t) };
 }
 function feedQ(bars) { const q = AiEng.feedQuality(bars, 3000); return { openGap: q.gap, n: q.n }; }
 
@@ -78,7 +81,7 @@ Deno.serve(async (req) => {
   const tf = MM && ({ 60: TF.scalp, 900: TF.intraday, 3600: TF.swing })[MM.base]; if (!tf) return json({ error: "mode" }, 400);
   const sym = SYM[(u.searchParams.get("sym") || "XAUUSD").toUpperCase()] ? (u.searchParams.get("sym") || "XAUUSD").toUpperCase() : "XAUUSD", S = SYM[sym];
   let ovr = null; try { ovr = u.searchParams.get("ovr") ? JSON.parse(u.searchParams.get("ovr")) : null; } catch (_) { return json({ error: "ovr is not JSON" }, 400); }
-  const days = Math.min(+(u.searchParams.get("days") || 30), 400), spread = +(u.searchParams.get("spread") || S.spread);
+  const days = Math.min(+(u.searchParams.get("days") || 30), 800), spread = +(u.searchParams.get("spread") || S.spread);
   const tdKey = Deno.env.get("TWELVEDATA_API_KEY") || "";
   const to = Math.floor(Date.now() / 1000 / tf.step) * tf.step, from = to - days * 86400;
   try {
@@ -91,16 +94,17 @@ Deno.serve(async (req) => {
     if (clean && S.closes) td = td.filter((b) => goldOpen(b.t) && goldOpen(b.t + tf.step - 1));
     tdNote.clean = clean; tdNote.droppedClosed = tdRaw - td.length;
     const start = td[0].t, end = td[td.length - 1].t + tf.step;
-    const pxAll = await binance(tf.bn, start, end, S.bn), px = S.closes ? pxAll.filter((b) => goldOpen(b.t) && goldOpen(b.t + tf.step - 1)) : pxAll;
-    const warm = start + Math.min(3 * 86400, (end - start) * 0.1);   // both feeds start indicators at the same place; signals counted after warm-up
-    // one feed per request keeps each run inside the Edge Function CPU limit: src=td | paxg (default td)
     const which = u.searchParams.get("src") === "paxg" ? "paxg" : "td";
+    // the Binance feed is only fetched when it is used (src=paxg) or for the premium comparison (cmp=1)
+    const needPx = which === "paxg" || u.searchParams.get("cmp") === "1";
+    const pxAll = needPx ? await binance(tf.bn, start, end, S.bn) : [], px = S.closes ? pxAll.filter((b) => goldOpen(b.t) && goldOpen(b.t + tf.step - 1)) : pxAll;
+    const warm = start + Math.min(3 * 86400, (end - start) * 0.1);   // both feeds start indicators at the same place; signals counted after warm-up
     const R = run(which === "td" ? td : px, mode, spread, warm, sym, ovr);
     const times = R.times; delete R.times;
     // average gap between the two feeds' closes on matching candles (PAXG premium / discount to spot)
     const mp = new Map(px.map((b) => [b.t, b.c])); let g = 0, gn = 0; for (const b of td) { const c = mp.get(b.t); if (c) { g += (c - b.c) / b.c; gn++; } }
     return json({ mode, sym, ovr, days: +((end - start) / 86400).toFixed(1), from: new Date(start * 1000).toISOString(), to: new Date(end * 1000).toISOString(), spread, tdNote,
-      src: which, result: { ...R, feed: feedQ(which === "td" ? td : px) }, signalTimes: times,
-      paxgVsSpot: { premiumPct: gn ? +(100 * g / gn).toFixed(3) : null, matchedBars: gn, paxgBars: px.length, droppedClosedHours: pxAll.length - px.length } });
+      src: which, result: { ...R, feed: feedQ(which === "td" ? td : px) }, signalTimes: u.searchParams.get("times") === "1" ? times : undefined,
+      paxgVsSpot: needPx ? { premiumPct: gn ? +(100 * g / gn).toFixed(3) : null, matchedBars: gn, paxgBars: px.length, droppedClosedHours: pxAll.length - px.length } : undefined });
   } catch (e) { return json({ error: String(e.message || e) }, 500); }
 });
