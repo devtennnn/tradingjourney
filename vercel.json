@@ -69,6 +69,21 @@
       ],
       "destination": "https://aromx.trade/$1",
       "permanent": true
+    },
+    {
+      "source": "/tiktok",
+      "destination": "https://www.tiktok.com/@aromx.trade",
+      "permanent": false
+    },
+    {
+      "source": "/channel",
+      "destination": "https://t.me/aromxtrade",
+      "permanent": false
+    },
+    {
+      "source": "/group",
+      "destination": "https://t.me/aromxtradecommunity",
+      "permanent": false
     }
   ]
 }
