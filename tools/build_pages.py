@@ -29,10 +29,11 @@ APP = [
     ("pricing",  "/pricing",  "pricing",  'data-i18n-html="prH1"'),
     ("refer",    "/refer",    "refer",    'id="rfH"'),
     ("profile",  "/profile",  "profile",  'id="pfH"'),   # private account page: noindex, not in the sitemap
-    ("course",   "/course",   "course",   'id="crH"'),   # AROM Academy: outline + free preview public, paid lessons from the database
+    ("course",   "/course",   "course",   'id="crH"'),
+    ("replay",   "/replay",   "replay",   'id="rpTitle"'),   # Replay mode (Elite / Ultra)   # AROM Academy: outline + free preview public, paid lessons from the database
 ]
 PRIVATE = {"profile"}
-HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"', 'id="pfH"', 'id="crH"']
+HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"', 'id="pfH"', 'id="crH"', 'id="rpTitle"']
 
 META = {
     "en": {
@@ -50,6 +51,8 @@ META = {
                      "Invite 15 traders who join and use AROM TRADE and get 30 days of Elite free. Earn bonus signals when your referrals buy a plan."),
         "profile":  ("AROM TRADE — My Profile",
                      "Your AROM TRADE account: name, photo, password, plan and expiry, purchase history, Telegram and notification alerts."),
+        "replay":   ("AROM TRADE — Replay Mode · Practise on Past Candles",
+                     "Bar replay for gold, Bitcoin and forex: pick a past date, hide the future and practise trades candle by candle, scored in R. Elite and Ultra."),
         "course":   ("AROM Academy — Gold Trading Course in English and Khmer",
                      "Learn to trade gold with a plan: risk management, market structure, A+ setups, order blocks and FVG, and trading psychology. Short lessons and quizzes. Chapter 1 is free."),
     },
@@ -66,6 +69,8 @@ META = {
                      "គម្រោង AROM TRADE៖ Free, Premium $2.50, Elite $14.99 និង Ultra $49.99 ក្នុង ៣០ ថ្ងៃ។ មិនបន្តដោយស្វ័យប្រវត្តិ បង់តាម KHQR។ ប្រៀបធៀបមុខងារទាំងអស់។"),
         "refer":    ("AROM TRADE — ណែនាំមិត្ត និងទទួលរង្វាន់",
                      "អញ្ជើញអ្នកជួញដូរ ១៥ នាក់ដែលចូលរួម និងប្រើ AROM TRADE ហើយទទួល Elite ឥតគិតថ្លៃ ៣០ ថ្ងៃ។ ទទួលសញ្ញាបន្ថែមនៅពេលមិត្តទិញគម្រោង។"),
+        "replay":   ("AROM TRADE — Replay Mode · ហាត់ជួញដូរលើទៀនអតីតកាល",
+                     "Bar Replay សម្រាប់មាស Bitcoin និង Forex៖ ជ្រើសថ្ងៃអតីតកាល លាក់អនាគត ហើយហាត់ជួញដូរម្ដងមួយទៀន គណនាជា R។ Elite និង Ultra។"),
         "course":   ("AROM Academy — វគ្គសិក្សាជួញដូរមាស ជាភាសាខ្មែរ",
                      "រៀនជួញដូរមាសដោយមានផែនការ៖ ការគ្រប់គ្រងហានិភ័យ រចនាសម្ព័ន្ធទីផ្សារ Setup A+ Order Block និង FVG ព្រមទាំងចិត្តវិទ្យាជួញដូរ។ មេរៀនខ្លីៗ និង Quiz។ ជំពូកទី 1 ឥតគិតថ្លៃ។"),
         "profile":  ("AROM TRADE — ប្រវត្តិរូបរបស់ខ្ញុំ",
@@ -151,7 +156,7 @@ def translations(src):
          "process.stdout.write(JSON.stringify(new Function('return '+s.slice(a+10,b+2))()));"
     return json.loads(subprocess.run(["node", "-e", js], input=src, capture_output=True, text=True, check=True).stdout)
 
-KM_PATHS = ["/journey", "/news", "/refer", "/profile", "/course", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
+KM_PATHS = ["/journey", "/news", "/refer", "/profile", "/course", "/replay", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
 
 def markup_only(s, fn):
     """Apply fn to the HTML outside <script> and <style> blocks."""
