@@ -80,7 +80,8 @@ const AiEng = (() => {
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     if(M.setup === 'pat') prepPat(P);
     if(M.setup === 'smc') P.smc = smcZones(bars, P.atr, {life:M.zAge * 3});
-    else if(!M.v3 && !M.sweep) P.smc = smcZones(bars, P.atr, {life:400});   // research: tag classic A+ signals with SMC confluence (smcTag)
+    else if(!M.v3 && !M.sweep){ P.smc = smcZones(bars, P.atr, {life:400});   // research: tag classic A+ signals with SMC confluence (smcTag)
+      const H = htf; P.hAtrS = atrF(H.map(x => x.h), H.map(x => x.l), H.map(x => x.c)); P.smcH = smcZones(H, P.hAtrS, {life:300}); }
     return P; }
   /* ---------- Classic chart patterns (entry timeframe) ----------
      Pivots: a high (low) above (below) the 3 candles on each side; known once the 3 right-hand candles have closed. Consecutive pivots on the same side
@@ -404,6 +405,23 @@ const AiEng = (() => {
       if(L ? ext <= z.top + 0.1 * A && ext >= z.bot - 0.5 * A : ext >= z.bot - 0.1 * A && ext <= z.top + 0.5 * A) got.add(z.kind); }
     return got.size ? [...got].sort().join('+') : null;
   }
+  /* Stricter research tags (bt-feed only).
+     smcTagHtf: zones found on the HIGHER timeframe (H1 for intraday, H4 for swing), known and not closed through by this candle's close time.
+     smcTagFresh: entry-timeframe zones whose FIRST touch is part of this pullback (first touch within the last 6 candles). */
+  function smcTagHtf(P, closeT, L, ext, A){
+    if(!P.smcH) return null; const H = P.htf, st = P.M.htf, want = L ? 'bull' : 'bear', got = new Set();
+    for(const z of P.smcH){ if(H[z.known].t + st > closeT) break;
+      if(z.dir !== want || (z.brk >= 0 && H[z.brk].t + st <= closeT) || H[z.known].t < closeT - 200 * st) continue;
+      if(L ? ext <= z.top + 0.1 * A && ext >= z.bot - 0.5 * A : ext >= z.bot - 0.1 * A && ext <= z.top + 0.5 * A) got.add(z.kind); }
+    return got.size ? [...got].sort().join('+') : null;
+  }
+  function smcTagFresh(P, i, L, ext, A){
+    if(!P.smc) return null; const want = L ? 'bull' : 'bear', got = new Set();
+    for(const z of P.smc){ if(z.known > i - 1) break;
+      if(z.dir !== want || (z.brk >= 0 && z.brk <= i) || z.known < i - 200 || z.touch < i - 6 || z.touch > i) continue;
+      if(L ? ext <= z.top + 0.1 * A && ext >= z.bot - 0.5 * A : ext >= z.bot - 0.1 * A && ext <= z.top + 0.5 * A) got.add(z.kind); }
+    return got.size ? [...got].sort().join('+') : null;
+  }
   function evalSetup(P, i, news){
     const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A = P.atr[i];
     const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key};
@@ -579,7 +597,7 @@ const AiEng = (() => {
     if(out.grade === 'A+'){
       const R = L ? 1 : -1, dp = entry >= 100 ? 2 : 5, f = x => +x.toFixed(dp);
       out.signal = {side, entry:f(entry), sl:f(sl), tp1:f(entry + R * M.rr[0] * risk), tp2:f(entry + R * M.rr[1] * risk), tp3:f(entry + R * M.rr[2] * risk),
-        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:trig, mode:M.key, rr:M.rr, maxBars:M.maxBars, feat:{smc:smcTag(P, i, L, ext, A)}};
+        risk:f(risk), t:closeT, validUntil:closeT + M.valid, trigger:trig, mode:M.key, rr:M.rr, maxBars:M.maxBars, feat:{smc:smcTag(P, i, L, ext, A), smcH:smcTagHtf(P, closeT, L, ext, A), smcF:smcTagFresh(P, i, L, ext, A)}};
     }
     return out;
   }

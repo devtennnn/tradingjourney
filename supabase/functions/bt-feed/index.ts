@@ -57,7 +57,7 @@ function run(bars, mode, spread, warm, sym = "XAUUSD", ovr = null) {
     const hits = r === "sl" || r === "expired" ? 0 : +r.slice(2, 3);
     let R = r === "sl" ? -1 : r === "expired" ? 0 : hits >= 2 ? (rr[0] + rr[1]) / 2 : rr[0] / 2;
     R -= spread / s.risk;
-    rows.push({ t: s.t, side: s.side, R, res: r, riskUsd: s.risk, zone: s.feat && s.feat.zone, smc: s.feat ? s.feat.smc : undefined });
+    rows.push({ t: s.t, side: s.side, R, res: r, riskUsd: s.risk, zone: s.feat && s.feat.zone, smc: s.feat ? s.feat.smc : undefined, smcH: s.feat ? s.feat.smcH : undefined, smcF: s.feat ? s.feat.smcF : undefined });
   }
   const n = rows.length, sum = rows.reduce((a, x) => a + x.R, 0), wins = rows.filter((x) => x.R > 0).length;
   const sd = n > 1 ? Math.sqrt(rows.reduce((a, x) => a + (x.R - sum / n) ** 2, 0) / (n - 1)) : 0;
@@ -70,7 +70,8 @@ function run(bars, mode, spread, warm, sym = "XAUUSD", ovr = null) {
   const grp = (f) => { const g = rows.filter(f), s2 = g.reduce((a, x) => a + x.R, 0), m = g.length ? s2 / g.length : 0;
     const sd2 = g.length > 1 ? Math.sqrt(g.reduce((a, x) => a + (x.R - m) ** 2, 0) / (g.length - 1)) : 0;
     return { n: g.length, avgR: g.length ? +m.toFixed(3) : null, ci95: g.length > 1 ? [+(m - 1.96 * sd2 / Math.sqrt(g.length)).toFixed(3), +(m + 1.96 * sd2 / Math.sqrt(g.length)).toFixed(3)] : null, winRate: g.length ? +(g.filter((x) => x.R > 0).length / g.length).toFixed(3) : null }; };
-  const bySmc = rows.some((x) => x.smc !== undefined) ? { none: grp((x) => !x.smc), any: grp((x) => !!x.smc), ob: grp((x) => /ob/.test(x.smc || "")), fvg: grp((x) => /(^|\+)fvg/.test(x.smc || "")), ifvg: grp((x) => /ifvg/.test(x.smc || "")) } : undefined;
+  const tagGroups = (k) => ({ none: grp((x) => !x[k]), any: grp((x) => !!x[k]), ob: grp((x) => /ob/.test(x[k] || "")), fvg: grp((x) => /(^|\+)fvg/.test(x[k] || "")), ifvg: grp((x) => /ifvg/.test(x[k] || "")) });
+  const bySmc = rows.some((x) => x.smc !== undefined) ? { ...tagGroups("smc"), htf: tagGroups("smcH"), fresh: tagGroups("smcF") } : undefined;
   return { bars: bars.length, signals: n, avgR: n ? +(sum / n).toFixed(3) : null, ci95: n > 1 ? [+(sum / n - 1.96 * sd / Math.sqrt(n)).toFixed(3), +(sum / n + 1.96 * sd / Math.sqrt(n)).toFixed(3)] : null,
     sumR: +sum.toFixed(2), winRate: n ? +(wins / n).toFixed(3) : null, maxDD: +dd.toFixed(2), halves: [half(0), half(1)],
     results: { sl: cnt((x) => x.res === "sl"), tp1: cnt((x) => x.res === "tp1"), tp2plus: cnt((x) => /^tp[23]$/.test(x.res)), expired: cnt((x) => x.res === "expired") },
