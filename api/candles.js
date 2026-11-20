@@ -70,6 +70,8 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (!sym) return res.status(400).json({error: 'unsupported symbol'});
   const tfKey = String((req.query && req.query.tf) || '5'), tf = TF[tfKey];
+  // full=1 (Replay mode): every candle the provider returned (up to 5000) instead of the recent window; same upstream call, its own CDN cache entry
+  const full = String((req.query && req.query.full) || '') === '1';
   if (!tf) return res.status(400).json({error: 'unsupported tf (1, 5, 15 or 60)'});
   // cache until just after the next 5-minute candle closes, so every visitor shares one upstream call per candle
   const now = Math.floor(Date.now() / 1000), next = Math.ceil((now + 1) / tf.step) * tf.step + 20;
@@ -84,9 +86,9 @@ module.exports = async (req, res) => {
       // drop the candle that is still forming
       const last = out.candles[out.candles.length - 1];
       if (last && last.t + tf.step > now) out.candles.pop();
-      out.candles = out.candles.slice(-tf.keep);
+      if (!full) out.candles = out.candles.slice(-tf.keep);
       if (out.candles.length < 300) throw new Error('not enough candles (' + out.candles.length + ')');
-      res.setHeader('Cache-Control', `public, s-maxage=${Math.max(30, Math.min(next - now, 900))}, stale-while-revalidate=60`);
+      res.setHeader('Cache-Control', full ? 'public, s-maxage=1800, stale-while-revalidate=600' : `public, s-maxage=${Math.max(30, Math.min(next - now, 900))}, stale-while-revalidate=60`);
       return res.status(200).json({symbol: key, tf: +tfKey, ...out, fetchedAt: now});
     } catch (e) { errors.push(String(e.message || e)); }
   }
