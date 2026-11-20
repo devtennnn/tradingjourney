@@ -399,21 +399,28 @@ header.top-nav.scrolled{border-color:#1c2849;box-shadow:0 18px 44px rgba(0,0,0,.
 .ptl-sub{margin:8px auto 22px;max-width:560px;font-size:14px;line-height:1.6;color:var(--muted)}
 .ptl-box{max-width:980px;margin:0 auto;padding:22px 20px;border-radius:24px;border:1px solid var(--glass-line);
   background:linear-gradient(160deg,rgba(16,23,43,.55),rgba(8,12,22,.75));box-shadow:0 18px 50px rgba(0,0,0,.35)}
-.ptl-row{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:16px}
+.ptl-rail{overflow:hidden;padding:10px 0;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.ptl-row{list-style:none;margin:0;padding:0;display:flex;gap:16px;width:max-content;animation:ptlSlide 28s linear infinite;will-change:transform}
+.ptl-rail:hover .ptl-row,.ptl-rail:focus-within .ptl-row{animation-play-state:paused}
+@keyframes ptlSlide{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 8px))}}
+.ptl-row li{animation:ptlBob 4.8s ease-in-out infinite;animation-delay:calc(var(--i) * -.48s)}
+@keyframes ptlBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .ptl-tile{position:relative;display:grid;text-decoration:none;place-items:center;width:64px;height:64px;border-radius:16px;
   background:#0d1426;border:1px solid var(--line);transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
-.ptl-tile:hover,.ptl-tile:focus-visible{transform:translateY(-3px);border-color:rgba(138,247,194,.35);box-shadow:0 10px 24px rgba(0,0,0,.45);outline:none}
+.ptl-tile:hover,.ptl-tile:focus-visible{transform:scale(1.12);border-color:rgba(138,247,194,.45);box-shadow:0 10px 24px rgba(0,0,0,.45),0 0 22px rgba(43,240,138,.18);outline:none}
+.ptl-tile svg,.ptl-tile img{transition:transform .35s ease}
+.ptl-tile:hover svg,.ptl-tile:hover img{transform:rotate(-6deg)}
 .ptl-tile svg{width:30px;height:30px}
 .ptl-tile img{max-width:38px;max-height:34px;object-fit:contain}
 .ptl-mono{font-weight:900;font-size:17px;color:var(--lime2)}
-.ptl-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translate(-50%,4px);white-space:nowrap;padding:5px 9px;border-radius:8px;
-  font-size:11.5px;font-weight:700;color:#eef3f8;background:#141d33;border:1px solid var(--line);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
-.ptl-tile:hover .ptl-tip,.ptl-tile:focus-visible .ptl-tip{opacity:1;transform:translate(-50%,0)}
 .ptl-disc{margin:16px auto 0;max-width:640px;text-align:center}
-@media(max-width:700px){.ptl{padding-left:16px;padding-right:16px}.ptl-box{padding:16px 12px;border-radius:20px}.ptl-row{gap:10px}.ptl-tile{width:52px;height:52px;border-radius:14px}.ptl-tile svg{width:24px;height:24px}}
+@media(max-width:700px){.ptl{padding-left:16px;padding-right:16px}.ptl-box{padding:16px 0;border-radius:20px}.ptl-row{gap:10px;animation-duration:22s}@keyframes ptlSlide{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 5px))}}.ptl-tile{width:52px;height:52px;border-radius:14px}.ptl-tile svg{width:24px;height:24px}}
 .pt-reveal{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
 .pt-reveal.in{opacity:1;transform:none}
-@media(prefers-reduced-motion:reduce){.pt-reveal{opacity:1;transform:none;transition:none}.ptl-tile{transition:none}}
+@media(prefers-reduced-motion:reduce){.pt-reveal{opacity:1;transform:none;transition:none}.ptl-tile{transition:none}
+  .ptl-row{animation:none;flex-wrap:wrap;justify-content:center;width:auto}.ptl-row li{animation:none}.ptl-row [aria-hidden="true"]{display:none}
+  .ptl-rail{-webkit-mask-image:none;mask-image:none}}
 /* Community stats tracker */
 .stats-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .st-card{
@@ -3855,7 +3862,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
 <section class="section ptl pt-reveal pg-main" id="partnersPanel" aria-labelledby="ptTitle">
   <h2 class="ptl-title" id="ptTitle" data-i18n="ptTitle">ដៃគូ និងវេទិកា</h2>
   <p class="ptl-sub" data-i18n="ptSub">ឈ្មួញកណ្តាល និងឧបករណ៍ដែលជំរុញការងារជួញដូររបស់ AROM TRADE</p>
-  <div class="ptl-box"><ul class="ptl-row" id="ptLogos"></ul></div>
+  <div class="ptl-box"><div class="ptl-rail"><ul class="ptl-row" id="ptLogos"></ul></div></div>
   <p class="na-disc ptl-disc" data-i18n="ptDisc">ឈ្មួញកណ្តាលដែលបង្ហាញ គឺជាអ្វីដែលយើងប្រើ — មិនមែនជាការណែនាំ ឬការផ្តល់ជូនដៃគូទេ។ ការជួញដូរមានហានិភ័យ។ ឈ្មោះជាពាណិជ្ជសញ្ញារបស់ម្ចាស់។</p>
 </section>
 
@@ -7542,11 +7549,13 @@ const PARTNERS = [
 const ptInit = n => n.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 function renderPartners(){
   const box = $('ptLogos'); if(!box) return;
-  box.innerHTML = PARTNERS.map(p => {
+  const item = (p, i, dup) => {
     const mark = p.path ? `<svg viewBox="0 0 24 24" fill="${esc(p.color)}" aria-hidden="true"><path d="${esc(p.path)}"/></svg>`
       : p.logo ? `<img src="${esc(p.logo)}" alt="" loading="lazy" decoding="async">` : `<span class="ptl-mono" aria-hidden="true">${esc(ptInit(p.name))}</span>`;
-    return `<li><a class="ptl-tile" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(p.name)}">${mark}<span class="ptl-tip" aria-hidden="true">${esc(p.name)}</span></a></li>`;
-  }).join('');
+    return `<li style="--i:${i}"${dup ? ' aria-hidden="true"' : ''}><a class="ptl-tile" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" title="${esc(p.name)}" ${dup ? 'tabindex="-1"' : `aria-label="${esc(p.name)}"`}>${mark}</a></li>`;
+  };
+  // the strip slides left forever: two copies side by side, moved by half its width (pauses on hover / keyboard focus)
+  box.innerHTML = PARTNERS.map((p, i) => item(p, i, false)).join('') + PARTNERS.map((p, i) => item(p, i, true)).join('');
 }
 (function(){
   const el = $('partnersPanel'); if(!el) return;
