@@ -3413,6 +3413,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
           <button type="button" data-ind="piv" style="--c:#ff9f6e" title="Classic daily pivots from yesterday's high, low and close"><i></i>Pivots</button>
           <button type="button" data-ind="keys" style="--c:#ff7fbf" title="Day open, Asia high/low, previous day high/low"><i></i>Key levels</button>
           <button type="button" data-ind="pulse" style="--c:#2fd28a" title="Scalp Pulse: EMA 9/21 cross on the right side of VWAP with RSI agreeing — momentum hint, not an A+ signal"><i></i>Scalp Pulse</button>
+          <button type="button" data-ind="smc" style="--c:#4fc3f7" title="Smart Money Concepts: order blocks (OB), fair value gaps (FVG) and inverse FVGs (IFVG) that price has not closed through yet. Green = bullish (support), red = bearish (resistance)."><i></i>OB · FVG</button>
           <span class="sp"></span>
           <div class="seg" id="termSub"><button type="button" data-sub="q" class="on">Quality</button><button type="button" data-sub="rsi">RSI 14</button><button type="button" data-sub="macd">MACD</button></div>
         </div>
@@ -8120,6 +8121,10 @@ const AiEng = (() => {
     // Backtest (after spread): all patterns together about break-even (M15 retest +0.13R n=30 gold / +0.07R n=37 BTC; H1 break −0.08R n=274 gold / −0.07R n=356 BTC).
     // Only candidate: BTC H1 symmetrical triangle breakout +0.39R n=82 (95% 0.03–0.77), but gold lost on the same pattern, so it must prove itself here first.
     intraday_pat:  {key:'intraday_pat',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'pat', entry:'retest', patWin:160, patAge:24, shadow:true, pub:true, one:true},
+    // SMC (Smart Money Concepts), SHADOW research: in the HTF trend direction, the first return into a fresh zone of that side
+    // (bullish order block, bullish FVG, or a bearish FVG that price closed through = bullish IFVG; mirror for sells) and a close back out of it.
+    intraday_smc:  {key:'intraday_smc',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'smc', zAge:96, shadow:true, pub:true, one:true},
+    swing_smc:     {key:'swing_smc',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'smc', zAge:120, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
@@ -8155,6 +8160,7 @@ const AiEng = (() => {
     if(M.v3 || M.sweep || M.setup) prepV3(P);
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     if(M.setup === 'pat') prepPat(P);
+    if(M.setup === 'smc') P.smc = smcZones(bars, P.atr, {life:M.zAge * 3});
     return P; }
   /* ---------- Classic chart patterns (entry timeframe) ----------
      Pivots: a high (low) above (below) the 3 candles on each side; known once the 3 right-hand candles have closed. Consecutive pivots on the same side
@@ -8434,6 +8440,38 @@ const AiEng = (() => {
      msnr: MSNR storyline: the HTF trend sets the side; the first touch of a FRESH line-chart level (V-level for buys, A-level for sells) where this candle closes back on the right side.
      qm:   Quasimodo on the HTF line chart: low, high, lower low, higher high (or the mirror); the first return to the left-shoulder close (QML) with a close back on the right side.
      All: stop beyond the structure, risk 0.5–3 ATR (srb 0.5–4), session (intraday: London / New York), no high-impact USD news within ±30 min. */
+  /* ---------- Smart Money Concepts zones (shared by the chart and the smc setup) ----------
+     FVG  (fair value gap): candle k-1 and candle k+1 do not overlap. Bullish: low[k+1] > high[k-1], zone = high[k-1]..low[k+1]; bearish mirror.
+          Known when candle k+1 closes. Gaps under minGap x ATR are ignored (noise).
+     IFVG (inverse FVG): a candle CLOSES through an FVG's far side. From that candle the gap works the other way (bullish FVG -> bearish IFVG).
+     OB   (order block): the last opposite-colour candle before a displacement: within 3 candles price closes beyond the high (low) of the 10 candles
+          before it and the move from the OB's extreme is at least 1.5 ATR. Zone = that candle's high..low. Known when the displacement candle closes.
+     For every zone: touch = first later candle that trades into it, brk = first later candle that CLOSES beyond its far side (the zone is spent).
+     Only candles already closed at `known` are used, so a zone never looks into the future. */
+  function smcZones(m, A, o){
+    o = o || {}; const n = m.length, life = o.life || 400, minG = o.minGap == null ? 0.15 : o.minGap, W = o.obLook || 10, out = [];
+    const track = (z, from) => { z.touch = -1; z.brk = -1;
+      for(let k = from + 1; k < n && k <= from + life; k++){ const b = m[k];
+        if(z.touch < 0 && (z.dir === 'bull' ? b.l <= z.top : b.h >= z.bot)) z.touch = k;
+        if(z.dir === 'bull' ? b.c < z.bot : b.c > z.top){ z.brk = k; break; } }
+      return z; };
+    for(let k = 1; k < n - 1; k++){
+      const a = A[k] || A[k + 1]; if(!a) continue; const p = m[k - 1], x = m[k + 1];
+      if(x.l - p.h >= minG * a) out.push(track({kind:'fvg', dir:'bull', top:x.l, bot:p.h, i:k - 1, known:k + 1}, k + 1));
+      else if(p.l - x.h >= minG * a) out.push(track({kind:'fvg', dir:'bear', top:p.l, bot:x.h, i:k - 1, known:k + 1}, k + 1));
+    }
+    for(const z of out.slice()) if(z.brk > 0) out.push(track({kind:'ifvg', dir:z.dir === 'bull' ? 'bear' : 'bull', top:z.top, bot:z.bot, i:z.i, known:z.brk}, z.brk));
+    for(let k = W; k < n - 1; k++){
+      const c = m[k], a = A[k], nx = m[k + 1]; if(!a) continue;
+      if(c.c < c.o && nx.c > nx.o){ let hi = -Infinity; for(let q = k - W; q < k; q++) hi = Math.max(hi, m[q].h);
+        for(let q = k + 1; q <= Math.min(k + 3, n - 1); q++) if(m[q].c > hi && m[q].c - c.l >= 1.5 * a){ out.push(track({kind:'ob', dir:'bull', top:c.h, bot:c.l, i:k, known:q}, q)); break; } }
+      else if(c.c > c.o && nx.c < nx.o){ let lo = Infinity; for(let q = k - W; q < k; q++) lo = Math.min(lo, m[q].l);
+        for(let q = k + 1; q <= Math.min(k + 3, n - 1); q++) if(m[q].c < lo && c.h - m[q].c >= 1.5 * a){ out.push(track({kind:'ob', dir:'bear', top:c.h, bot:c.l, i:k, known:q}, q)); break; } }
+    }
+    return out.sort((a, b) => a.known - b.known);
+  }
+  // zones still alive after candle `at` (known by then, not closed through yet); newest first
+  function smcActive(Z, at){ return Z.filter(z => z.known <= at && (z.brk < 0 || z.brk > at)).sort((a, b) => b.known - a.known); }
   function evalSetup(P, i, news){
     const M = P.M, m = P.m, b = m[i], closeT = b.t + M.base, A = P.atr[i];
     const out = {i, t:closeT, side:null, checks:[], grade:'—', signal:null, mode:M.key};
@@ -8492,6 +8530,19 @@ const AiEng = (() => {
       const ev = M.entry === 'break' ? patEvent(P, i) : patRetest(P, i);
       if(ev){ side = ev.side; stopBase = ev.stopBase; feat.pat = ev.pat; feat.mmA = +(ev.height / A).toFixed(2); feat.mm = ev.height; feat.withBias = bias === side; if(ev.brkBars) feat.brkBars = ev.brkBars; }
     }
+    // smc: first return into a fresh zone of the trend side (formed within zAge candles, not touched before the last 3 candles, not closed through),
+    // this candle closes back out of it: above the zone middle and up on the candle and on the previous close (mirror for sells). Stop beyond the zone.
+    if(M.setup === 'smc' && bias && P.smc){
+      const L = bias === 'BUY', want = L ? 'bull' : 'bear';
+      for(const z of P.smc){
+        if(z.dir !== want || z.known > i - 1 || z.known < i - M.zAge || (z.brk >= 0 && z.brk <= i) || z.touch < 0 || z.touch > i || z.touch < i - 3) continue;
+        const mid = (z.top + z.bot) / 2;
+        if(L ? b.c > mid && b.c > b.o && b.c > m[i - 1].c : b.c < mid && b.c < b.o && b.c < m[i - 1].c){
+          let ext = L ? z.bot : z.top; for(let k = z.touch; k <= i; k++) ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h);
+          side = bias; stopBase = ext; feat.zone = z.kind; feat.zoneA = +((z.top - z.bot) / A).toFixed(2); feat.zAge = i - z.known; break;
+        }
+      }
+    }
     if(M.setup === 'qm'){
       const legs = P.legs.filter(x => x.known <= closeT);
       if(legs.length >= 4){
@@ -8503,7 +8554,7 @@ const AiEng = (() => {
       }
     }
     out.side = side; const L = side === 'BUY';
-    add('bias', (M.setup !== 'brt' && M.setup !== 'msnr') || !!bias, bias || 'range', true);
+    add('bias', (M.setup !== 'brt' && M.setup !== 'msnr' && M.setup !== 'smc') || !!bias, bias || 'range', true);
     add('setup', !!side, side ? M.setup : null, true);
     if(!side){ out.grade = 'No setup'; return out; }
     const d = new Date(closeT * 1000), hr = d.getUTCHours() + d.getUTCMinutes() / 60, wd = d.getUTCDay();
@@ -8626,7 +8677,7 @@ const AiEng = (() => {
     }
     return out;
   }
-  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, MODES};
+  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, smcZones, smcActive, MODES};
 })();
 
 /* ---------- AI Signal Analysis panel ---------- */
@@ -8863,7 +8914,7 @@ const TERM_THEMES = {
 };
 const TERM_RM = 4;    // blank bars always kept to the right of the live candle
 const TERM = {theme:(() => { try{ return localStorage.getItem('aromTermTheme') || 'tv'; }catch(e){ return 'tv'; } })(), tf:'5', bars:0, user:false, off:0, hover:null, drag:null, yAuto:true, yLo:0, yHi:0, N:0, scores:null, key:'', ind:null, indKey:'', sub:'q',
-  on:{ema:true, ribbon:true, vwap:true, sr:true, piv:false, keys:true, pulse:false}};
+  on:{ema:true, ribbon:true, vwap:true, sr:true, piv:false, keys:true, pulse:false, smc:false}};
 try{ const sv = JSON.parse(localStorage.getItem('aromTermInd_v1') || 'null'); if(sv && sv.on){ Object.assign(TERM.on, sv.on); if(['q','rsi','macd'].includes(sv.sub)) TERM.sub = sv.sub; } }catch(e){}
 function termSave(){ try{ localStorage.setItem('aromTermInd_v1', JSON.stringify({on:TERM.on, sub:TERM.sub})); }catch(e){} }
 /* Scalping indicators computed on the candles shown in the terminal (5m or 15m) */
@@ -8932,7 +8983,9 @@ function termInd(S5){
   for(let i = Math.max(1, N - 400); i < N; i++){ if(e9[i] == null || e21[i] == null || e9[i - 1] == null || rsi[i] == null || vw[i] == null) continue;
     if(e9[i - 1] <= e21[i - 1] && e9[i] > e21[i] && cl[i] > vw[i] && rsi[i] > 50 && rsi[i] < 72) pulse.push({i, side:'BUY'});
     else if(e9[i - 1] >= e21[i - 1] && e9[i] < e21[i] && cl[i] < vw[i] && rsi[i] < 50 && rsi[i] > 28) pulse.push({i, side:'SELL'}); }
-  TERM.ind = {e9, e21, rsi, macd, sigL, atr, vw, vs, piv, zones, pulse}; TERM.indKey = key; return TERM.ind;
+  // Smart Money Concepts zones: the same detector the AI engine uses (AiEng.smcZones); only zones still alive on the last candle are drawn
+  let smc = []; try{ smc = AiEng.smcActive(AiEng.smcZones(C, atr, {life:600}), N - 1); }catch(e){}
+  TERM.ind = {e9, e21, rsi, macd, sigL, atr, vw, vs, piv, zones, pulse, smc}; TERM.indKey = key; return TERM.ind;
 }
 function termIndSync(){
   const bar = $('termInd'); if(!bar) return;
@@ -9153,7 +9206,7 @@ function termDraw(){
   // key levels
   const tags = [];
   const used = [];
-  const I = termInd(S5), O = aiSimple() ? {ema:true, ribbon:false, vwap:false, sr:true, piv:false, keys:true, pulse:false} : TERM.on;
+  const I = termInd(S5), O = aiSimple() ? {ema:true, ribbon:false, vwap:false, sr:true, piv:false, keys:true, pulse:false, smc:false} : TERM.on;
   g.save(); g.beginPath(); g.rect(0, 0, plotW, mainH); g.clip();
   // S/R zones (drawn first, under everything): box opacity follows strength; labels sit at the right end, stacked so they never overlap
   const zl = [];
@@ -9163,6 +9216,18 @@ function termDraw(){
     g.strokeStyle = `rgba(${col},${.35 + z.str / 100 * .45})`; g.lineWidth = z.grade === 'strong' ? 1.5 : 1; g.setLineDash(z.grade === 'weak' ? [4, 4] : []);
     g.beginPath(); g.moveTo(x0, Math.round(y1) + .5); g.lineTo(plotW, Math.round(y1) + .5); g.moveTo(x0, Math.round(y2) + .5); g.lineTo(plotW, Math.round(y2) + .5); g.stroke(); g.setLineDash([]); g.lineWidth = 1;
     zl.push({z, col, y:Math.max(10, Math.min(mainH - 10, (y1 + y2) / 2))}); });
+  // Order blocks / FVG / IFVG still alive: box from the zone's candle to the right edge, newest few of each kind inside the view
+  const smcL = [];
+  if(O.smc && I.smc && I.smc.length){
+    const lim = {ob:3, fvg:3, ifvg:2}, cnt = {ob:0, fvg:0, ifvg:0};
+    I.smc.forEach(z => { if(z.top < lo || z.bot > hi || cnt[z.kind] >= lim[z.kind]) return; cnt[z.kind]++;
+      const col = z.dir === 'bull' ? K.upRgb : K.dnRgb, x0 = Math.max(0, X(Math.max(start - 1, z.i)) - cw / 2), y1 = Y(z.top), y2 = Y(z.bot), h = Math.max(2, y2 - y1);
+      g.fillStyle = `rgba(${col},${z.kind === 'ob' ? .16 : z.kind === 'fvg' ? .10 : .07})`; g.fillRect(x0, y1, plotW - x0, h);
+      g.strokeStyle = `rgba(${col},${z.kind === 'ob' ? .75 : .5})`; g.setLineDash(z.kind === 'fvg' ? [5, 3] : z.kind === 'ifvg' ? [2, 3] : []);
+      g.strokeRect(Math.round(x0) + .5, Math.round(y1) + .5, Math.round(plotW - x0) - 1, Math.round(h)); g.setLineDash([]);
+      const lbl = z.kind === 'ob' ? 'OB' : z.kind === 'fvg' ? 'FVG' : 'IFVG';
+      smcL.push({lbl, col, x:x0 + 3, y:y1 + Math.min(h / 2, 8)}); });   // labels are drawn after the candles so they stay readable
+  }
   // Daily pivots
   if(O.piv && I.piv) I.piv.forEach(([lbl, pv]) => { if(pv < lo || pv > hi) return; const y = Math.round(Y(pv)) + .5;
     g.strokeStyle = lbl === 'PP' ? 'rgba(255,159,110,.85)' : 'rgba(255,159,110,.5)'; g.setLineDash(lbl === 'PP' ? [6, 4] : [2, 4]); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]);
@@ -9197,6 +9262,9 @@ function termDraw(){
     g.fillStyle = buy ? K.up : K.dn; g.strokeStyle = K.bg; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); g.fill(); g.stroke(); g.lineWidth = 1; });
   g.restore();
   // S/R labels on top of the candles
+  if(smcL.length){ g.font = '800 9.5px ' + K.font; g.textAlign = 'left'; g.textBaseline = 'middle'; const placed = [];
+    smcL.forEach(L => { let y = L.y; placed.forEach(q => { if(Math.abs(q.y - y) < 15 && Math.abs(q.x - L.x) < 40) y = q.y + 15; }); placed.push({x:L.x, y});
+      const tw = g.measureText(L.lbl).width + 8; g.fillStyle = `rgba(${L.col},.92)`; g.fillRect(L.x, y - 7, tw, 14); g.fillStyle = K.bg; g.fillText(L.lbl, L.x + 4, y + .5); }); }
   if(zl.length){ g.font = '800 9.5px ' + K.font; g.textAlign = 'left';
     const rx = plotW - (live ? 84 : 8); let prevY = -99;
     zl.sort((p, q) => p.y - q.y).forEach(L => { const z = L.z, txt = (z.kind === 'R' ? 'RES' : z.kind === 'S' ? 'SUP' : 'TESTING') + ' ' + z.str + '% · ' + z.n + '×' + (z.htf ? ' · ' + z.htfName : '') + (z.flip && z.kind !== 'F' ? ' · FLIP' : '');
