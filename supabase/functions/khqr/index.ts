@@ -299,6 +299,14 @@ Deno.serve(async (req) => {
 
     /** Promo check with the database rules. Fails CLOSED: if the check cannot run, no discount is given. */
     const promoQuote = async (plan: string, code: string) => {
+      // The user's own open QR with this promo already holds a use: show its price instead of "already used".
+      const { data: mineOpen } = await admin.from("payments").select("promo_code,discount,amount")
+        .eq("user_id", user.id).eq("plan", plan).eq("status", "pending").gt("expires_at", new Date().toISOString())
+        .eq("promo_code", code.trim().toUpperCase()).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (mineOpen) {
+        const { data: pc } = await admin.from("promo_codes").select("code,kind,value,plan").eq("code", mineOpen.promo_code).maybeSingle();
+        return { ok: true, code: mineOpen.promo_code, kind: pc?.kind, value: pc?.value, plan: pc?.plan, list_price: PLANS[plan].price, discount: Number(mineOpen.discount ?? 0), final: Number(mineOpen.amount) } as any;
+      }
       const { data, error } = await admin.rpc("promo_quote_internal", { p_user: user.id, p_code: code, p_plan: plan, p_price: PLANS[plan].price });
       if (error || !data) { console.error("promo quote failed", error && error.message); return { ok: false, error: "unavailable" } as any; }
       return data as any;
@@ -320,17 +328,20 @@ Deno.serve(async (req) => {
         const { data: pr } = await admin.from("profiles").select("course_until").eq("id", user.id).maybeSingle();
         if ((pr as any)?.course_until && new Date((pr as any).course_until) > new Date()) return json({ error: "already_owned", plan });
       }
+      // Reopen the user's open QR first when it used the same promo (or none). The promo limits count every open
+      // promo QR the user holds, so this is the only way to see the same discounted QR again.
+      const want = promo ? promo.toUpperCase() : null;
+      let oq = admin.from("payments").select("*")
+        .eq("user_id", user.id).eq("status", "pending").eq("plan", plan).gt("expires_at", new Date().toISOString());
+      oq = want ? oq.eq("promo_code", want) : oq.is("promo_code", null);
+      const { data: open } = await oq.order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (open && isHosted(open) === ANAJAK_ON) return json(publicRow(open));
       let quote: any = null;
       if (promo) {
         quote = await promoQuote(plan, promo);
         if (!quote.ok) return json({ error: "promo_" + quote.error, plan: quote.plan ?? null });
       }
       const price = quote ? Number(quote.final) : P.price;
-      const { data: open } = await admin.from("payments").select("*")
-        .eq("user_id", user.id).eq("status", "pending").eq("plan", plan).gt("expires_at", new Date().toISOString())
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      // reopen the user's open QR only when it used the same promo (or none): otherwise the amount would be wrong
-      if (open && (open.promo_code ?? null) === (quote ? quote.code : null) && isHosted(open) === ANAJAK_ON) return json(publicRow(open));
 
       const created = Date.now(), expires = created + TTL_MS, bill = billNumber();
       const payload = ANAJAK_ON ? await anajakCheckoutUrl(bill, price, `AROM TRADE ${P.label}`) : buildKHQR({
@@ -397,6 +408,7 @@ Deno.serve(async (req) => {
     const settle = async (p: any) => {
       const plan = planOf(p.plan), col = PLANS[plan].col;
       if (p.status === "paid") { const u = await untilFor(col); return { status: "paid", plan, until: u, premium_until: u }; }
+      if (p.status === "rejected") return { status: "rejected" };   // an admin refused this payment: never settle it
       const waiting = (bk: string) => ({ status: p.status === "claimed" ? "claimed" : "pending", bakong: bk });
       // hosted-checkout rows are confirmed by the gateway's webhook (khqr-webhook), with the Account API as a safety net; never by asking Bakong from here
       const { tx, blocked } = (isHosted(p) ? await anajakLookup(p.bill_number) : await bakongLookup(p.md5)) as { tx: any; blocked: Blocked };
@@ -421,10 +433,9 @@ Deno.serve(async (req) => {
         .update({ status: "paid", paid_at: new Date().toISOString(), bakong_hash: tx.hash ?? null })
         .eq("id", p.id).in("status", ["pending", "expired", "claimed"]).select().maybeSingle();
       if (claimed && plan !== "course") {   // the course is granted for life by the database trigger, not extended by days
-        const cur = await untilFor(col);
-        const base = cur && new Date(cur) > new Date() ? new Date(cur) : new Date();
-        const next = new Date(base.getTime() + DAYS * 86_400_000).toISOString();
-        await admin.from("profiles").update({ [col]: next }).eq("id", user.id);
+        // one SQL statement, so two payments settled at the same moment both count
+        const { error } = await admin.rpc("extend_plan", { p_user: user.id, p_plan: plan, p_days: DAYS });
+        if (error) console.error("extend_plan failed", error.message);
       }
       const u = await untilFor(col);
       return { status: "paid", plan, until: u, premium_until: u };

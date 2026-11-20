@@ -73,6 +73,15 @@ module.exports = async (req, res) => {
   // full=1 (Replay mode): every candle the provider returned (up to 5000) instead of the recent window; same upstream call, its own CDN cache entry
   const full = String((req.query && req.query.full) || '') === '1';
   if (!tf) return res.status(400).json({error: 'unsupported tf (1, 5, 15 or 60)'});
+  // The CDN cache key is the whole URL. Send any other spelling (extra params, other order, lower case) to the one canonical URL,
+  // so random query strings cannot skip the cache and spend Twelve Data credits on every request.
+  const q = req.query || {}, canon = 'symbol=' + key + ('tf' in q ? '&tf=' + tfKey : '') + (full ? '&full=1' : '');
+  const raw = String(req.url || '').split('?')[1] || '';
+  if (req.url && raw !== canon) {   // (the AWS Lambda wrapper passes no url and keys its own cache)
+    res.setHeader('Cache-Control', 'public, s-maxage=86400');
+    res.setHeader('Location', '/api/candles?' + canon);
+    return res.status(308).end();
+  }
   // cache until just after the next 5-minute candle closes, so every visitor shares one upstream call per candle
   const now = Math.floor(Date.now() / 1000), next = Math.ceil((now + 1) / tf.step) * tf.step + 20;
   const errors = [];

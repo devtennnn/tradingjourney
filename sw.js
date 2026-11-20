@@ -2,7 +2,7 @@
    - Pages: network first, cached copy when offline (the app opens without a connection)
    - Static files (icons, manifest, fonts): stale-while-revalidate
    - /api/*, Supabase, Telegram and other live data: never cached, always from the network */
-const VERSION = 'arom-v14';
+const VERSION = 'arom-v15';
 const SHELL = ['/', '/journey', '/news', '/refer', '/analysis', '/pricing', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -59,7 +59,9 @@ self.addEventListener('push', (e) => {
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-  const target = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin).href;
+  let target = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin);
+  if (target.origin !== self.location.origin) target = new URL('/', self.location.origin);   // only open pages of this site
+  target = target.href;
   e.waitUntil((async () => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const w of wins) { if (new URL(w.url).origin === self.location.origin) { await w.focus(); try { await w.navigate(target); } catch (_) {} return; } }

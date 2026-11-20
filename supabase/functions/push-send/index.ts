@@ -37,10 +37,14 @@ async function claim(key, endpoint) {
   const { data } = await db.from("push_sent").upsert({ key, endpoint }, { onConflict: "key,endpoint", ignoreDuplicates: true }).select();
   return !!(data && data.length);
 }
+// Only real browser push services. push_subscribe checks this too; this is the second lock.
+const PUSH_HOST = /^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|[a-z0-9.-]+\.push\.apple\.com|[a-z0-9.-]+\.notify\.windows\.com)\//i;
+const within = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("push timeout")), ms))]);
 async function sendTo(app, sub, payload) {
+  if (!PUSH_HOST.test(String(sub.endpoint || ""))) { await db.from("push_subs").delete().eq("endpoint", sub.endpoint); return false; }
   try {
-    await app.subscribe({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } })
-      .pushTextMessage(JSON.stringify(payload), { ttl: 3600, urgency: "high" });
+    await within(app.subscribe({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } })
+      .pushTextMessage(JSON.stringify(payload), { ttl: 3600, urgency: "high" }), 8000);
     await db.from("push_subs").update({ last_ok: new Date().toISOString(), fails: 0 }).eq("endpoint", sub.endpoint);
     return true;
   } catch (e) {
@@ -121,7 +125,7 @@ Deno.serve(async (req) => {
     const old = ticks.find(([t]) => now - t >= 13 * 60000), mv = Q.XAU && old ? Q.XAU.price - old[1] : 0;
     for (const s of all) {
       const p = s.prefs || {};
-      for (const a of p.pa || []) {
+      for (const a of (Array.isArray(p.pa) ? p.pa : []).slice(0, 20)) {   // at most 20 price alerts per device
         const q = Q[a.sym]; if (!q || a.hit) continue;
         if (a.dir === "above" ? q.price >= a.px : q.price <= a.px) {
           const k = `pa|${a.id}|${a.sym}|${a.dir}|${a.px}`;

@@ -11,7 +11,7 @@ const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
 const TOKEN = () => (Deno.env.get("METAAPI_TOKEN") || "").trim().replace(/^["']|["']$/g, "");   // tolerate spaces / quotes pasted into the secret
 const PROV = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai";
 const client = (region) => `https://mt-client-api-v1.${/^[a-z-]{2,30}$/.test(region || "") ? region : "london"}.agiliumtrade.ai`;
-const ALLOWED = /^[A-Za-z0-9._#-]{2,20}$/;
+const ALLOWED = /^(XAU|XAG|GOLD|SILVER)[A-Za-z0-9._#-]{0,14}$/i;   // gold / silver only: each new symbol opens a paid MetaApi subscription
 const json = (o, status = 200, cache = "no-store") => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": cache } });
 
 let acct = null, acctAt = 0;            // {id, region, state, connectionStatus, broker}
@@ -61,7 +61,9 @@ Deno.serve(async (req) => {
       acctAt = 0;
       return json({ deploy_status: r.status, detail: r.ok ? "deploying" : clip(await r.text()) }, r.ok ? 200 : 502);
     }
-    if (url.searchParams.get("debug") === "1") {
+    if (url.searchParams.get("debug") === "1") {   // diagnostics: admin / cron only (shows account details)
+      const { data: k } = await db.from("ai_bot_config").select("value").eq("key", "cron_secret").maybeSingle();
+      if (!k || !k.value || url.searchParams.get("key") !== k.value) return json({ error: "unauthorized" }, 401);
       const h = await hosts(a.region || "london"), tried = [];
       let s = null;
       for (const host of h.list) { const r = await ma(`${host}${path}/symbols`, 6000); tried.push({ host, status: r.status }); if (r.ok) { s = r; hostOk = host; break; } s = r; }
