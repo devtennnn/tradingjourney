@@ -93,7 +93,7 @@ def jsonld(obj):
     return '<script type="application/ld+json">' + json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "</script>\n"
 
 ORG = {"@type": "Organization", "@id": SITE + "/#org", "name": "AROM TRADE", "url": SITE + "/",
-       "logo": SITE + "/icons/icon-512.png", "email": "info@aromx.trade", "sameAs": ["https://t.me/aromxtrade"],
+       "logo": SITE + "/icons/icon-512.png", "email": "info@aromx.trade", "sameAs": ["https://t.me/aromxtrade", "https://t.me/aromxtradecommunity", "https://www.tiktok.com/@aromx.trade"],
        "contactPoint": [{"@type": "ContactPoint", "contactType": "customer support", "email": "info@aromx.trade", "url": "https://t.me/tentennnn0719", "availableLanguage": ["en", "km"]}],
        "description": "Trading journal, rule-based signals and USD news alerts for traders in Cambodia, in English and Khmer."}
 
