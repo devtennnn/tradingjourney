@@ -3218,6 +3218,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
         <div class="seg rp-speed" id="rpSpeed" role="group" aria-label="Speed"><button type="button" data-v="1" class="on">1×</button><button type="button" data-v="2">2×</button><button type="button" data-v="5">5×</button><button type="button" data-v="10">10×</button></div>
         <label class="rp-tog"><input type="checkbox" id="rpEma" checked> EMA 20/50</label>
         <label class="rp-tog"><input type="checkbox" id="rpSmc"> OB · FVG</label>
+        <label class="rp-tog"><input type="checkbox" id="rpIct"> ICT · SB</label>
         <span class="rp-sp"></span>
         <div class="rp-zoom" role="toolbar" aria-label="Chart view">
           <button type="button" class="rp-ctl sm" data-z="out" aria-label="Zoom out" title="Zoom out">−</button>
@@ -3492,6 +3493,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
           <button type="button" data-ind="piv" style="--c:#ff9f6e" title="Classic daily pivots from yesterday's high, low and close"><i></i>Pivots</button>
           <button type="button" data-ind="keys" style="--c:#ff7fbf" title="Day open, Asia high/low, previous day high/low"><i></i>Key levels</button>
           <button type="button" data-ind="pulse" style="--c:#2fd28a" title="Scalp Pulse: EMA 9/21 cross on the right side of VWAP with RSI agreeing — momentum hint, not an A+ signal"><i></i>Scalp Pulse</button>
+          <button type="button" data-ind="ict" style="--c:#a78bfa" title="ICT: Silver Bullet hours (New York 10:00–11:00 and 14:00–15:00), buy-side / sell-side liquidity (swing highs / lows price has not taken yet) and, on M5, the Silver Bullet setups the AI engine found"><i></i>ICT · SB</button>
           <button type="button" data-ind="smc" style="--c:#4fc3f7" title="Smart Money Concepts: order blocks (OB), fair value gaps (FVG) and inverse FVGs (IFVG) that price has not closed through yet. Green = bullish (support), red = bearish (resistance)."><i></i>OB · FVG</button>
           <span class="sp"></span>
           <div class="seg" id="termSub"><button type="button" data-sub="q" class="on">Quality</button><button type="button" data-sub="rsi">RSI 14</button><button type="button" data-sub="macd">MACD</button></div>
@@ -8225,6 +8227,12 @@ const AiEng = (() => {
     // (bullish order block, bullish FVG, or a bearish FVG that price closed through = bullish IFVG; mirror for sells) and a close back out of it.
     intraday_smc:  {key:'intraday_smc',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'smc', zAge:96, shadow:true, pub:true, one:true},
     swing_smc:     {key:'swing_smc',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'smc', zAge:120, shadow:true, pub:true, one:true},
+    // ICT Silver Bullet, SHADOW research (M5 entry): inside the New York 10:00-11:00 or 14:00-15:00 hour (DST handled), price first takes the
+    // liquidity of the previous sbLook candles (sell-side for buys, buy-side for sells), then displaces the other way and leaves a fair value gap;
+    // the entry is the first return into that gap, stop beyond the sweep extreme. The H1 trend is recorded (feat.withBias), not required (sbBias:true requires it).
+    // Backtest 24 Jun - 21 Nov 2026 (150 days, Twelve Data M5, spread included): gold n=49 -0.33R/trade (95% -0.55 to -0.10), with 1R/2R/3R targets and 6 h
+    // -0.24R; BTC n=60 -0.00R (95% -0.28 to +0.27). NO EDGE on these rules: kept as a logged shadow mode only, never posted.
+    intraday_sb:   {key:'intraday_sb',   base:300,  htf:3600,  valid:900,   rr:[1.5, 3, 4.5], session:false, maxBars:36,  eName:'M5',  hName:'H1', setup:'sb', sbWin:[[600, 660], [840, 900]], sbLook:24, sbPre:6, only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
@@ -8261,6 +8269,7 @@ const AiEng = (() => {
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     if(M.setup === 'pat') prepPat(P);
     if(M.smcHtf && !P.smcH){ P.hAtrS = atrF(htf.map(x => x.h), htf.map(x => x.l), htf.map(x => x.c)); P.smcH = smcZones(htf, P.hAtrS, {life:300}); }
+    if(M.setup === 'sb'){ P.sbF = smcZones(bars, P.atr, {life:72, minGap:M.fvgMin == null ? .15 : M.fvgMin}).filter(z => z.kind === 'fvg'); P.ny = bars.map(b => nyMin(b.t)); }
     if(M.setup === 'smc') P.smc = smcZones(bars, P.atr, {life:M.zAge * 3});
     return P; }
   /* ---------- Classic chart patterns (entry timeframe) ----------
@@ -8518,6 +8527,11 @@ const AiEng = (() => {
     return {ok:!(g > .15), gap:+g.toFixed(2), ext:+e.toFixed(2), n:s.length};
   }
 
+  /* New York clock for the ICT windows: US daylight saving runs from the 2nd Sunday of March 07:00 UTC to the 1st Sunday of November 06:00 UTC.
+     nyMin(t) = minutes after New York midnight at unix time t. */
+  function usDst(t){ const y = new Date(t * 1000).getUTCFullYear(), m1 = new Date(Date.UTC(y, 2, 1)).getUTCDay(), n1 = new Date(Date.UTC(y, 10, 1)).getUTCDay();
+    const start = Date.UTC(y, 2, 1 + (7 - m1) % 7 + 7, 7) / 1000, end = Date.UTC(y, 10, 1 + (7 - n1) % 7, 6) / 1000; return t >= start && t < end; }
+  function nyMin(t){ return ((Math.floor(t / 60) + (usDst(t) ? -240 : -300)) % 1440 + 1440) % 1440; }
   const SESSION = {from:7, to:17};          // UTC hours = 14:00–24:00 Cambodia (London + New York)
   // Evaluate the CLOSED candle at index i. news(tSec) -> true (clear) | false (blocked) | null (unknown)
   // Higher-timeframe trend bias at closeT (same rule as Intraday / Swing: HTF close > EMA50 > EMA200 with EMA50 rising; swing also needs the daily close on the right side of its EMA)
@@ -8653,6 +8667,29 @@ const AiEng = (() => {
         }
       }
     }
+    /* sb (ICT Silver Bullet): this candle is inside a window (New York time). Within the window (or sbPre candles before it) price traded beyond the
+       low (buys) / high (sells) of the sbLook candles before that = liquidity taken; after the sweep a fair value gap of the other side formed
+       inside the window; this candle is the FIRST return into the gap and closes back on the gap's side (not through its far edge). Stop beyond the sweep extreme. */
+    if(M.setup === 'sb' && P.sbF && (!M.only || M.only.test(P.sym))){
+      const nm = P.ny[i], win = (M.sbWin || []).find(w => nm >= w[0] && nm < w[1]);
+      if(win){
+        const ws = b.t - (nm - win[0]) * 60, iw = i - Math.round((b.t - ws) / M.base), from = Math.max(M.sbLook + 1, iw - (M.sbPre || 0));
+        for(let q = P.sbF.length - 1; q >= 0; q--){
+          const z = P.sbF[q]; if(z.known > i - 1) continue; if(m[z.i + 1].t < ws) break;   // the displacement candle must be inside the window
+          if(z.touch !== i || (z.brk >= 0 && z.brk <= i)) continue;
+          const L = z.dir === 'bull';
+          let liq = L ? Infinity : -Infinity; for(let k = from - M.sbLook; k < from; k++) liq = L ? Math.min(liq, m[k].l) : Math.max(liq, m[k].h);
+          let ext = L ? Infinity : -Infinity, swept = false;
+          for(let k = from; k <= z.i; k++){ ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h); if(L ? m[k].l < liq : m[k].h > liq) swept = true; }
+          for(let k = z.i + 1; k <= i; k++) ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h);
+          if(!swept || (L ? b.c < z.bot : b.c > z.top)) continue;
+          if(M.sbBias && bias !== (L ? 'BUY' : 'SELL')) continue;
+          side = L ? 'BUY' : 'SELL'; stopBase = ext; maxRisk = M.maxRiskA || 4;
+          feat.win = win[0] / 60; feat.gapA = +((z.top - z.bot) / A).toFixed(2); feat.sweepA = +((L ? liq - ext : ext - liq) / A).toFixed(2); feat.withBias = bias === side; feat.fvgAge = i - z.known;
+          break;
+        }
+      }
+    }
     if(M.setup === 'qm'){
       const legs = P.legs.filter(x => x.known <= closeT);
       if(legs.length >= 4){
@@ -8671,7 +8708,7 @@ const AiEng = (() => {
     add('session', (P.allWeek || (wd >= 1 && wd <= 5)) && (!M.session || (hr >= SESSION.from && hr < SESSION.to)), M.session ? null : 'any', true);
     const nz = news ? news(closeT) : true;
     add('news', nz === true, nz === null ? 'unknown' : null, true);
-    const entry = b.c, sl = M.setup === 'srb' ? stopBase : L ? stopBase - 0.25 * A : stopBase + 0.25 * A, risk = Math.abs(entry - sl);
+    const pad = M.setup === 'sb' ? (M.sbPad == null ? 0.1 : M.sbPad) : 0.25, entry = b.c, sl = M.setup === 'srb' ? stopBase : L ? stopBase - pad * A : stopBase + pad * A, risk = Math.abs(entry - sl);
     add('risk', (L ? sl < entry : sl > entry) && risk >= 0.5 * A && risk <= maxRisk * A, +(risk / A).toFixed(2), true);
     out.score = out.checks.filter(x => x.pass).length; out.max = out.checks.length;
     out.grade = out.checks.every(x => x.pass) ? 'A+' : 'C';
@@ -8788,7 +8825,7 @@ const AiEng = (() => {
     }
     return out;
   }
-  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, smcZones, smcActive, MODES};
+  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, smcZones, smcActive, nyMin, MODES};
 })();
 
 /* ---------- AI Signal Analysis panel ---------- */
@@ -9025,7 +9062,7 @@ const TERM_THEMES = {
 };
 const TERM_RM = 4;    // blank bars always kept to the right of the live candle
 const TERM = {theme:(() => { try{ return localStorage.getItem('aromTermTheme') || 'tv'; }catch(e){ return 'tv'; } })(), tf:'5', bars:0, user:false, off:0, hover:null, drag:null, yAuto:true, yLo:0, yHi:0, N:0, scores:null, key:'', ind:null, indKey:'', sub:'q',
-  on:{ema:true, ribbon:true, vwap:true, sr:true, piv:false, keys:true, pulse:false, smc:false}};
+  on:{ema:true, ribbon:true, vwap:true, sr:true, piv:false, keys:true, pulse:false, smc:false, ict:false}};
 try{ const sv = JSON.parse(localStorage.getItem('aromTermInd_v1') || 'null'); if(sv && sv.on){ Object.assign(TERM.on, sv.on); if(['q','rsi','macd'].includes(sv.sub)) TERM.sub = sv.sub; } }catch(e){}
 function termSave(){ try{ localStorage.setItem('aromTermInd_v1', JSON.stringify({on:TERM.on, sub:TERM.sub})); }catch(e){} }
 /* Scalping indicators computed on the candles shown in the terminal (5m or 15m) */
@@ -9096,7 +9133,31 @@ function termInd(S5){
     else if(e9[i - 1] >= e21[i - 1] && e9[i] < e21[i] && cl[i] < vw[i] && rsi[i] < 50 && rsi[i] > 28) pulse.push({i, side:'SELL'}); }
   // Smart Money Concepts zones: the same detector the AI engine uses (AiEng.smcZones); only zones still alive on the last candle are drawn
   let smc = []; try{ smc = AiEng.smcActive(AiEng.smcZones(C, atr, {life:600}), N - 1); }catch(e){}
-  TERM.ind = {e9, e21, rsi, macd, sigL, atr, vw, vs, piv, zones, pulse, smc}; TERM.indKey = key; return TERM.ind;
+  // ICT: liquidity and, on M5 charts, the Silver Bullet setups of the AI engine (same rules as the intraday_sb research mode)
+  let ict = {lv:[], sw:[], sb:[]};
+  try{ ict = {...ictPick(ictLiquidity(C, N - 1, 300), C[N - 1].c, N - 1, 2), sb:[]};
+    if(N > 150 && C[N - 1].t - C[N - 2].t === 300){ const P = AiEng.prep(C, null, 'intraday_sb', AI.sym);
+      for(let i = Math.max(120, N - 400); i < N; i++){ const r = AiEng.evalAt(P, i); if(r.signal) ict.sb.push({i, side:r.signal.side}); } } }catch(e){}
+  TERM.ind = {e9, e21, rsi, macd, sigL, atr, vw, vs, piv, zones, pulse, smc, ict}; TERM.indKey = key; return TERM.ind;
+}
+/* ICT helpers for the chart and Replay. Liquidity = 3-candle swing highs (buy-side, BSL) / lows (sell-side, SSL) up to candle `upto`;
+   swept = the first later candle that trades beyond it. Silver Bullet hours = New York 10:00-11:00 and 14:00-15:00 (AiEng.nyMin handles daylight saving). */
+function ictLiquidity(C, upto, look){
+  const out = [], k = 3;
+  for(let j = Math.max(k, upto - (look || 300)); j <= upto - k; j++){
+    let hi = true, lo = true;
+    for(let d = 1; d <= k; d++){ if(!(C[j].h > C[j - d].h && C[j].h >= C[j + d].h)) hi = false; if(!(C[j].l < C[j - d].l && C[j].l <= C[j + d].l)) lo = false; }
+    if(hi){ let sw = -1; for(let q = j + k; q <= upto; q++) if(C[q].h > C[j].h){ sw = q; break; } out.push({side:'BSL', p:C[j].h, i:j, sw}); }
+    if(lo){ let sw = -1; for(let q = j + k; q <= upto; q++) if(C[q].l < C[j].l){ sw = q; break; } out.push({side:'SSL', p:C[j].l, i:j, sw}); }
+  }
+  return out;
+}
+const ICT_SB = [[600, 660], [840, 900]];
+const ictInSb = t => { try{ const m = AiEng.nyMin(t); return ICT_SB.find(w => m >= w[0] && m < w[1]) || null; }catch(e){ return null; } };
+function ictPick(L, last, upto, n){   // nearest untaken levels on each side + sweeps of the last 40 candles
+  const live = L.filter(x => x.sw < 0), bsl = live.filter(x => x.side === 'BSL' && x.p > last).sort((a, b) => a.p - b.p).slice(0, n),
+    ssl = live.filter(x => x.side === 'SSL' && x.p < last).sort((a, b) => b.p - a.p).slice(0, n), sw = L.filter(x => x.sw >= 0 && x.sw > upto - 40).slice(-4);
+  return {lv:bsl.concat(ssl), sw};
 }
 function termIndSync(){
   const bar = $('termInd'); if(!bar) return;
@@ -9327,8 +9388,23 @@ function termDraw(){
     g.strokeStyle = `rgba(${col},${.35 + z.str / 100 * .45})`; g.lineWidth = z.grade === 'strong' ? 1.5 : 1; g.setLineDash(z.grade === 'weak' ? [4, 4] : []);
     g.beginPath(); g.moveTo(x0, Math.round(y1) + .5); g.lineTo(plotW, Math.round(y1) + .5); g.moveTo(x0, Math.round(y2) + .5); g.lineTo(plotW, Math.round(y2) + .5); g.stroke(); g.setLineDash([]); g.lineWidth = 1;
     zl.push({z, col, y:Math.max(10, Math.min(mainH - 10, (y1 + y2) / 2))}); });
+  const smcL = [];   // zone / liquidity labels, drawn after the candles
+  // ICT: Silver Bullet hours as soft bands (intraday charts), untaken liquidity as dotted lines, recent sweeps, Silver Bullet setups on M5
+  if(O.ict && I.ict){
+    const stepS = C.length > 1 ? C[C.length - 1].t - C[C.length - 2].t : 0;
+    if(stepS && stepS <= 900){ let run = null; const flush = () => { if(!run) return; const x0 = X(run.a) - cw / 2, x1 = X(run.b) + cw / 2;
+        g.fillStyle = 'rgba(167,139,250,.075)'; g.fillRect(x0, 0, x1 - x0, mainH); g.font = '800 9px ' + K.font; g.fillStyle = 'rgba(196,181,253,.9)'; g.textAlign = 'left';
+        if(x1 - x0 > 26) g.fillText('SB ' + (run.w[0] / 60) + '–' + (run.w[1] / 60) + ' NY', x0 + 3, 12); run = null; };
+      for(let i = start; i < end; i++){ const w = ictInSb(C[i].t); if(w && run && run.w === w && run.b === i - 1) run.b = i; else { flush(); if(w) run = {a:i, b:i, w}; } }
+      flush(); }
+    I.ict.lv.forEach(v => { if(v.p < lo || v.p > hi) return; const y = Math.round(Y(v.p)) + .5, x0 = Math.max(0, X(Math.max(start, v.i)));
+      g.strokeStyle = v.side === 'BSL' ? 'rgba(255,209,102,.8)' : 'rgba(127,211,255,.8)'; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(x0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]);
+      smcL.push({lbl:v.side === 'BSL' ? 'BSL $' : 'SSL $', col:v.side === 'BSL' ? '255,209,102' : '127,211,255', x:x0 + 3, y:y + (v.side === 'BSL' ? -7 : 7)}); });
+    I.ict.sw.forEach(v => { if(v.sw < start || v.p < lo || v.p > hi) return; const y = Math.round(Y(v.p)) + .5, x0 = X(Math.max(start, v.i)), x1 = X(v.sw);
+      g.strokeStyle = 'rgba(167,139,250,.55)'; g.setLineDash([1, 3]); g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); g.setLineDash([]);
+      smcL.push({lbl:'swept', col:'196,181,253', x:x1 + 4, y}); });
+  }
   // Order blocks / FVG / IFVG still alive: box from the zone's candle to the right edge, newest few of each kind inside the view
-  const smcL = [];
   if(O.smc && I.smc && I.smc.length){
     const lim = {ob:3, fvg:3, ifvg:2}, cnt = {ob:0, fvg:0, ifvg:0};
     I.smc.forEach(z => { if(z.top < lo || z.bot > hi || cnt[z.kind] >= lim[z.kind]) return; cnt[z.kind]++;
@@ -10331,6 +10407,19 @@ function rpDraw(){
     for(let i = start; i <= end; i++) if(i % every === 0){ const x = Math.round(X(i)) + .5; g.strokeStyle = 'rgba(42,46,57,.45)'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, plotH); g.stroke(); g.fillText(lab.format(new Date(RP.data[i].t * 1000)), x, plotH + timeH / 2); }
     g.textAlign = 'left'; }
   g.save(); g.beginPath(); g.rect(0, 0, plotW, plotH); g.clip();
+  // ICT at the replay candle: Silver Bullet hours (shaded up to the replay candle) and untaken liquidity known by then
+  if($('rpIct').checked){
+    const D = RP.data, stepS = D.length > 1 ? D[1].t - D[0].t : 0;
+    if(stepS && stepS <= 900){ let run = null; const flush = () => { if(!run) return; const x0 = X(run.a) - cw / 2, x1 = X(run.b) + cw / 2;
+        g.fillStyle = 'rgba(167,139,250,.075)'; g.fillRect(x0, 0, x1 - x0, plotH); g.font = '800 9px Inter, sans-serif'; g.fillStyle = 'rgba(196,181,253,.9)';
+        if(x1 - x0 > 26) g.fillText('SB ' + (run.w[0] / 60) + '–' + (run.w[1] / 60) + ' NY', x0 + 3, 12); run = null; };
+      for(let i = start; i <= Math.min(end, RP.cur); i++){ const w = ictInSb(D[i].t); if(w && run && run.w === w && run.b === i - 1) run.b = i; else { flush(); if(w) run = {a:i, b:i, w}; } }
+      flush(); }
+    const pk = ictPick(ictLiquidity(D, RP.cur, 300), D[RP.cur].c, RP.cur, 2), x1 = Math.min(plotW, X(RP.cur) + cw / 2);
+    pk.lv.forEach(v => { if(v.p < lo || v.p > hi) return; const y = Math.round(Y(v.p)) + .5, x0 = Math.max(0, X(v.i)); if(x1 <= x0) return;
+      const col = v.side === 'BSL' ? '255,209,102' : '127,211,255'; g.strokeStyle = `rgba(${col},.8)`; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); g.setLineDash([]);
+      g.font = '800 9.5px Inter, sans-serif'; g.fillStyle = `rgba(${col},.95)`; g.fillText(v.side + ' $', x0 + 4, y + (v.side === 'BSL' ? -6 : 11)); });
+  }
   // order blocks / FVG / IFVG alive at the replay candle (zones only use candles up to it)
   if($('rpSmc').checked){
     if(!RP.Z) RP.Z = AiEng.smcZones(RP.data, RP.atr, {life:600});
@@ -10408,7 +10497,7 @@ function rpEnd(){
   $('rpStart').onclick = rpLoad; $('rpUpgrade').onclick = () => openPremium('elite'); $('rpRandom').onclick = () => { $('rpDate').value = ''; rpLoad(); };
   $('rpPlay').onclick = rpPlayToggle; $('rpStep').onclick = () => { rpPause(); rpStep(); };
   $('rpBuy').onclick = () => rpPick('BUY'); $('rpSell').onclick = () => rpPick('SELL'); $('rpConfirm').onclick = rpPlace; $('rpCancel').onclick = () => { RP.pend = null; rpTicket(); rpDraw(); };
-  $('rpSl').addEventListener('input', rpDraw); $('rpTp').addEventListener('input', rpDraw); $('rpEma').onchange = rpDraw; $('rpSmc').onchange = rpDraw; $('rpEnd').onclick = rpEnd;
+  $('rpSl').addEventListener('input', rpDraw); $('rpTp').addEventListener('input', rpDraw); $('rpEma').onchange = rpDraw; $('rpSmc').onchange = rpDraw; $('rpIct').onchange = rpDraw; $('rpEnd').onclick = rpEnd;
   $('rpSpeed').addEventListener('click', e => { const s2 = e.target.closest('button[data-v]'); if(!s2) return; RP.speed = +s2.dataset.v; $('rpSpeed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === s2)); if(RP.play){ rpPause(); rpPlayToggle(); } });
   document.addEventListener('keydown', e => { if(PAGE !== 'replay' || document.querySelector('.modal-backdrop.show') || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
     if(e.key === 'ArrowRight'){ e.preventDefault(); rpPause(); rpStep(); } else if(e.key === ' '){ e.preventDefault(); rpPlayToggle(); } });

@@ -10,7 +10,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
-const TF = { scalp: { bn: "1m", td: "1min", step: 60, site: 1 }, intraday: { bn: "15m", td: "15min", step: 900, site: 15 }, swing: { bn: "1h", td: "1h", step: 3600, site: 60 } };
+const TF = { scalp: { bn: "1m", td: "1min", step: 60, site: 1 }, m5: { bn: "5m", td: "5min", step: 300, site: 5 }, intraday: { bn: "15m", td: "15min", step: 900, site: 15 }, swing: { bn: "1h", td: "1h", step: 3600, site: 60 } };
 const NY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", hourCycle: "h23" });
 const openHr = new Map();   // per UTC hour (formatToParts is slow; tens of thousands of candles)
 const goldOpen = (t) => { const k = Math.floor(t / 3600); let v = openHr.get(k); if (v !== undefined) return v;
@@ -57,7 +57,7 @@ function run(bars, mode, spread, warm, sym = "XAUUSD", ovr = null) {
     const hits = r === "sl" || r === "expired" ? 0 : +r.slice(2, 3);
     let R = r === "sl" ? -1 : r === "expired" ? 0 : hits >= 2 ? (rr[0] + rr[1]) / 2 : rr[0] / 2;
     R -= spread / s.risk;
-    rows.push({ t: s.t, side: s.side, R, res: r, riskUsd: s.risk, zone: s.feat && s.feat.zone, smc: s.feat ? s.feat.smc : undefined, smcH: s.feat ? s.feat.smcH : undefined, smcF: s.feat ? s.feat.smcF : undefined });
+    rows.push({ t: s.t, side: s.side, R, res: r, riskUsd: s.risk, win: s.feat && s.feat.win, wb: s.feat && s.feat.withBias, zone: s.feat && s.feat.zone, smc: s.feat ? s.feat.smc : undefined, smcH: s.feat ? s.feat.smcH : undefined, smcF: s.feat ? s.feat.smcF : undefined });
   }
   const n = rows.length, sum = rows.reduce((a, x) => a + x.R, 0), wins = rows.filter((x) => x.R > 0).length;
   const sd = n > 1 ? Math.sqrt(rows.reduce((a, x) => a + (x.R - sum / n) ** 2, 0) / (n - 1)) : 0;
@@ -71,11 +71,13 @@ function run(bars, mode, spread, warm, sym = "XAUUSD", ovr = null) {
     const sd2 = g.length > 1 ? Math.sqrt(g.reduce((a, x) => a + (x.R - m) ** 2, 0) / (g.length - 1)) : 0;
     return { n: g.length, avgR: g.length ? +m.toFixed(3) : null, ci95: g.length > 1 ? [+(m - 1.96 * sd2 / Math.sqrt(g.length)).toFixed(3), +(m + 1.96 * sd2 / Math.sqrt(g.length)).toFixed(3)] : null, winRate: g.length ? +(g.filter((x) => x.R > 0).length / g.length).toFixed(3) : null }; };
   const tagGroups = (k) => ({ none: grp((x) => !x[k]), any: grp((x) => !!x[k]), ob: grp((x) => /ob/.test(x[k] || "")), fvg: grp((x) => /(^|\+)fvg/.test(x[k] || "")), ifvg: grp((x) => /ifvg/.test(x[k] || "")) });
+  // ICT Silver Bullet research: by window (New York 10h / 14h) and with / against the H1 trend
+  const bySb = rows.some((x) => x.win != null) ? { ny10: grp((x) => x.win === 10), ny14: grp((x) => x.win === 14), ny3: grp((x) => x.win === 3), withBias: grp((x) => x.wb === true), noBias: grp((x) => x.wb === false), buys: grp((x) => x.side === "BUY"), sells: grp((x) => x.side === "SELL") } : undefined;
   const bySmc = rows.some((x) => x.smc !== undefined) ? { ...tagGroups("smc"), htf: tagGroups("smcH"), fresh: tagGroups("smcF") } : undefined;
   return { bars: bars.length, signals: n, avgR: n ? +(sum / n).toFixed(3) : null, ci95: n > 1 ? [+(sum / n - 1.96 * sd / Math.sqrt(n)).toFixed(3), +(sum / n + 1.96 * sd / Math.sqrt(n)).toFixed(3)] : null,
     sumR: +sum.toFixed(2), winRate: n ? +(wins / n).toFixed(3) : null, maxDD: +dd.toFixed(2), halves: [half(0), half(1)],
     results: { sl: cnt((x) => x.res === "sl"), tp1: cnt((x) => x.res === "tp1"), tp2plus: cnt((x) => /^tp[23]$/.test(x.res)), expired: cnt((x) => x.res === "expired") },
-    byZone, bySmc, medianRiskUsd: n ? +rows.map((x) => x.riskUsd).sort((a, b) => a - b)[Math.floor(n / 2)].toFixed(2) : null, times: rows.map((x) => x.t) };
+    byZone, bySmc, bySb, medianRiskUsd: n ? +rows.map((x) => x.riskUsd).sort((a, b) => a - b)[Math.floor(n / 2)].toFixed(2) : null, times: rows.map((x) => x.t) };
 }
 function feedQ(bars) { const q = AiEng.feedQuality(bars, 3000); return { openGap: q.gap, n: q.n }; }
 
@@ -84,7 +86,7 @@ Deno.serve(async (req) => {
   const { data: k } = await db.from("ai_bot_config").select("value").eq("key", "cron_secret").maybeSingle();
   if (!k || !k.value || u.searchParams.get("key") !== k.value) return json({ error: "unauthorized" }, 401);   // empty secret never matches
   const mode = u.searchParams.get("mode") || "scalp", MM = AiEng.MODES[mode];   // any engine mode; its entry timeframe picks the feed interval
-  const tf = MM && ({ 60: TF.scalp, 900: TF.intraday, 3600: TF.swing })[MM.base]; if (!tf) return json({ error: "mode" }, 400);
+  const tf = MM && ({ 60: TF.scalp, 300: TF.m5, 900: TF.intraday, 3600: TF.swing })[MM.base]; if (!tf) return json({ error: "mode" }, 400);
   const sym = SYM[(u.searchParams.get("sym") || "XAUUSD").toUpperCase()] ? (u.searchParams.get("sym") || "XAUUSD").toUpperCase() : "XAUUSD", S = SYM[sym];
   let ovr = null; try { ovr = u.searchParams.get("ovr") ? JSON.parse(u.searchParams.get("ovr")) : null; } catch (_) { return json({ error: "ovr is not JSON" }, 400); }
   const days = Math.min(+(u.searchParams.get("days") || 30), 800), spread = +(u.searchParams.get("spread") || S.spread);
