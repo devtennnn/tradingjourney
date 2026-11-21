@@ -8226,6 +8226,10 @@ const AiEng = (() => {
     // (bullish order block, bullish FVG, or a bearish FVG that price closed through = bullish IFVG; mirror for sells) and a close back out of it.
     intraday_smc:  {key:'intraday_smc',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:true,  maxBars:32,  eName:'M15', hName:'H1', setup:'smc', zAge:96, shadow:true, pub:true, one:true},
     swing_smc:     {key:'swing_smc',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'smc', zAge:120, shadow:true, pub:true, one:true},
+    // ICT Silver Bullet, SHADOW research (M5 entry): inside the New York 10:00-11:00 or 14:00-15:00 hour (DST handled), price first takes the
+    // liquidity of the previous sbLook candles (sell-side for buys, buy-side for sells), then displaces the other way and leaves a fair value gap;
+    // the entry is the first return into that gap, stop beyond the sweep extreme. The H1 trend is recorded (feat.withBias), not required (sbBias:true requires it).
+    intraday_sb:   {key:'intraday_sb',   base:300,  htf:3600,  valid:900,   rr:[1.5, 3, 4.5], session:false, maxBars:36,  eName:'M5',  hName:'H1', setup:'sb', sbWin:[[600, 660], [840, 900]], sbLook:24, sbPre:6, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
@@ -8262,6 +8266,7 @@ const AiEng = (() => {
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     if(M.setup === 'pat') prepPat(P);
     if(M.smcHtf && !P.smcH){ P.hAtrS = atrF(htf.map(x => x.h), htf.map(x => x.l), htf.map(x => x.c)); P.smcH = smcZones(htf, P.hAtrS, {life:300}); }
+    if(M.setup === 'sb'){ P.sbF = smcZones(bars, P.atr, {life:72, minGap:M.fvgMin == null ? .15 : M.fvgMin}).filter(z => z.kind === 'fvg'); P.ny = bars.map(b => nyMin(b.t)); }
     if(M.setup === 'smc') P.smc = smcZones(bars, P.atr, {life:M.zAge * 3});
     return P; }
   /* ---------- Classic chart patterns (entry timeframe) ----------
@@ -8519,6 +8524,11 @@ const AiEng = (() => {
     return {ok:!(g > .15), gap:+g.toFixed(2), ext:+e.toFixed(2), n:s.length};
   }
 
+  /* New York clock for the ICT windows: US daylight saving runs from the 2nd Sunday of March 07:00 UTC to the 1st Sunday of November 06:00 UTC.
+     nyMin(t) = minutes after New York midnight at unix time t. */
+  function usDst(t){ const y = new Date(t * 1000).getUTCFullYear(), m1 = new Date(Date.UTC(y, 2, 1)).getUTCDay(), n1 = new Date(Date.UTC(y, 10, 1)).getUTCDay();
+    const start = Date.UTC(y, 2, 1 + (7 - m1) % 7 + 7, 7) / 1000, end = Date.UTC(y, 10, 1 + (7 - n1) % 7, 6) / 1000; return t >= start && t < end; }
+  function nyMin(t){ return ((Math.floor(t / 60) + (usDst(t) ? -240 : -300)) % 1440 + 1440) % 1440; }
   const SESSION = {from:7, to:17};          // UTC hours = 14:00–24:00 Cambodia (London + New York)
   // Evaluate the CLOSED candle at index i. news(tSec) -> true (clear) | false (blocked) | null (unknown)
   // Higher-timeframe trend bias at closeT (same rule as Intraday / Swing: HTF close > EMA50 > EMA200 with EMA50 rising; swing also needs the daily close on the right side of its EMA)
@@ -8654,6 +8664,29 @@ const AiEng = (() => {
         }
       }
     }
+    /* sb (ICT Silver Bullet): this candle is inside a window (New York time). Within the window (or sbPre candles before it) price traded beyond the
+       low (buys) / high (sells) of the sbLook candles before that = liquidity taken; after the sweep a fair value gap of the other side formed
+       inside the window; this candle is the FIRST return into the gap and closes back on the gap's side (not through its far edge). Stop beyond the sweep extreme. */
+    if(M.setup === 'sb' && P.sbF){
+      const nm = P.ny[i], win = (M.sbWin || []).find(w => nm >= w[0] && nm < w[1]);
+      if(win){
+        const ws = b.t - (nm - win[0]) * 60, iw = i - Math.round((b.t - ws) / M.base), from = Math.max(M.sbLook + 1, iw - (M.sbPre || 0));
+        for(let q = P.sbF.length - 1; q >= 0; q--){
+          const z = P.sbF[q]; if(z.known > i - 1) continue; if(m[z.i + 1].t < ws) break;   // the displacement candle must be inside the window
+          if(z.touch !== i || (z.brk >= 0 && z.brk <= i)) continue;
+          const L = z.dir === 'bull';
+          let liq = L ? Infinity : -Infinity; for(let k = from - M.sbLook; k < from; k++) liq = L ? Math.min(liq, m[k].l) : Math.max(liq, m[k].h);
+          let ext = L ? Infinity : -Infinity, swept = false;
+          for(let k = from; k <= z.i; k++){ ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h); if(L ? m[k].l < liq : m[k].h > liq) swept = true; }
+          for(let k = z.i + 1; k <= i; k++) ext = L ? Math.min(ext, m[k].l) : Math.max(ext, m[k].h);
+          if(!swept || (L ? b.c < z.bot : b.c > z.top)) continue;
+          if(M.sbBias && bias !== (L ? 'BUY' : 'SELL')) continue;
+          side = L ? 'BUY' : 'SELL'; stopBase = ext; maxRisk = M.maxRiskA || 4;
+          feat.win = win[0] / 60; feat.gapA = +((z.top - z.bot) / A).toFixed(2); feat.sweepA = +((L ? liq - ext : ext - liq) / A).toFixed(2); feat.withBias = bias === side; feat.fvgAge = i - z.known;
+          break;
+        }
+      }
+    }
     if(M.setup === 'qm'){
       const legs = P.legs.filter(x => x.known <= closeT);
       if(legs.length >= 4){
@@ -8672,7 +8705,7 @@ const AiEng = (() => {
     add('session', (P.allWeek || (wd >= 1 && wd <= 5)) && (!M.session || (hr >= SESSION.from && hr < SESSION.to)), M.session ? null : 'any', true);
     const nz = news ? news(closeT) : true;
     add('news', nz === true, nz === null ? 'unknown' : null, true);
-    const entry = b.c, sl = M.setup === 'srb' ? stopBase : L ? stopBase - 0.25 * A : stopBase + 0.25 * A, risk = Math.abs(entry - sl);
+    const pad = M.setup === 'sb' ? (M.sbPad == null ? 0.1 : M.sbPad) : 0.25, entry = b.c, sl = M.setup === 'srb' ? stopBase : L ? stopBase - pad * A : stopBase + pad * A, risk = Math.abs(entry - sl);
     add('risk', (L ? sl < entry : sl > entry) && risk >= 0.5 * A && risk <= maxRisk * A, +(risk / A).toFixed(2), true);
     out.score = out.checks.filter(x => x.pass).length; out.max = out.checks.length;
     out.grade = out.checks.every(x => x.pass) ? 'A+' : 'C';
@@ -8789,7 +8822,7 @@ const AiEng = (() => {
     }
     return out;
   }
-  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, smcZones, smcActive, MODES};
+  return {prep, evalAt, simulate, scan, toM15, agg, feedQuality, smcZones, smcActive, nyMin, MODES};
 })();
 
 /* ---------- AI Signal Analysis panel ---------- */
