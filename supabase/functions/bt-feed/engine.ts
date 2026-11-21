@@ -52,7 +52,7 @@ const AiEng = (() => {
     // ICT Silver Bullet, SHADOW research (M5 entry): inside the New York 10:00-11:00 or 14:00-15:00 hour (DST handled), price first takes the
     // liquidity of the previous sbLook candles (sell-side for buys, buy-side for sells), then displaces the other way and leaves a fair value gap;
     // the entry is the first return into that gap, stop beyond the sweep extreme. The H1 trend is recorded (feat.withBias), not required (sbBias:true requires it).
-    intraday_sb:   {key:'intraday_sb',   base:300,  htf:3600,  valid:900,   rr:[1.5, 3, 4.5], session:false, maxBars:36,  eName:'M5',  hName:'H1', setup:'sb', sbWin:[[600, 660], [840, 900]], sbLook:24, sbPre:6, shadow:true, pub:true, one:true},
+    intraday_sb:   {key:'intraday_sb',   base:300,  htf:3600,  valid:900,   rr:[1.5, 3, 4.5], session:false, maxBars:36,  eName:'M5',  hName:'H1', setup:'sb', sbWin:[[600, 660], [840, 900]], sbLook:24, sbPre:6, only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
@@ -512,7 +512,7 @@ const AiEng = (() => {
     /* sb (ICT Silver Bullet): this candle is inside a window (New York time). Within the window (or sbPre candles before it) price traded beyond the
        low (buys) / high (sells) of the sbLook candles before that = liquidity taken; after the sweep a fair value gap of the other side formed
        inside the window; this candle is the FIRST return into the gap and closes back on the gap's side (not through its far edge). Stop beyond the sweep extreme. */
-    if(M.setup === 'sb' && P.sbF){
+    if(M.setup === 'sb' && P.sbF && (!M.only || M.only.test(P.sym))){
       const nm = P.ny[i], win = (M.sbWin || []).find(w => nm >= w[0] && nm < w[1]);
       if(win){
         const ws = b.t - (nm - win[0]) * 60, iw = i - Math.round((b.t - ws) / M.base), from = Math.max(M.sbLook + 1, iw - (M.sbPre || 0));
