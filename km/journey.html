@@ -651,10 +651,11 @@ body[data-page="orderflow"] :is(.pg-main,.pg-an,.pg-pr,.pg-jr,.pg-nw,.pg-rf,.pg-
 .of-lock{margin:24px auto;max-width:520px;padding:24px;text-align:center;border-radius:16px;border:1px solid rgba(201,162,255,.35);background:rgba(201,162,255,.06)}.of-lock[hidden]{display:none}.of-lock p{color:var(--muted)}
 .of.locked .of-body{display:none}
 .of-body{display:flex;flex-direction:column}
-.of-stats{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:8px 16px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line);min-height:36px}
+.of-stats{display:flex;gap:16px;flex-wrap:nowrap;align-items:center;padding:0 16px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line);height:36px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none}.of-stats::-webkit-scrollbar{display:none}
+.of-stats>span{flex:none}
 .of-stats b{color:#eef3f8;font-variant-numeric:tabular-nums}.of-stats b.up{color:#26a69a}.of-stats b.dn{color:#ef5350}
 .of-live{margin-left:auto;font-weight:800;font-size:11px;letter-spacing:.6px;color:#8f99a6}.of-live.on{color:#2bf08a}.of-live.on::before{content:"● "}
-.of-cvwrap{position:relative;height:min(74vh,820px);min-height:460px}
+.of-cvwrap{position:relative;height:min(74vh,820px);height:clamp(460px,74svh,820px)}   /* svh: the phone's address bar showing / hiding must not resize the chart */
 .of-cvwrap canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .of-msg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;color:var(--muted);pointer-events:none}.of-msg:empty{display:none}
 .of-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--line)}
@@ -11857,10 +11858,8 @@ async function ofStart(){
       if(+x.q >= cfg.big) OF.big.push({t:ts, p:+x.p, q:+x.q, sell:!!x.m}); });
     // 3) live streams; the book snapshot is taken after the diff stream has started (Binance local order book procedure)
     ofConnect(seq);
-    const snap = await ofGet(`/api/v3/depth?symbol=${cfg.bn}&limit=5000`); if(seq !== OF.seq) return;
-    const bk = OF.book; snap.bids.forEach(([p, q]) => bk.bids.set(+p, +q)); snap.asks.forEach(([p, q]) => bk.asks.set(+p, +q)); bk.last = snap.lastUpdateId;
-    bk.buf.filter(e => e.u > bk.last).forEach(ofDepthApply); bk.buf = []; bk.ready = true;
-    const mid = (Math.max(...bk.bids.keys()) + Math.min(...bk.asks.keys())) / 2;
+    await ofResync(seq); if(seq !== OF.seq) return;
+    const bk = OF.book, mid = (Math.max(...bk.bids.keys()) + Math.min(...bk.asks.keys())) / 2;
     OF.hmLo = ofBucket(mid * (1 - cfg.range)); OF.hmN = Math.ceil(mid * cfg.range * 2 / OF.B) + 1;
     OF.hm = document.createElement('canvas'); OF.hm.width = 3600; OF.hm.height = OF.hmN; OF.hmCols = 0; OF.hmT0 = Math.floor(Date.now() / 1000); OF.hmMax = 1;
     $('ofMsg').textContent = ''; ofLoop();
@@ -11877,12 +11876,33 @@ function ofConnect(seq){
   ws.onclose = () => { if(seq === OF.seq && OF.alive) ofRetry(seq); };
   ws.onerror = () => { try{ ws.close(); }catch(e){} };
 }
-function ofRetry(seq){ OF.host++; OF.retry = Math.min(OF.retry + 1, 6); clearTimeout(OF.tmr); OF.tmr = setTimeout(() => { if(seq === OF.seq && OF.alive) ofStart(); }, 1500 * OF.retry); }
-function ofDepthApply(d){
-  const bk = OF.book; if(bk.ready && d.U > bk.last + 1){ bk.ready = false; OF.tmr = setTimeout(() => OF.alive && ofStart(), 500); return; }   // missed an update: resync
+// A lost connection reconnects the streams only (candles, footprint and heatmap stay) and then re-reads the book.
+function ofRetry(seq){ OF.host++; OF.retry = Math.min(OF.retry + 1, 6); clearTimeout(OF.tmr);
+  OF.tmr = setTimeout(() => { if(seq !== OF.seq || !OF.alive) return; OF.book.ready = false; OF.book.buf = []; ofConnect(seq); ofResync(seq); }, 1500 * OF.retry); }
+/* Book snapshot (Binance local order book): read the REST snapshot while the diff stream is buffered, drop buffered updates it already contains,
+   apply the rest. If the snapshot is older than the first buffered update, read it again (up to 3 times), then accept it: a slightly stale book
+   is better than reloading the page. Only the book is re-read: the candles, the footprint and the heatmap are never cleared here. */
+async function ofResync(seq, tries){
+  tries = tries || 0; const bk = OF.book, cfg = OF_CFG[OF.sym]; bk.ready = false; if(!tries) OF.resyncs = (OF.resyncs || 0) + 1;
+  let snap; try{ snap = await ofGet(`/api/v3/depth?symbol=${cfg.bn}&limit=5000`); }catch(e){ if(seq === OF.seq && OF.alive) OF.tmr = setTimeout(() => ofResync(seq, tries + 1), 3000); return; }
+  if(seq !== OF.seq) return;
+  const first = bk.buf.find(e => e.u > snap.lastUpdateId);
+  if(first && first.U > snap.lastUpdateId + 1 && tries < 3){ await new Promise(r => setTimeout(r, 700)); return ofResync(seq, tries + 1); }
+  bk.bids = new Map(); bk.asks = new Map(); snap.bids.forEach(([p, q]) => bk.bids.set(+p, +q)); snap.asks.forEach(([p, q]) => bk.asks.set(+p, +q)); bk.last = snap.lastUpdateId;
+  bk.buf.filter(e => e.u > bk.last).forEach(ofDepthPut); bk.buf = []; bk.ready = true;
+}
+function ofDepthPut(d){
+  const bk = OF.book;
   d.b.forEach(([p, q]) => { q = +q; if(q === 0) bk.bids.delete(+p); else bk.bids.set(+p, q); });
   d.a.forEach(([p, q]) => { q = +q; if(q === 0) bk.asks.delete(+p); else bk.asks.set(+p, q); });
-  bk.last = d.u;
+  bk.last = Math.max(bk.last, d.u);
+}
+function ofDepthApply(d){
+  const bk = OF.book; if(d.u <= bk.last) return;                         // already in the book
+  if(d.U > bk.last + 1){                                                  // an update was missed: buffer and re-read the book (at most every 5 s)
+    bk.buf.push(d); if(Date.now() - (OF.lastSync || 0) > 5000){ OF.lastSync = Date.now(); ofResync(OF.seq); } else if(bk.ready){ ofDepthPut(d); bk.buf = []; }
+    return; }
+  ofDepthPut(d);
 }
 function ofBookCol(){   // resting size per heatmap bucket now (bids and asks together)
   const col = new Float32Array(OF.hmN), add = (p, q) => { const i = Math.floor((p - OF.hmLo) / OF.B); if(i >= 0 && i < OF.hmN) col[i] += q; };
@@ -12011,7 +12031,7 @@ function ofInit(){
   $('ofZout').onclick = () => { OF.view.w = Math.max(1, OF.view.w / 1.3); ofDraw(); };
   $('ofLockBtn').onclick = () => openPremium('ultra');
   fillB(); window.addEventListener('resize', () => { if(PAGE === 'orderflow') ofDraw(); });
-  document.addEventListener('visibilitychange', () => { if(PAGE === 'orderflow' && document.visibilityState === 'visible' && OF.alive && (!OF.ws || OF.ws.readyState > 1)) ofStart(); });
+  document.addEventListener('visibilitychange', () => { if(PAGE === 'orderflow' && document.visibilityState === 'visible' && OF.alive && (!OF.ws || OF.ws.readyState > 1)){ OF.retry = 0; ofRetry(OF.seq); } });   // back to the tab: reconnect, keep the data
   ofGate();
 }
 
