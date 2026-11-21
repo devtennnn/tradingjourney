@@ -8234,6 +8234,13 @@ const AiEng = (() => {
     // Backtest 24 Jun - 21 Nov 2026 (150 days, Twelve Data M5, spread included): gold n=49 -0.33R/trade (95% -0.55 to -0.10), with 1R/2R/3R targets and 6 h
     // -0.24R; BTC n=60 -0.00R (95% -0.28 to +0.27). NO EDGE on these rules: kept as a logged shadow mode only, never posted.
     intraday_sb:   {key:'intraday_sb',   base:300,  htf:3600,  valid:900,   rr:[1.5, 3, 4.5], session:false, maxBars:36,  eName:'M5',  hName:'H1', setup:'sb', sbWin:[[600, 660], [840, 900]], sbLook:24, sbPre:6, only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
+    // ICT liquidity sweep + market structure shift + OTE, SHADOW research (M15): in a killzone (New York 02:00-05:00 London, 07:00-10:00 New York),
+    // price takes the low (high) of the last 32 candles, then within 12 candles closes beyond the last swing high (low) = MSS; the entry is the first
+    // pullback into the 62-79% retracement (OTE) of the leg from the sweep extreme, stop beyond that extreme.
+    intraday_mss:  {key:'intraday_mss',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:false, maxBars:32,  eName:'M15', hName:'H1', setup:'mss', kz:[[120, 300], [420, 600]], liqLook:32, mssWin:12, oteWait:8, only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
+    // ICT Judas swing (Power of 3), SHADOW research (M15): the Asia range is New York 19:00-00:00; in the London killzone (02:00-05:00 New York) price trades
+    // beyond one side of it (the false move) and a candle closes back inside the range: trade the other way, stop beyond the false-move extreme.
+    intraday_judas: {key:'intraday_judas', base:900, htf:3600, valid:3600, rr:[1.5, 3, 4.5], session:false, maxBars:32,  eName:'M15', hName:'H1', setup:'judas', only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
   const ema = (a, n) => { const k = 2 / (n + 1), o = new Array(a.length); let p = null;
@@ -8270,6 +8277,10 @@ const AiEng = (() => {
     if(M.setup === 'msnr' || M.setup === 'qm') prepLine(P);
     if(M.setup === 'pat') prepPat(P);
     if(M.smcHtf && !P.smcH){ P.hAtrS = atrF(htf.map(x => x.h), htf.map(x => x.l), htf.map(x => x.c)); P.smcH = smcZones(htf, P.hAtrS, {life:300}); }
+    if(M.setup === 'mss' || M.setup === 'judas'){ P.ny = bars.map(b => nyMin(b.t));
+      P.pvH = []; P.pvL = []; for(let j = 3; j < bars.length - 3; j++){ let hi = true, lo = true;
+        for(let d = 1; d <= 3; d++){ if(!(bars[j].h > bars[j - d].h && bars[j].h >= bars[j + d].h)) hi = false; if(!(bars[j].l < bars[j - d].l && bars[j].l <= bars[j + d].l)) lo = false; }
+        if(hi) P.pvH.push({i:j, p:bars[j].h, known:j + 3}); if(lo) P.pvL.push({i:j, p:bars[j].l, known:j + 3}); } }
     if(M.setup === 'sb'){ P.sbF = smcZones(bars, P.atr, {life:72, minGap:M.fvgMin == null ? .15 : M.fvgMin}).filter(z => z.kind === 'fvg'); P.ny = bars.map(b => nyMin(b.t)); }
     if(M.setup === 'smc') P.smc = smcZones(bars, P.atr, {life:M.zAge * 3});
     return P; }
@@ -8691,6 +8702,52 @@ const AiEng = (() => {
         }
       }
     }
+    /* mss (ICT sweep + MSS + OTE): sweep candle s in a killzone takes the extreme of the liqLook candles before it; within mssWin candles a candle k closes
+       beyond the last swing point formed before k on the other side (market structure shift); this candle i (at most oteWait candles after k) is the FIRST
+       to reach the 62% retracement of the leg (sweep extreme -> extreme since k) and closes back above (buys) the 79% level. Stop beyond the sweep extreme. */
+    if(M.setup === 'mss' && P.pvH && (!M.only || M.only.test(P.sym))){
+      for(let k = i - 1; k >= Math.max(M.liqLook + 2, i - M.oteWait) && !side; k--){
+        for(const L of [true, false]){
+          const pv = L ? P.pvH : P.pvL; let lvl = null;
+          for(let q = pv.length - 1; q >= 0; q--) if(pv[q].known <= k - 1){ lvl = pv[q]; break; }
+          if(!lvl || (L ? !(m[k].c > lvl.p && m[k - 1].c <= lvl.p) : !(m[k].c < lvl.p && m[k - 1].c >= lvl.p))) continue;
+          let s = -1;
+          for(let q = k - 1; q >= Math.max(M.liqLook, k - M.mssWin); q--){
+            const kzw = (M.kz || []).find(w => P.ny[q] >= w[0] && P.ny[q] < w[1]); if(!kzw) continue;
+            let ex = L ? Infinity : -Infinity; for(let r = q - M.liqLook; r < q; r++) ex = L ? Math.min(ex, m[r].l) : Math.max(ex, m[r].h);
+            if(L ? m[q].l < ex : m[q].h > ex){ s = q; feat.win = kzw[0] / 60; break; }
+          }
+          if(s < 0 || lvl.i < s - 20) continue;
+          let lo = Infinity, hiL = -Infinity; for(let q = s; q <= k; q++){ lo = Math.min(lo, m[q].l); hiL = Math.max(hiL, m[q].h); }
+          let ext2 = L ? -Infinity : Infinity; for(let q = k; q < i; q++) ext2 = L ? Math.max(ext2, m[q].h) : Math.min(ext2, m[q].l);
+          const a0 = L ? lo : hiL, rng = Math.abs(ext2 - a0); if(rng < A) continue;
+          const o62 = L ? ext2 - .62 * rng : ext2 + .62 * rng, o79 = L ? ext2 - .79 * rng : ext2 + .79 * rng;
+          let early = false; for(let q = k + 1; q < i; q++) if(L ? m[q].l <= o62 : m[q].h >= o62) early = true;
+          if(early || (L ? b.l > o62 : b.h < o62) || (L ? b.c < o79 : b.c > o79)) continue;
+          side = L ? 'BUY' : 'SELL'; stopBase = a0; maxRisk = 4; feat.legA = +(rng / A).toFixed(2); feat.withBias = bias === side; break;
+        }
+      }
+    }
+    /* judas (ICT Power of 3): Asia range = New York 19:00-00:00 (needs 12+ candles). In the London killzone (02:00-05:00 New York) price traded beyond one side
+       of it and this candle closes back inside the range (first time today): fade it. Stop beyond the false-move extreme. */
+    if(M.setup === 'judas' && P.ny && (!M.only || M.only.test(P.sym))){
+      const nm = P.ny[i];
+      if(nm >= 120 && nm < 300){
+        let hi = -Infinity, lo = Infinity, nA = 0;
+        for(let k = i - 1; k >= Math.max(0, i - 48); k--){ const t = P.ny[k]; if(t >= 300 && t < 1140) break; if(t >= 1140){ hi = Math.max(hi, m[k].h); lo = Math.min(lo, m[k].l); nA++; } }   // walk back through London / pre-London to the Asia candles
+        if(nA >= 12 && hi - lo >= A){
+          let upX = -Infinity, dnX = Infinity, back = false;
+          for(let k = i - 1; k >= 0 && P.ny[k] >= 120 && P.ny[k] < 300; k--){ upX = Math.max(upX, m[k].h); dnX = Math.min(dnX, m[k].l); }
+          for(let k = i - 1; k >= 1 && P.ny[k] >= 120 && P.ny[k] < 300; k--) if((upX > hi || dnX < lo) && m[k].c <= hi && m[k].c >= lo && (m[k - 1].c > hi || m[k - 1].c < lo)) back = true;
+          upX = Math.max(upX, b.h); dnX = Math.min(dnX, b.l);
+          if(!back && b.c <= hi && b.c >= lo){
+            if(upX > hi && m[i - 1].c > hi && !(dnX < lo)){ side = 'SELL'; stopBase = upX; }
+            else if(dnX < lo && m[i - 1].c < lo && !(upX > hi)){ side = 'BUY'; stopBase = dnX; }
+            if(side){ maxRisk = 4; feat.rangeA = +((hi - lo) / A).toFixed(2); feat.win = 2; feat.withBias = bias === side; }
+          }
+        }
+      }
+    }
     if(M.setup === 'qm'){
       const legs = P.legs.filter(x => x.known <= closeT);
       if(legs.length >= 4){
@@ -8709,7 +8766,7 @@ const AiEng = (() => {
     add('session', (P.allWeek || (wd >= 1 && wd <= 5)) && (!M.session || (hr >= SESSION.from && hr < SESSION.to)), M.session ? null : 'any', true);
     const nz = news ? news(closeT) : true;
     add('news', nz === true, nz === null ? 'unknown' : null, true);
-    const pad = M.setup === 'sb' ? (M.sbPad == null ? 0.1 : M.sbPad) : 0.25, entry = b.c, sl = M.setup === 'srb' ? stopBase : L ? stopBase - pad * A : stopBase + pad * A, risk = Math.abs(entry - sl);
+    const pad = M.setup === 'sb' || M.setup === 'mss' || M.setup === 'judas' ? (M.sbPad == null ? 0.1 : M.sbPad) : 0.25, entry = b.c, sl = M.setup === 'srb' ? stopBase : L ? stopBase - pad * A : stopBase + pad * A, risk = Math.abs(entry - sl);
     add('risk', (L ? sl < entry : sl > entry) && risk >= 0.5 * A && risk <= maxRisk * A, +(risk / A).toFixed(2), true);
     out.score = out.checks.filter(x => x.pass).length; out.max = out.checks.length;
     out.grade = out.checks.every(x => x.pass) ? 'A+' : 'C';
