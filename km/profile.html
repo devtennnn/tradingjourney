@@ -7253,7 +7253,7 @@ function qrBill(payload){
   }catch(e){}
   return '';
 }
-const qrMake = text => { const q = qrcode(0, 'M'); q.addData(String(text)); q.make(); return q; };
+const qrMake = text => { const q = qrcode(0, 'H'); q.addData(String(text)); q.make(); return q; };   // error-correction level H, as KHQRPay asks
 function qrPaint(g, q, px, quiet){
   const n = q.getModuleCount(), side = (n + quiet * 2) * px;
   g.fillStyle = '#fff'; g.fillRect(0, 0, side, side); g.fillStyle = '#000';
@@ -7307,7 +7307,7 @@ async function qrCreate(){
     const money = data.currency === 'KHR' ? Math.round(data.amount) + ' ៛' : '$' + Number(data.amount).toFixed(2);
     $('qrAmt').textContent = money; $('qrMerchant').textContent = data.merchant || '';
     $('qrCanvas').setAttribute('aria-label', t('qrAria') + ' · ' + money);
-    $('qrBillNo').textContent = (hosted ? data.bill : qrBill(data.payload)) || '—';
+    $('qrBillNo').textContent = data.bill || qrBill(data.payload) || '—';
     if(hosted){ const promoTxt = data.promo_code && Number(data.discount) > 0 ? ' · ' + t('promoQrLine').replace('{code}', data.promo_code).replace('{off}', promoMoney(data.discount)) : ''; $('qrSumPlan').textContent = $('qrPlan').textContent + promoTxt; $('qrSumAmt').textContent = money; }
     if(data.promo_code && Number(data.discount) > 0){ $('qrPromo').hidden = false; $('qrPromo').textContent = t('promoQrLine').replace('{code}', data.promo_code).replace('{off}', promoMoney(data.discount)); }
     if(!hosted) qrOverlay(false); qrStatus('qrWait', 'wait'); qrBusyBtns(false); qrShowClaim(false);
@@ -7345,6 +7345,7 @@ async function qrCheck(manual){
     const b = data.bakong || 'ok', noAuto = b === 'geo_blocked' || b === 'no_token';
     if(data.status === 'rejected'){ Qr.slow = true; qrShowClaim(false); qrStatus('qrNotFound', 'err'); return 'expired'; }   // an admin refused this payment
     if(data.status === 'claimed'){ Qr.slow = true; qrShowClaim(false); qrStatus('qrClaimed', 'ok'); return 'claimed'; }
+    if(data.gap){ Qr.slow = true; qrStatus('qrDelayed', 'warn'); qrShowClaim(true, true); if(data.status === 'expired') return 'expired'; return 'pending'; }   // KHQRPay lost sight of the bank for a while: the buyer may have paid, let them claim it
     if(noAuto || b === 'rejected' || b === 'unreachable' || manual) qrShowClaim(true);        // the bank cannot confirm by itself: let the user ask the admin
     if(data.status === 'expired'){ if(manual) qrStatus(noAuto ? 'qrNoAuto' : 'qrNotFound', 'warn'); qrShowClaim(true, noAuto); return 'expired'; }
     if(b === 'amount_mismatch') qrStatus('qrMismatch', 'err');
@@ -7397,7 +7398,7 @@ $('qrSaveBtn').onclick = () => {
   if(!Qr.row) return;
   const q = qrMake(Qr.row.payload), n = q.getModuleCount(), px = 10, quiet = 4, c = document.createElement('canvas');
   c.width = c.height = (n + quiet * 2) * px; qrPaint(c.getContext('2d'), q, px, quiet);
-  c.toBlob(b => { if(!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'KHQR-' + (qrBill(Qr.row.payload) || 'payment') + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+  c.toBlob(b => { if(!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'KHQR-' + (Qr.row.bill || qrBill(Qr.row.payload) || 'payment') + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
 };
 $('qrBillBtn').onclick = async () => {
   const bill = $('qrBillNo').textContent; if(!bill || bill === '—') return;
@@ -7418,7 +7419,7 @@ $('payRecover').onclick = async () => {
     else {
       const un = (data && data.unpaid) || [], bk = data && data.bakong, noAuto = bk === 'geo_blocked' || bk === 'no_token';
       payUnpaidRender(un);
-      pe.textContent = t(data && data.status === 'claimed' ? 'qrClaimed' : un.length && (noAuto || (bk && bk !== 'ok')) ? 'qrPickPaid' : bk && bk !== 'ok' ? 'qrDelayed' : 'qrNoPay');
+      pe.textContent = t(data && data.status === 'claimed' ? 'qrClaimed' : un.length ? 'qrPickPaid' : bk && bk !== 'ok' ? 'qrDelayed' : 'qrNoPay');   // KHQRPay: unpaid QRs listed so a buyer who paid can point to one
     }
   }catch(e){ console.error('KHQR recover error:', e); pe.className = 'prem-err'; pe.textContent = t('qrNetwork'); }
   finally{ btn.disabled = false; }
@@ -10645,8 +10646,9 @@ async function admBankCheck(){
     if(error) throw error;
     if(data && data.error) throw new Error(data.error);
     const where = data.egress && data.egress.country ? ' · server location ' + data.egress.country : '';
+    const kpInfo = data.provider === 'khqrpay' ? ' · key: ' + (data.mode || '?') + ' · webhook secret ' + (data.webhookSecretSet ? 'set' : 'NOT set') + (data.usage ? ' · used ' + data.usage.used + ' / ' + data.usage.limit + ' (' + (data.usage.plan || '') + ')' : '') : '';
     box.className = 'adm-bank ' + (data.ok ? 'ok' : 'bad');
-    box.innerHTML = `<b>${data.ok ? '● Automatic bank confirmation is working' : '● Automatic bank confirmation is NOT working'}</b><span>${esc(data.verdict || '')}${esc(where)}${data.bakongHttpStatus ? ' · Bakong HTTP ' + esc(String(data.bakongHttpStatus)) : ''}</span>${data.ok ? '' : '<span>Until that is fixed, payments stay unconfirmed: approve them below after you see the bill number in your bank app.</span>'}`;
+    box.innerHTML = `<b>${data.ok ? '● Automatic bank confirmation is working' : '● Automatic bank confirmation is NOT working'}</b><span>${esc(data.verdict || '')}${esc(where)}${esc(kpInfo)}${data.bakongHttpStatus ? ' · Bakong HTTP ' + esc(String(data.bakongHttpStatus)) : ''}</span>${data.ok ? '' : '<span>Until that is fixed, payments stay unconfirmed: approve them below after you see the bill number in your bank app.</span>'}`;
   }catch(e){ box.className = 'adm-bank bad'; box.textContent = 'Could not run the bank check: ' + String((e && e.message) || e); }
 }
 async function admLoadClaims(){
