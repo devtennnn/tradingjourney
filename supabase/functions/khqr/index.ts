@@ -1,111 +1,20 @@
-// Supabase Edge Function: "khqr"
-// Creates the payment for the Premium / Elite / Ultra plans and confirms it. Two ways, chosen by secrets:
-//   ANAJAK PAY (hosted checkout, confirmed from inside Cambodia by a signed webhook, so no Bakong geo-block): set ANAJAK_SECRET and ANAJAK_PROFILE_ID.
-//   OWN KHQR + Bakong check (fallback when the Anajak secrets are not set): BAKONG_TOKEN and/or BAKONG_EMAIL (token renewed via /v1/renew_token).
-// The merchant details below are public (they are printed inside every own-KHQR) and are used as defaults when no secret overrides them.
-// Optional secrets: PLAN_PRICE (default 2.5), PLAN_PRICE_ELITE (default 14.99), PLAN_PRICE_ULTRA (default 49.99), COURSE_PRICE (default 19.99), PLAN_DAYS (default 30), QR_TTL_MIN (default 15),
-//   BAKONG_ACCOUNT_ID, BAKONG_ACCOUNT_TYPE (individual | merchant), BAKONG_MERCHANT_ID, BAKONG_ACQUIRING_BANK, MERCHANT_NAME, MERCHANT_CITY,
-//   BAKONG_API_URL (default https://api-bakong.nbc.gov.kh; use https://sit-api-bakong.nbc.gov.kh to test, or the URL of a relay in Cambodia), BAKONG_RELAY_KEY
+// Supabase Edge Function: "khqr" — checkout for the Premium / Elite / Ultra plans and the Academy course, through KHQRPay
+// (https://khqrpay.dev): we create a payment, the buyer scans the KHQR with any Cambodian banking app, the money goes to our ABA account.
 //
-// WHY ANAJAK: Bakong's Open API answers calls from outside Cambodia with an empty HTTP 403 before it even looks at the token.
-// Supabase Edge Functions run in Singapore / Seoul / etc., so own-KHQR checks are refused ("geo_blocked"). Without Anajak or a relay in Cambodia,
-// payments are confirmed by an admin (claim_payment / admin_approve_payment in the database).
+// Actions (the browser calls them with the user's Supabase session):
+//   quote   exact price for a plan, with an optional promo code (rules in the database)
+//   create  one KHQRPay payment per checkout attempt; returns the KHQR string (payload) and expires_at for the QR modal
+//   check   the order's status FROM OUR DATABASE. The order turns paid only when the signed payment.completed webhook
+//           reaches khqrpay-webhook. The browser never decides that a payment is paid, and this function never polls KHQRPay
+//           (the daily read budget is for webhooks + support, not polling).
+//   recover the user's unpaid QRs of the last 3 days, so they can tell the admin "I paid this one" (claim_payment)
+//   diag    admins: which key mode is set and the plan usage (GET /v1/usage). Reveals no secret.
 //
-// ANAJAK secrets: ANAJAK_SECRET (the profile's Payment Secret), ANAJAK_PROFILE_ID. When both are set, "create" returns a signed checkout URL instead of
-//   our own KHQR, and the payment is confirmed by the gateway's signed webhook (function "khqr-webhook"). Optional: ANAJAK_API_URL.
-//   Safety net (optional): ANAJAK_TOKEN = an Account API token (kacc_...) with ONLY the scope transactions.read. If the webhook is missed, "check"
-//   asks Anajak's Account API whether this bill is SUCCESS and settles it. Optional: ANAJAK_ACCOUNT_API (default https://anajakpay.com/api/v1).
-//
-// Requests (POST, user JWT required):  { action: "create" }  |  { action: "check", id: "<payment id>" }  |  { action: "recover" }
-//   { action: "diag" }  (admins only)  |  { action: "quote", plan, promo }  (exact price with a promo code)
-//   create also accepts { plan, promo }: the discount is calculated HERE with the database rules (promo_quote_internal), never taken from the browser.
-
+// Secrets (Supabase → Edge Functions → Secrets, never in the browser):
+//   KHQRPAY_SECRET_KEY  kp_test_... while building, kp_live_... in production
+//   PLAN_PRICE (2.5), PLAN_PRICE_ELITE (14.99), PLAN_PRICE_ULTRA (49.99), COURSE_PRICE (19.99), PLAN_DAYS (30), MERCHANT_NAME (shown under the QR)
+// The ABA payment link connected in KHQRPay is in USD, so the payer pays exactly the USD price (no conversion).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-
-// ===== KHQR payload builder (inlined so this works pasted into the Supabase Dashboard editor) =====
-// KHQR (Bakong) dynamic payload builder — EMV merchant-presented QR with CRC16/CCITT-FALSE.
-// Pure functions, no dependencies, so it runs in Deno (Edge Function) and Node (tests).
-
-const tlv = (tag: string, val: string): string => tag + String(val.length).padStart(2, "0") + val;
-
-/** CRC16-CCITT (poly 0x1021, init 0xFFFF) as 4 uppercase hex chars. */
-function crc16(str: string): string {
-  let crc = 0xffff;
-  for (let i = 0; i < str.length; i++) {
-    crc ^= str.charCodeAt(i) << 8;
-    for (let j = 0; j < 8; j++) {
-      crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
-    }
-  }
-  return crc.toString(16).toUpperCase().padStart(4, "0");
-}
-
-interface KhqrInput {
-  accountId: string;              // Bakong account, e.g. "devten@aclb"
-  accountType?: "individual" | "merchant";
-  merchantId?: string;            // merchant accounts only
-  acquiringBank?: string;         // merchant accounts only
-  merchantName: string;           // max 25 chars
-  merchantCity: string;           // max 15 chars
-  amount: number;
-  currency: "USD" | "KHR";
-  billNumber: string;             // max 25 chars, unique per payment
-  storeLabel?: string;
-  terminalLabel?: string;
-  createdMs: number;
-  expiresMs: number;
-}
-
-/** Build a DYNAMIC KHQR string (point of initiation "12") with an expiry timestamp. */
-function buildKHQR(o: KhqrInput): string {
-  const isKhr = o.currency === "KHR";
-  const amount = isKhr ? String(Math.round(o.amount)) : Number(o.amount).toFixed(2);
-  let s = tlv("00", "01") + tlv("01", "12");
-
-  if (o.accountType === "merchant") {
-    s += tlv("30", tlv("00", o.accountId) + tlv("01", o.merchantId || "") + tlv("02", o.acquiringBank || ""));
-  } else {
-    s += tlv("29", tlv("00", o.accountId));
-  }
-
-  s += tlv("52", "5999");
-  s += tlv("53", isKhr ? "116" : "840");
-  s += tlv("54", amount);
-  s += tlv("58", "KH");
-  s += tlv("59", o.merchantName.slice(0, 25));
-  s += tlv("60", o.merchantCity.slice(0, 15));
-
-  let extra = tlv("01", o.billNumber.slice(0, 25));
-  if (o.storeLabel) extra += tlv("03", o.storeLabel.slice(0, 25));
-  if (o.terminalLabel) extra += tlv("07", o.terminalLabel.slice(0, 25));
-  s += tlv("62", extra);
-
-  s += tlv("99", tlv("00", String(o.createdMs)) + tlv("01", String(o.expiresMs)));
-
-  s += "6304";
-  return s + crc16(s);
-}
-
-/** Parse top-level TLV pairs (used by tests / debugging). */
-function parseTLV(s: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  let i = 0;
-  while (i + 4 <= s.length) {
-    const tag = s.slice(i, i + 2);
-    const len = parseInt(s.slice(i + 2, i + 4), 10);
-    if (Number.isNaN(len)) throw new Error("bad TLV length at " + i);
-    out[tag] = s.slice(i + 4, i + 4 + len);
-    i += 4 + len;
-  }
-  return out;
-}
-
-/** True when the trailing CRC matches the payload. */
-function verifyCRC(payload: string): boolean {
-  return payload.slice(-4) === crc16(payload.slice(0, -4));
-}
-
-// ===== Edge Function =====
 
 const env = (k: string, d = "") => Deno.env.get(k) ?? d;
 const CORS = {
@@ -116,170 +25,67 @@ const CORS = {
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
-// DEVTEN merchant defaults (ABA Bank KHQR merchant account)
-const DEFAULTS = {
-  BAKONG_ACCOUNT_TYPE: "merchant",
-  BAKONG_ACCOUNT_ID: "abaakhppxxx@abaa",
-  BAKONG_MERCHANT_ID: "125102422022315",
-  BAKONG_ACQUIRING_BANK: "ABA Bank",
-  MERCHANT_NAME: "DEVTEN by C.LIM",
-  MERCHANT_CITY: "PHNOM PENH",
-} as const;
-const cfg = (k: keyof typeof DEFAULTS) => env(k, DEFAULTS[k]);
-
 // Plans: Premium = chart uploads. Elite = chart uploads + Market News Analysis + Signal Provider. Ultra = Elite + Premium (top tier).
 const PLANS: Record<string, { price: number; col: string; label: string }> = {
   premium: { price: Number(env("PLAN_PRICE", "2.5")), col: "premium_until", label: "Premium" },
   elite:   { price: Number(env("PLAN_PRICE_ELITE", "14.99")), col: "elite_until", label: "Elite" },
-  ultra:   { price: Number(env("PLAN_PRICE_ULTRA", "49.99")), col: "ultra_until", label: "Ultra" },   // Ultra = Elite + Premium
+  ultra:   { price: Number(env("PLAN_PRICE_ULTRA", "49.99")), col: "ultra_until", label: "Ultra" },
   // AROM Academy course: one payment, lifetime access. The database trigger payments_course_paid sets course_until when the row turns paid.
   course:  { price: Number(env("COURSE_PRICE", "19.99")), col: "course_until", label: "Academy" },
 };
 const planOf = (v: unknown) => (v === "course" ? "course" : v === "ultra" ? "ultra" : v === "elite" ? "elite" : "premium");
-const DAYS = Number(env("PLAN_DAYS", "30"));
-const TTL_MS = Number(env("QR_TTL_MIN", "15")) * 60_000;
 const CURRENCY = "USD" as const;
-const BAKONG_DEFAULT = "https://api-bakong.nbc.gov.kh";
-const BAKONG_API = env("BAKONG_API_URL", BAKONG_DEFAULT);
+const MERCHANT = env("MERCHANT_NAME", "AROM TRADE");
+const RECOVER_DAYS = 3;
 
-// Token renewal (Bakong guide section 3). Bakong allows only ~100 renew_token calls a day, so renewing is rationed:
-//   - the token lives in memory AND in the table public.bakong_token (shared by every instance, survives cold starts), so one renewal serves everyone;
-//   - a renewal is only asked for when there is no usable token, the cached one is within 5 minutes of its exp, or Bakong rejected the current one
-//     (and nobody renewed it meanwhile);
-//   - at most one attempt every 10 minutes (success or failure) and DAILY_CAP attempts per UTC day.
-// Needs BAKONG_EMAIL. Without the table it still works from memory only, with the same limits per instance.
-const MIN_GAP_MS = 10 * 60_000, MANUAL_GAP_MS = 60_000, DAILY_CAP = 40;
-let renewed: { token: string; exp: number } | null = null;
-let lastAttemptMem = 0;
-type TokRow = { token: string | null; exp: string | null; renewed_at: string | null; day: string | null; renews_today: number | null; last_attempt: string | null; last_error: string | null };
-async function loadTok(db: any): Promise<TokRow | null> {
-  try { const { data } = await db.from("bakong_token").select("*").eq("id", 1).maybeSingle(); return (data as TokRow) ?? null; } catch { return null; }
-}
-async function saveTok(db: any, patch: Record<string, unknown>) {
+/* ---------- KHQRPay API ---------- */
+const KP_BASE = "https://khqrpay.dev";   // always this exact origin: www. answers 308 and many clients drop Authorization on redirects
+const kpKey = () => env("KHQRPAY_SECRET_KEY").trim();
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+type KpResult = { ok: true; status: number; data: any } | { ok: false; status: number; code: string; retryAfter: number };
+
+async function kpRequest(method: "GET" | "POST", path: string, body?: unknown, idempotencyKey?: string): Promise<KpResult> {
+  const headers: Record<string, string> = { Authorization: `Bearer ${kpKey()}`, Accept: "application/json" };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+  let res: Response;
   try {
-    const { data } = await db.from("bakong_token").select("id").eq("id", 1).maybeSingle();
-    if (data) await db.from("bakong_token").update(patch).eq("id", 1); else await db.from("bakong_token").insert({ id: 1, ...patch });
-  } catch (e) { console.error("bakong_token not saved (run supabase/sql/bakong-token.sql):", String(e)); }
-}
-const tokExp = (t: string, fallback: number) => {
-  try { return JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp * 1000 || fallback; } catch { return fallback; }
-};
-/** Get a usable token. `bad` = the token Bakong just rejected (renew even if the cached one looks valid). `manual` = an admin asked (shorter wait). Never throws. */
-async function renewToken(db: any, bad = "", manual = false): Promise<string> {
-  const email = env("BAKONG_EMAIL").trim();
-  if (!email) return "";
-  const now = Date.now();
-  const fresh = (t: string | null, exp: number) => !!t && t !== bad && now < exp - 300_000;
-  if (!manual && renewed && fresh(renewed.token, renewed.exp)) return renewed.token;
-  const row = await loadTok(db);
-  if (!manual && row?.token && row.exp && fresh(row.token, Date.parse(row.exp))) { renewed = { token: row.token, exp: Date.parse(row.exp) }; return row.token; }   // another instance already renewed
-  const gap = manual ? MANUAL_GAP_MS : MIN_GAP_MS, last = Math.max(lastAttemptMem, row?.last_attempt ? Date.parse(row.last_attempt) : 0);
-  const day = new Date(now).toISOString().slice(0, 10), used = row?.day === day ? Number(row?.renews_today ?? 0) : 0;
-  if (now - last < gap) { console.error("Bakong renew skipped: last attempt was", Math.round((now - last) / 1000), "s ago"); return ""; }
-  if (used >= DAILY_CAP) { console.error("Bakong renew skipped: daily cap", DAILY_CAP, "reached"); return ""; }
-  lastAttemptMem = now;
-  try {
-    const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
-    if (env("BAKONG_RELAY_KEY")) headers["x-relay-key"] = env("BAKONG_RELAY_KEY");
-    const res = await fetch(`${BAKONG_API}/v1/renew_token`, { method: "POST", headers, body: JSON.stringify({ email }) });
-    const j: any = await res.json().catch(() => null);
-    const t = j && j.responseCode === 0 ? String(j.data?.token ?? "") : "";
-    const stamp = { last_attempt: new Date(now).toISOString(), day, renews_today: used + 1 };
-    if (!t) {
-      const why = res.status === 403 && !j ? "geo_blocked (Bakong refuses this server's location)" : `http ${res.status} ${String(j?.responseMessage ?? "").slice(0, 100)}`;
-      console.error("Bakong renew_token failed:", why);
-      await saveTok(db, { ...stamp, last_error: why });
-      return "";
-    }
-    const exp = tokExp(t, now + 3600_000);
-    renewed = { token: t, exp };
-    await saveTok(db, { ...stamp, token: t, exp: new Date(exp).toISOString(), renewed_at: new Date(now).toISOString(), last_error: null });
-    return t;
+    res = await fetch(KP_BASE + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), redirect: "manual", signal: AbortSignal.timeout(15000) });
   } catch (e) {
-    console.error("Bakong renew_token request failed", String(e));
-    await saveTok(db, { last_attempt: new Date(now).toISOString(), day, renews_today: used + 1, last_error: String(e).slice(0, 150) });
-    return "";
+    console.error("KHQRPay request failed", method, path, String((e as Error)?.message ?? e));
+    return { ok: false, status: 0, code: "network_error", retryAfter: 0 };
   }
+  const retryAfter = Number(res.headers.get("retry-after") ?? 0) || 0;
+  let j: any = null;
+  try { j = await res.json(); } catch { j = null; }
+  if (res.ok) return { ok: true, status: res.status, data: j };
+  const code = j && typeof j.error === "string" ? j.error : `http_${res.status}`;   // branch on the code only, never on the message
+  console.error("KHQRPay error", method, path, res.status, code);
+  return { ok: false, status: res.status, code, retryAfter };
 }
 
-// Anajak Pay (KHQRPay) hosted checkout. The request hash is sha1(secret + transaction_id + amount + success_url + remark), exactly as in their PHP sample.
-const ANAJAK_SECRET = env("ANAJAK_SECRET").trim(), ANAJAK_PROFILE = env("ANAJAK_PROFILE_ID").trim();
-const ANAJAK_URL = env("ANAJAK_API_URL", "https://anajakpay.com/api/payment/request").replace(/\/$/, "");
-const ANAJAK_ON = !!(ANAJAK_SECRET && ANAJAK_PROFILE);
-const isHosted = (p: any) => typeof p?.payload === "string" && /^https:\/\//.test(p.payload);   // hosted-checkout rows keep the checkout URL in "payload"
-const ANAJAK_TOKEN = env("ANAJAK_TOKEN").trim();
-const ANAJAK_ACCOUNT_API = env("ANAJAK_ACCOUNT_API", "https://anajakpay.com/api/v1").replace(/\/$/, "");
-const lookups = new Map<string, { t: number; v: { tx: any; blocked: string } }>();   // short per-instance cache: the account API allows 120 calls/minute per token
-/** Ask Anajak's Account API (read only) whether OUR bill number is a successful transaction. Never throws. */
-async function anajakLookup(bill: string, fresh = false): Promise<{ tx: any; blocked: string }> {
-  if (!ANAJAK_TOKEN) return { tx: null, blocked: "" };
-  const hit = lookups.get(bill);
-  if (!fresh && hit && Date.now() - hit.t < 8000) return hit.v;
-  let v: { tx: any; blocked: string };
-  try {
-    const res = await fetch(`${ANAJAK_ACCOUNT_API}/transactions?search=${encodeURIComponent(bill)}&limit=5`, { headers: { Authorization: `Bearer ${ANAJAK_TOKEN}`, Accept: "application/json" } });
-    const j: any = await res.json().catch(() => null);
-    if (res.status === 401 || res.status === 403) v = { tx: null, blocked: "rejected" };           // bad / revoked / wrong-scope token
-    else if (res.status === 429) v = { tx: null, blocked: "" };                                   // rate limited: just look again next time
-    else if (!res.ok || !j || j.responseCode !== 0) v = { tx: null, blocked: "unreachable" };
-    else {
-      const it = (j.data?.items ?? []).find((x: any) => String(x.transaction_id) === bill && /^(success|completed)$/i.test(String(x.status)));
-      v = { tx: it ? { amount: Number(it.amount), currency: String(it.currency || "USD"), hash: null, toAccountId: null } : null, blocked: "" };
-    }
-  } catch (e) { console.error("Anajak lookup failed", String(e)); v = { tx: null, blocked: "unreachable" }; }
-  if (lookups.size > 500) lookups.clear();
-  lookups.set(bill, { t: Date.now(), v });
-  return v;
-}
-async function sha1hex(s: string): Promise<string> {
-  const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s));
-  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-async function anajakCheckoutUrl(bill: string, amount: number, remark: string): Promise<string> {
-  const amt = String(Number(amount));                                   // same text in the hash and in the URL (PHP prints 2.5, not 2.50)
-  const successUrl = `${env("SUPABASE_URL")}/functions/v1/khqr-webhook`;
-  const hash = await sha1hex(ANAJAK_SECRET + bill + amt + successUrl + remark);
-  const q = new URLSearchParams({ transaction_id: bill, amount: amt, success_url: successUrl, remark, hash });
-  return `${ANAJAK_URL}/${ANAJAK_PROFILE}?${q.toString()}`;
+/** POST /v1/payments for one checkout attempt. A 500 / 502 / 503 is retried once with the SAME Idempotency-Key. */
+async function kpCreate(bill: string, amount: number, plan: string): Promise<KpResult> {
+  const body = { amount: amount.toFixed(2), currency: CURRENCY, reference_id: bill, metadata: { plan } };
+  let r = await kpRequest("POST", "/v1/payments", body, bill);
+  if (!r.ok && [0, 500, 502, 503].includes(r.status) && r.retryAfter <= 3) {
+    await sleep(Math.max(500, r.retryAfter * 1000));
+    r = await kpRequest("POST", "/v1/payments", body, bill);
+  }
+  return r;
 }
 
-// Pure-JS MD5 (Supabase's WebCrypto does not support "MD5"). Returns lowercase hex of the UTF-8 bytes of s.
-function md5hex(s: string): string {
-  const msg = new TextEncoder().encode(s);
-  const K = new Uint32Array(64), R = [7,12,17,22,5,9,14,20,4,11,16,23,6,10,15,21];
-  for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) >>> 0;
-  const n = msg.length, padded = new Uint8Array(((n + 8) >> 6 << 6) + 64);
-  padded.set(msg); padded[n] = 0x80;
-  const dv = new DataView(padded.buffer);
-  dv.setUint32(padded.length - 8, (n << 3) >>> 0, true);
-  dv.setUint32(padded.length - 4, Math.floor(n / 536870912), true);
-  let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
-  for (let off = 0; off < padded.length; off += 64) {
-    const M = new Uint32Array(16);
-    for (let i = 0; i < 16; i++) M[i] = dv.getUint32(off + i * 4, true);
-    let A = a0, B = b0, C = c0, D = d0;
-    for (let i = 0; i < 64; i++) {
-      let F: number, g: number;
-      if (i < 16) { F = (B & C) | (~B & D); g = i; }
-      else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
-      else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
-      else { F = C ^ (B | ~D); g = (7 * i) % 16; }
-      F = (F + A + K[i] + M[g]) >>> 0;
-      A = D; D = C; C = B;
-      const r = R[(i >> 4) * 4 + (i % 4)];
-      B = (B + ((F << r) | (F >>> (32 - r)))) >>> 0;
-    }
-    a0 = (a0 + A) >>> 0; b0 = (b0 + B) >>> 0; c0 = (c0 + C) >>> 0; d0 = (d0 + D) >>> 0;
-  }
-  const out = new Uint8Array(16), ov = new DataView(out.buffer);
-  ov.setUint32(0, a0, true); ov.setUint32(4, b0, true); ov.setUint32(8, c0, true); ov.setUint32(12, d0, true);
-  return [...out].map((b) => b.toString(16).padStart(2, "0")).join("");
+/** What the browser is told about a failed create (codes it already knows, or a generic one). */
+function createError(r: Extract<KpResult, { ok: false }>) {
+  if (r.status === 429) return { error: "busy", retry_after: r.retryAfter || 60 };   // never sleep inside the request: the buyer retries
+  if (r.code === "quota_exceeded" || r.code === "payment_link_disabled" || r.code === "payment_link_not_found" || r.code === "account_blocked" || r.code === "api_key_blocked" || r.code === "unauthorized")
+    return { error: "unavailable" };
+  return { error: "create_failed" };
 }
+
 const billNumber = () =>
   "DT" + Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
-
-/** Why a Bakong call produced no answer. "" = Bakong answered (found or not found). */
-type Blocked = "" | "no_token" | "geo_blocked" | "rejected" | "unreachable";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -292,10 +98,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
 
     const publicRow = (p: any) => ({
-      id: p.id, plan: p.plan ?? "premium", payload: p.payload, bill: p.bill_number, checkout_url: isHosted(p) ? p.payload : null, amount: Number(p.amount), currency: p.currency,
-      merchant: cfg("MERCHANT_NAME"), expires_at: p.expires_at,
+      id: p.id, plan: p.plan ?? "premium", payload: p.payload, bill: p.bill_number, checkout_url: null, amount: Number(p.amount), currency: p.currency,
+      merchant: MERCHANT, expires_at: p.expires_at,
       list_price: p.list_price != null ? Number(p.list_price) : Number(p.amount), discount: Number(p.discount ?? 0), promo_code: p.promo_code ?? null,
     });
+    const untilFor = async (col: string) =>
+      ((await admin.from("profiles").select(col).eq("id", user.id).maybeSingle()).data as any)?.[col] ?? null;
 
     /** Promo check with the database rules. Fails CLOSED: if the check cannot run, no discount is given. */
     const promoQuote = async (plan: string, code: string) => {
@@ -312,7 +120,7 @@ Deno.serve(async (req) => {
       return data as any;
     };
 
-    /* ---------- quote: exact price for a plan, with an optional promo code ---------- */
+    /* ---------- quote ---------- */
     if (body.action === "quote") {
       const plan = planOf(body.plan), P = PLANS[plan], code = String(body.promo ?? "").trim();
       if (!code) return json({ ok: true, plan, list_price: P.price, discount: 0, final: P.price, promo: null });
@@ -323,19 +131,20 @@ Deno.serve(async (req) => {
 
     /* ---------- create ---------- */
     if (body.action === "create") {
+      if (!kpKey()) { console.error("KHQRPAY_SECRET_KEY is not set"); return json({ error: "unavailable" }); }
       const plan = planOf(body.plan), P = PLANS[plan], promo = String(body.promo ?? "").trim();
       if (plan === "course") {   // lifetime access: never sell it twice
         const { data: pr } = await admin.from("profiles").select("course_until").eq("id", user.id).maybeSingle();
         if ((pr as any)?.course_until && new Date((pr as any).course_until) > new Date()) return json({ error: "already_owned", plan });
       }
-      // Reopen the user's open QR first when it used the same promo (or none). The promo limits count every open
-      // promo QR the user holds, so this is the only way to see the same discounted QR again.
+      // Reopen the user's open QR for the same plan and promo: closing the window must not start a second payment.
       const want = promo ? promo.toUpperCase() : null;
-      let oq = admin.from("payments").select("*")
-        .eq("user_id", user.id).eq("status", "pending").eq("plan", plan).gt("expires_at", new Date().toISOString());
+      let oq = admin.from("payments").select("*").eq("user_id", user.id).eq("provider", "khqrpay").eq("status", "pending").eq("plan", plan)
+        .not("kp_payment_id", "is", null).gt("expires_at", new Date(Date.now() + 20_000).toISOString());
       oq = want ? oq.eq("promo_code", want) : oq.is("promo_code", null);
       const { data: open } = await oq.order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (open && isHosted(open) === ANAJAK_ON) return json(publicRow(open));
+      if (open) return json(publicRow(open));
+
       let quote: any = null;
       if (promo) {
         quote = await promoQuote(plan, promo);
@@ -343,186 +152,91 @@ Deno.serve(async (req) => {
       }
       const price = quote ? Number(quote.final) : P.price;
 
-      const created = Date.now(), expires = created + TTL_MS, bill = billNumber();
-      const payload = ANAJAK_ON ? await anajakCheckoutUrl(bill, price, `AROM TRADE ${P.label}`) : buildKHQR({
-        accountId: cfg("BAKONG_ACCOUNT_ID"),
-        accountType: cfg("BAKONG_ACCOUNT_TYPE") as "individual" | "merchant",
-        merchantId: cfg("BAKONG_MERCHANT_ID"),
-        acquiringBank: cfg("BAKONG_ACQUIRING_BANK"),
-        merchantName: cfg("MERCHANT_NAME"),
-        merchantCity: cfg("MERCHANT_CITY"),
-        amount: price, currency: CURRENCY, billNumber: bill, storeLabel: P.label,
-        createdMs: created, expiresMs: expires,
-      });
-      const md5 = await md5hex(payload);
+      // 1. Our order row first (reference_id = bill number = this checkout attempt's Idempotency-Key). With a promo the
+      //    database re-checks the limits under a lock, so two buyers cannot both take the last use.
+      const bill = billNumber(), holdUntil = new Date(Date.now() + 5 * 60_000).toISOString();
+      let row: any = null;
       if (quote) {
-        // the database re-checks the limits under a lock and refuses if the price changed, so two buyers cannot both take the last use
         const { data, error } = await admin.rpc("create_payment_row", {
-          p_user: user.id, p_bill: bill, p_md5: md5, p_payload: payload, p_plan: plan, p_list_price: P.price, p_amount: price,
-          p_currency: CURRENCY, p_expires: new Date(expires).toISOString(), p_code: quote.code,
+          p_user: user.id, p_bill: bill, p_md5: "kp:" + bill, p_payload: "", p_plan: plan, p_list_price: P.price, p_amount: price,
+          p_currency: CURRENCY, p_expires: holdUntil, p_code: quote.code,
         });
         if (error) { const m = String(error.message || ""); return json({ error: /^promo_[a-z_]+$/.test(m) ? m : "promo_unavailable" }); }
-        return json(publicRow(data));
+        row = data;
+        await admin.from("payments").update({ provider: "khqrpay" }).eq("id", row.id);
+      } else {
+        const { data, error } = await admin.from("payments").insert({
+          user_id: user.id, bill_number: bill, md5: "kp:" + bill, payload: "", list_price: P.price, discount: 0,
+          plan, amount: price, currency: CURRENCY, status: "pending", expires_at: holdUntil, provider: "khqrpay",
+        }).select().single();
+        if (error) { console.error("payment row insert failed", error.message); return json({ error: "create_failed" }); }
+        row = data;
       }
-      const row = {
-        user_id: user.id, bill_number: bill, md5, payload, list_price: P.price, discount: 0,
-        plan, amount: price, currency: CURRENCY, status: "pending", expires_at: new Date(expires).toISOString(),
-      };
-      const { data, error } = await admin.from("payments").insert(row).select().single();
-      if (error) return json({ error: error.message }, 500);
-      return json(publicRow(data));
+
+      // 2. The KHQRPay payment for it
+      const r = await kpCreate(bill, price, plan);
+      if (!r.ok) {
+        await admin.from("payments").update({ status: "expired" }).eq("id", row.id).eq("status", "pending");   // frees a promo reservation
+        return json(createError(r));
+      }
+      const kp = r.data;
+      if (kp.currency !== CURRENCY || Number(kp.amount) !== Number(price.toFixed(2))) {
+        // the ABA link is expected to be USD: if it was reconnected in another currency the QR asks for a different amount
+        console.error("KHQRPay amount differs from the order", { bill, asked: price, payer: kp.amount, currency: kp.currency, rate: kp.conversion_rate });
+      }
+      const { data: saved, error: se } = await admin.from("payments").update({
+        kp_payment_id: kp.id, kp_livemode: !!kp.livemode, payload: kp.qr_string, expires_at: kp.expires_at,
+      }).eq("id", row.id).select().single();
+      if (se) { console.error("payment row update failed", se.message); return json({ error: "create_failed" }); }
+      return json({ ...publicRow(saved), amount: Number(kp.amount), currency: kp.currency });
     }
 
-    /* ---------- shared helpers: Bakong lookup + atomic settle ---------- */
-    const untilFor = async (col: string) =>
-      ((await admin.from("profiles").select(col).eq("id", user.id).maybeSingle()).data as any)?.[col] ?? null;
-    const bakongToken = () => (renewed && Date.now() < renewed.exp - 300_000 ? renewed.token : env("BAKONG_TOKEN").trim()).replace(/^["']|["']$/g, "").replace(/^Bearer\s+/i, "");
-
-    /** Ask Bakong about one MD5. Never throws. */
-    const bakongLookup = async (md5: string, retried = false): Promise<any> => {
-      const token = bakongToken() || (await renewToken(admin));
-      if (!token) return { tx: null, blocked: "no_token" as Blocked, http: 0, raw: null as unknown };
-      try {
-        const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${token}` };
-        if (env("BAKONG_RELAY_KEY")) headers["x-relay-key"] = env("BAKONG_RELAY_KEY");
-        const res = await fetch(`${BAKONG_API}/v1/check_transaction_by_md5`, { method: "POST", headers, body: JSON.stringify({ md5 }) });
-        const text = await res.text();
-        let j: any = null;
-        try { j = JSON.parse(text); } catch { j = null; }
-        // Outside Cambodia Bakong refuses with an empty / non-JSON 403 BEFORE it looks at the token. A bad token gets a JSON answer.
-        let blocked: Blocked = "";
-        if (!j && (res.status === 403 || res.status === 451)) blocked = "geo_blocked";
-        else if (res.status >= 500 || (!j && !res.ok)) blocked = "unreachable";          // server error, or a non-JSON error page
-        else if (res.status === 401 || res.status === 403 || (j && j.responseCode === 401)) blocked = "rejected";
-        else if (j && j.responseCode === undefined && !res.ok) blocked = "unreachable";   // the relay's own JSON error (wrong path / bad request), not an answer from Bakong
-        if (blocked === "rejected" && !retried && env("BAKONG_EMAIL").trim() && (await renewToken(admin, token))) return bakongLookup(md5, true);   // expired token: renew (rationed) and ask again
-        if (blocked) console.error("Bakong not usable:", blocked, "http", res.status, "body", text.slice(0, 200));
-        return { tx: j && j.responseCode === 0 ? j.data : null, blocked, http: res.status, raw: j ?? text.slice(0, 200) };
-      } catch (e) {
-        console.error("Bakong request failed", String(e));
-        return { tx: null, blocked: "unreachable" as Blocked, http: 0, raw: String(e) as unknown };
-      }
-    };
-
-    /** Check one payment row against Bakong; if truly paid, mark it paid and extend the plan exactly once. */
-    const settle = async (p: any) => {
-      const plan = planOf(p.plan), col = PLANS[plan].col;
-      if (p.status === "paid") { const u = await untilFor(col); return { status: "paid", plan, until: u, premium_until: u }; }
-      if (p.status === "rejected") return { status: "rejected" };   // an admin refused this payment: never settle it
-      const waiting = (bk: string) => ({ status: p.status === "claimed" ? "claimed" : "pending", bakong: bk });
-      // hosted-checkout rows are confirmed by the gateway's webhook (khqr-webhook), with the Account API as a safety net; never by asking Bakong from here
-      const { tx, blocked } = (isHosted(p) ? await anajakLookup(p.bill_number) : await bakongLookup(p.md5)) as { tx: any; blocked: Blocked };
-      if (!tx) {
-        if (p.status === "claimed") return waiting(blocked || "ok");          // user said "I paid": an admin decides
-        if (new Date(p.expires_at) < new Date()) {
-          await admin.from("payments").update({ status: "expired" }).eq("id", p.id).eq("status", "pending");
-          return { status: "expired", bakong: blocked || "ok" };
-        }
-        return waiting(blocked || "ok");
-      }
-      // Never trust a bare "found": confirm amount and currency match what we asked for.
-      const paidOk = Number(tx.amount) >= Number(p.amount) - 0.001 &&
-        String(tx.currency ?? p.currency).toUpperCase() === p.currency;
-      if (!paidOk) return waiting("amount_mismatch");
-      if (tx.toAccountId && String(tx.toAccountId) !== cfg("BAKONG_ACCOUNT_ID")) {
-        console.error("Paid to unexpected account", tx.toAccountId);
-        return waiting("wrong_account");
-      }
-      // Claim atomically so two concurrent checks cannot extend the plan twice.
-      const { data: claimed } = await admin.from("payments")
-        .update({ status: "paid", paid_at: new Date().toISOString(), bakong_hash: tx.hash ?? null })
-        .eq("id", p.id).in("status", ["pending", "expired", "claimed"]).select().maybeSingle();
-      if (claimed && plan !== "course") {   // the course is granted for life by the database trigger, not extended by days
-        // one SQL statement, so two payments settled at the same moment both count
-        const { error } = await admin.rpc("extend_plan", { p_user: user.id, p_plan: plan, p_days: DAYS });
-        if (error) console.error("extend_plan failed", error.message);
-      }
-      const u = await untilFor(col);
-      return { status: "paid", plan, until: u, premium_until: u };
-    };
-
-    /* ---------- check ---------- */
+    /* ---------- check: our database only ---------- */
     if (body.action === "check") {
       const { data: p } = await admin.from("payments").select("*").eq("id", body.id).eq("user_id", user.id).maybeSingle();
       if (!p) return json({ error: "payment not found" }, 404);
-      return json(await settle(p));
+      const plan = planOf(p.plan);
+      if (p.status === "paid") { const u = await untilFor(PLANS[plan].col); return json({ status: "paid", plan, until: u, premium_until: u }); }
+      // past its deadline with no webhook yet: show it as expired (a late payment still turns it paid through the webhook)
+      const status = p.status === "pending" && new Date(p.expires_at).getTime() < Date.now() ? "expired" : p.status;
+      // monitoring gap: KHQRPay could not watch the bank for a while, so an approval may never be reported. Not "unpaid": the buyer can claim it.
+      return json({ status, plan, gap: !!p.monitoring_gap });
     }
 
-    /* ---------- recover: re-check this user's unpaid QR codes from the last 3 days (e.g. paid while Bakong was unreachable) ---------- */
+    /* ---------- recover ---------- */
     if (body.action === "recover") {
-      const since = new Date(Date.now() - 3 * 86_400_000).toISOString();
+      const since = new Date(Date.now() - RECOVER_DAYS * 86_400_000).toISOString();
       const { data: rows } = await admin.from("payments").select("*")
-        .eq("user_id", user.id).in("status", ["pending", "expired", "claimed"]).gt("created_at", since)
+        .eq("user_id", user.id).in("status", ["pending", "expired", "claimed", "paid"]).gt("created_at", since)
         .order("created_at", { ascending: false }).limit(10);
-      let last: any = { status: "none" }, anyClaimed = false;
-      for (const p of rows ?? []) {
-        const r = await settle(p);
-        if (r.status === "paid") return json(r);
-        if (r.status === "claimed") anyClaimed = true;
-        last = r;
-      }
-      // unpaid QR codes the user can point to with "I paid this one" (bank could not confirm them, admin will)
-      const unpaid = (rows ?? []).filter((p: any) => p.status !== "claimed")
+      const recentPaid = (rows ?? []).find((p: any) => p.status === "paid" && Date.now() - new Date(p.paid_at || p.created_at).getTime() < 86_400_000);
+      if (recentPaid) { const plan = planOf(recentPaid.plan), u = await untilFor(PLANS[plan].col); return json({ status: "paid", plan, until: u, premium_until: u }); }
+      const open = (rows ?? []).filter((p: any) => p.status !== "paid" && p.payload);
+      const unpaid = open.filter((p: any) => p.status !== "claimed")
         .map((p: any) => ({ id: p.id, bill: p.bill_number, plan: p.plan ?? "premium", amount: Number(p.amount), currency: p.currency, created_at: p.created_at }));
-      return json({ status: anyClaimed ? "claimed" : "none", bakong: last.bakong, unpaid });
+      return json({ status: open.some((p: any) => p.status === "claimed") ? "claimed" : "none", unpaid });
     }
 
-    /* ---------- token / renew_token: admins only. "token" = status of the stored Bakong token, "renew_token" = renew it now (rationed) ---------- */
-    if (body.action === "token" || body.action === "renew_token") {
-      const { data: prof } = await admin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
-      if (!(prof as any)?.is_admin) return json({ error: "forbidden" }, 403);
-      if (body.action === "renew_token") await renewToken(admin, "", true);
-      const row = await loadTok(admin), left = row?.exp ? Date.parse(row.exp) - Date.now() : null;
-      return json({
-        emailSet: !!env("BAKONG_EMAIL").trim(), tokenSecretSet: !!env("BAKONG_TOKEN").trim(), hasStoredToken: !!row?.token,
-        expiresAt: row?.exp ?? null, hoursLeft: left == null ? null : Math.round(left / 360000) / 10, renewedAt: row?.renewed_at ?? null,
-        renewalsToday: row?.day === new Date().toISOString().slice(0, 10) ? Number(row?.renews_today ?? 0) : 0, dailyCap: DAILY_CAP, lastAttempt: row?.last_attempt ?? null, lastError: row?.last_error ?? null,
-      });
-    }
-
-    /* ---------- diag: self-test for admins (reveals no secrets) ---------- */
+    /* ---------- diag: admins only ---------- */
     if (body.action === "diag") {
       const { data: prof } = await admin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
       if (!(prof as any)?.is_admin) return json({ error: "forbidden" }, 403);
-      if (ANAJAK_ON) {
-        const net = ANAJAK_TOKEN ? (await anajakLookup("DIAGPROBE", true)).blocked : null;
-        const netMsg = !ANAJAK_TOKEN ? " Safety net off (optional): add ANAJAK_TOKEN with the transactions.read scope to confirm a payment even if a webhook is missed."
-          : net === "rejected" ? " WARNING: Anajak rejected ANAJAK_TOKEN (revoked, expired, or missing the transactions.read scope)."
-          : net === "unreachable" ? " WARNING: the Anajak Account API could not be reached." : " Safety net on: the Account API answered.";
-        return json({ ok: net !== "rejected", provider: "anajakpay", verdict: "OK: payments use Anajak Pay. They are confirmed by the gateway's signed webhook, so Bakong's location block does not matter. Make one 0.01 test payment to prove it." + netMsg,
-          accountApi: ANAJAK_TOKEN ? (net || "ok") : "not set", blocked: null, webhook: `${env("SUPABASE_URL")}/functions/v1/khqr-webhook`, profileSet: true, secretSet: true, secretLength: ANAJAK_SECRET.length, account: cfg("BAKONG_ACCOUNT_ID") });
-      }
-      const probe = await bakongLookup("0".repeat(32));
-      let egress: Record<string, string> | null = null;      // where this function reaches the internet from (country decides whether Bakong answers)
-      try {
-        const t = await (await fetch("https://www.cloudflare.com/cdn-cgi/trace")).text();
-        const m = Object.fromEntries(t.trim().split("\n").map((l) => l.split("=")));
-        egress = { ip: m.ip, country: m.loc, colo: m.colo };
-      } catch (_) { /* optional */ }
-      const viaRelay = BAKONG_API !== BAKONG_DEFAULT;
-      const relayKeyBad = viaRelay && probe.blocked === "rejected" && !!probe.raw && typeof probe.raw === "object" && (probe.raw as any).error === "bad relay key";
-      const verdict = relayKeyBad
-        ? "The relay refused BAKONG_RELAY_KEY: it must be exactly the RELAY_KEY stored on the relay server (/etc/bakong-relay.env)."
-        : viaRelay && probe.blocked === "geo_blocked"
-        ? "The relay answered, but Bakong still refuses the relay's server. Check that the VPS really has a Cambodian IP address (the installer prints its country)."
-        : viaRelay && probe.blocked === "unreachable"
-        ? "The relay could not be used: check BAKONG_API_URL, that the relay is running (systemctl status bakong-relay) and that ports 80 and 443 are open."
-        : probe.blocked === "geo_blocked"
-        ? "Bakong refuses this server's location (empty 403). Put a relay in Cambodia (BAKONG_API_URL + BAKONG_RELAY_KEY) or confirm payments by hand in the Admin panel."
-        : probe.blocked === "rejected" ? "Bakong answered but rejected the token: renew BAKONG_TOKEN."
-        : probe.blocked === "no_token" ? "BAKONG_TOKEN is not set."
-        : probe.blocked === "unreachable" ? "Bakong could not be reached (network error / 5xx)."
-        : "OK: Bakong answered, automatic confirmation works.";
+      const key = kpKey(), mode = key.startsWith("kp_live_") ? "live" : key.startsWith("kp_test_") ? "test" : key ? "unknown" : "not set";
+      const usage = key ? await kpRequest("GET", "/v1/usage") : null;
+      const ok = !!usage && usage.ok;
+      const verdict = !key ? "KHQRPAY_SECRET_KEY is not set: checkout is off."
+        : !ok ? `KHQRPay refused the key or could not be reached (${(usage as any).code}).`
+        : mode === "test" ? "OK, TEST mode: payments are simulated and never reach the bank, and the webhook does not unlock plans for them."
+        : "OK: live payments through KHQRPay.";
       return json({
-        ok: probe.blocked === "", verdict, blocked: probe.blocked || null,
-        tokenSet: !!bakongToken(), tokenLength: bakongToken().length, tokenLooksLikeJwt: bakongToken().split(".").length === 3,
-        api: BAKONG_API, viaRelay, relayKeySet: !!env("BAKONG_RELAY_KEY"),
-        egress, bakongHttpStatus: probe.http, bakongReply: probe.raw, account: cfg("BAKONG_ACCOUNT_ID"),
+        ok, provider: "khqrpay", verdict, mode, webhookSecretSet: !!env("KHQRPAY_WEBHOOK_SECRET").trim(),
+        webhook: `${url}/functions/v1/khqrpay-webhook`, usage: ok ? (usage as any).data : null,
       });
     }
 
     return json({ error: "unknown action" }, 400);
   } catch (e) {
-    return json({ error: String((e as Error).message ?? e) }, 500);
+    console.error("khqr error", String((e as Error)?.message ?? e));
+    return json({ error: "server error" }, 500);
   }
 });
