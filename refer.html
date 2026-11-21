@@ -8230,6 +8230,8 @@ const AiEng = (() => {
     // ICT Silver Bullet, SHADOW research (M5 entry): inside the New York 10:00-11:00 or 14:00-15:00 hour (DST handled), price first takes the
     // liquidity of the previous sbLook candles (sell-side for buys, buy-side for sells), then displaces the other way and leaves a fair value gap;
     // the entry is the first return into that gap, stop beyond the sweep extreme. The H1 trend is recorded (feat.withBias), not required (sbBias:true requires it).
+    // Backtest 24 Jun - 21 Nov 2026 (150 days, Twelve Data M5, spread included): gold n=49 -0.33R/trade (95% -0.55 to -0.10), with 1R/2R/3R targets and 6 h
+    // -0.24R; BTC n=60 -0.00R (95% -0.28 to +0.27). NO EDGE on these rules: kept as a logged shadow mode only, never posted.
     intraday_sb:   {key:'intraday_sb',   base:300,  htf:3600,  valid:900,   rr:[1.5, 3, 4.5], session:false, maxBars:36,  eName:'M5',  hName:'H1', setup:'sb', sbWin:[[600, 660], [840, 900]], sbLook:24, sbPre:6, only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
