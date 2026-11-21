@@ -8237,9 +8237,12 @@ const AiEng = (() => {
     // ICT liquidity sweep + market structure shift + OTE, SHADOW research (M15): in a killzone (New York 02:00-05:00 London, 07:00-10:00 New York),
     // price takes the low (high) of the last 32 candles, then within 12 candles closes beyond the last swing high (low) = MSS; the entry is the first
     // pullback into the 62-79% retracement (OTE) of the leg from the sweep extreme, stop beyond that extreme.
+    // Backtest 17 Oct 2025 - 21 Nov 2026 (400 days, Twelve Data M15, spread included): gold n=51 -0.30R (95% -0.60 to +0.01); BTC n=81 +0.07R (95% -0.21 to +0.35,
+    // halves +0.29 / -0.15). No proven edge: shadow only.
     intraday_mss:  {key:'intraday_mss',  base:900,  htf:3600,  valid:3600,  rr:[1.5, 3, 4.5], session:false, maxBars:32,  eName:'M15', hName:'H1', setup:'mss', kz:[[120, 300], [420, 600]], liqLook:32, mssWin:12, oteWait:8, only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
     // ICT Judas swing (Power of 3), SHADOW research (M15): the Asia range is New York 19:00-00:00; in the London killzone (02:00-05:00 New York) price trades
     // beyond one side of it (the false move) and a candle closes back inside the range: trade the other way, stop beyond the false-move extreme.
+    // Backtest, same 400 days: gold n=102 -0.32R (95% -0.53 to -0.11); BTC n=121 -0.06R (95% -0.29 to +0.17). No edge: shadow only.
     intraday_judas: {key:'intraday_judas', base:900, htf:3600, valid:3600, rr:[1.5, 3, 4.5], session:false, maxBars:32,  eName:'M15', hName:'H1', setup:'judas', only:/^(XAUUSD|BTCUSD)$/, shadow:true, pub:true, one:true},
     swing_pat:     {key:'swing_pat',     base:3600, htf:14400, valid:14400, rr:[2, 4, 6],     session:false, maxBars:120, eName:'H1',  hName:'H4', daily:true, setup:'pat', entry:'break', patWin:160, patAge:24, shadow:true, pub:true, one:true},
   };
