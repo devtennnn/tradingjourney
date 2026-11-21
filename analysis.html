@@ -12032,11 +12032,35 @@ loadNews();
 <!-- AROM Help: answers "how do I use…" questions from a built-in guide (EN + Khmer), with a button that opens the feature.
      Runs fully in the browser: no AI call, no key, no account needed. Unknown questions get suggestions and the support contacts. -->
 <style>
-.hb-fab{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:60;width:54px;height:54px;border-radius:18px;border:1px solid rgba(43,240,138,.35);
-  background:linear-gradient(145deg,#2bf08a,#17b866);color:#000412;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  box-shadow:0 12px 30px rgba(0,0,0,.45),0 0 0 6px rgba(43,240,138,.08);transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
-.hb-fab:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(0,0,0,.5),0 0 0 8px rgba(43,240,138,.10)}
-.hb-fab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hb-fab{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:60;width:60px;height:60px;padding:0;border:0;border-radius:50%;
+  background:none;cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.2,1),filter .25s}
+.hb-fab:hover,.hb-fab:focus-visible{transform:translateY(-2px) scale(1.06);filter:brightness(1.15);outline:none}
+.hb-fab:focus-visible .hb-orb{box-shadow:inset 3px 4px 8px rgba(110,150,255,.4),inset -4px -5px 10px rgba(160,110,255,.4),0 0 0 3px rgba(127,211,255,.6)}
+/* AROM Help orb: dark glass sphere, glowing dot-matrix screen, two eyes that blink and now and then wink */
+.hb-orb{--s:60px;position:relative;display:grid;place-items:center;width:var(--s);height:var(--s);border-radius:50%;flex:none;
+  background:radial-gradient(circle at 50% 46%,#01030a 52%,#071029 78%,#16265a 96%,#2a3c7a 100%);
+  box-shadow:inset calc(var(--s)*.05) calc(var(--s)*.06) calc(var(--s)*.12) rgba(110,150,255,.35),inset calc(var(--s)*-.06) calc(var(--s)*-.08) calc(var(--s)*.16) rgba(160,110,255,.38),
+    0 calc(var(--s)*.14) calc(var(--s)*.4) rgba(0,0,0,.6),0 0 calc(var(--s)*.3) rgba(80,140,255,.22)}
+.hb-orb::after{content:"";position:absolute;inset:4%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 30% 16%,rgba(255,255,255,.28),transparent 24%),radial-gradient(circle at 74% 86%,rgba(190,140,255,.14),transparent 30%)}
+.hb-scr{position:relative;width:58%;height:34%;border-radius:calc(var(--s)*.09);animation:hbFloat 5s ease-in-out infinite}
+.hb-scr::before,.hb-scr::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,#38e0ff,#4a90ff 50%,#a479ff);background-size:220% 220%;animation:hbHue 7s ease-in-out infinite alternate}
+.hb-scr::after{filter:blur(calc(var(--s)*.12));opacity:.6;z-index:-1}
+.hb-scr::before{--d:max(1.5px,calc(var(--s)*.026));inset:-6%;
+  -webkit-mask:radial-gradient(circle,#000 45%,transparent 60%) 0 0/var(--d) var(--d),radial-gradient(ellipse 60% 62% at 50% 50%,#000 55%,transparent 100%);-webkit-mask-composite:source-in;
+  mask:radial-gradient(circle,#000 45%,transparent 60%) 0 0/var(--d) var(--d),radial-gradient(ellipse 60% 62% at 50% 50%,#000 55%,transparent 100%);mask-composite:intersect}
+.hb-eye,.hb-wink{position:absolute;top:50%;z-index:1}
+.hb-eye{width:max(1.5px,calc(var(--s)*.045));height:46%;margin-top:-23%;border-radius:2px;background:#fff;
+  box-shadow:0 0 calc(var(--s)*.06) #fff,0 0 calc(var(--s)*.14) rgba(160,230,255,.9);animation:hbBlink 6s infinite}
+.hb-eye.l{left:31%}.hb-eye.r{left:64%;animation:hbBlink 6s infinite,hbEyeR 6s infinite}
+.hb-wink{left:60%;width:calc(var(--s)*.11);height:calc(var(--s)*.11);margin-top:calc(var(--s)*-.055);border-left:max(1.5px,calc(var(--s)*.045)) solid #fff;border-bottom:max(1.5px,calc(var(--s)*.045)) solid #fff;
+  border-radius:1px;transform:rotate(45deg);filter:drop-shadow(0 0 calc(var(--s)*.05) #fff);opacity:0;animation:hbWink 6s infinite}
+@keyframes hbBlink{0%,40%,44%,100%{transform:scaleY(1)}42%{transform:scaleY(.12)}}
+@keyframes hbEyeR{0%,68%,86%,100%{opacity:1}70%,84%{opacity:0}}
+@keyframes hbWink{0%,68%,86%,100%{opacity:0}70%,84%{opacity:1}}
+@keyframes hbHue{from{background-position:0% 40%}to{background-position:100% 60%}}
+@keyframes hbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(calc(var(--s)*-.02))}}
+@media(prefers-reduced-motion:reduce){.hb-scr,.hb-scr::before,.hb-scr::after,.hb-eye,.hb-wink{animation:none!important}.hb-wink{opacity:0}}
 .hb-fab.hb-hide{transform:scale(.6);opacity:0;pointer-events:none}
 html.nav-locked .hb-fab{display:none}
 .hb{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:61;width:min(380px,calc(100vw - 24px));height:min(580px,calc(100vh - 110px));
@@ -12045,6 +12069,7 @@ html.nav-locked .hb-fab{display:none}
 .hb[hidden]{display:none}
 @keyframes hbIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
 .hb-head{display:flex;align-items:center;gap:10px;padding:14px 14px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.hb-ava-orb{--s:36px}
 .hb-ava{width:34px;height:34px;border-radius:11px;background:rgba(43,240,138,.12);border:1px solid rgba(43,240,138,.3);display:flex;align-items:center;justify-content:center;color:#2bf08a}
 .hb-ava svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .hb-title{font-weight:700;font-size:14px;color:#eef3f8;line-height:1.2}
@@ -12075,11 +12100,11 @@ html.nav-locked .hb-fab{display:none}
 @media(prefers-reduced-motion:reduce){.hb,.hb-m,.hb-dots i{animation:none!important}}
 </style>
 <button type="button" class="hb-fab" id="hbFab" aria-label="Help" aria-haspopup="dialog" aria-expanded="false">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.7c0 1.6-2.4 2-2.4 3.3"/><line x1="12" y1="16" x2="12" y2="16"/></svg>
+  <span class="hb-orb" aria-hidden="true"><span class="hb-scr"><i class="hb-eye l"></i><i class="hb-eye r"></i><i class="hb-wink"></i></span></span>
 </button>
 <section class="hb" id="hbBox" role="dialog" aria-modal="false" aria-labelledby="hbTitle" hidden>
   <div class="hb-head">
-    <div class="hb-ava"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <span class="hb-orb hb-ava-orb" aria-hidden="true"><span class="hb-scr"><i class="hb-eye l"></i><i class="hb-eye r"></i><i class="hb-wink"></i></span></span>
     <div class="hb-title" id="hbTitle">AROM Help<small id="hbSub">Ask how to use any feature</small></div>
     <button type="button" class="hb-x" id="hbClose" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
