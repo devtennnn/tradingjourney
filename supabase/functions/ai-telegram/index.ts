@@ -299,8 +299,10 @@ Deno.serve(async (req) => {
         const s = ev.signal;
         if (nowS > s.validUntil) continue;
         if (M.one && openLeft > 0) continue;
+        // the last 40 candles up to the signal bar, stored with the signal so the AI jury (ai-jury function) judges exactly what the engine saw, whenever it runs
+        const ctx = { tf: M.base, bars: m.slice(Math.max(0, i - 39), i + 1).map((b) => [b.t, +(+b.o).toFixed(2), +(+b.h).toFixed(2), +(+b.l).toFixed(2), +(+b.c).toFixed(2)]) };
         const { data: ins, error: e2 } = await db.from("ai_signals").upsert(
-          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source, feat: sh && !M.shadow ? { ...(s.feat || {}), shadow: true } : beta && !betaOff ? { ...(s.feat || {}), beta: true } : beta ? { ...(s.feat || {}), beta_paused: true } : s.feat || null },
+          { symbol: sym, mode: mk, t: s.t, side: s.side, entry: s.entry, sl: s.sl, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk: s.risk, trigger: s.trigger, source: data.source, feat: { ...(sh && !M.shadow ? { ...(s.feat || {}), shadow: true } : beta && !betaOff ? { ...(s.feat || {}), beta: true } : beta ? { ...(s.feat || {}), beta_paused: true } : s.feat || {}), ctx } },
           { onConflict: "symbol,mode,t", ignoreDuplicates: true }).select();
         if (e2) throw new Error(e2.message);
         if (!ins || !ins.length) continue;
