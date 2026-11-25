@@ -8337,9 +8337,10 @@ const AiEng = (() => {
     // no minimum -0.28R n=106 · $4 -0.05R n=48 · $5 +0.13R n=31). Gold scalping is in shadow (ai_bot_config shadow_pairs) while this proves itself.
     scalp:    {key:'scalp',    base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true, minRisk:{XAUUSD:5},
                keys:['bias','align','pullback','trigger','session','news','risk','room','sr','tline','retest']},
-    // btcx: SHADOW research mode (BTC only, never posted). Scalping v3 without the momentum trigger and with a 0.3 ATR stop pad.
+    // btcx: research mode (BTC only), published as BETA through publish_pairs. Scalping v3 without the momentum trigger and with a 0.3 ATR stop pad.
+    // one:true = a new signal only when none is running: the first two BETA posts were the same SELL two minutes apart (one trade, double loss).
     // Backtest BTCUSD 20 days, $5 spread: n=52, +0.26R/trade, positive in both halves (+0.25R / +0.32R). One market, small sample: forward-test before trusting.
-    btcx:     {key:'btcx',     base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true, only:/^BTC/, noMom:true, stopPad:.3, shadow:true,
+    btcx:     {key:'btcx',     base:60,   htf:300,   valid:600,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', v3:true, only:/^BTC/, noMom:true, stopPad:.3, shadow:true, one:true,
                keys:['bias','align','pullback','trigger','session','news','risk','room','sr','tline','retest']},
     sweep:    {key:'sweep',    base:60,   htf:300,   valid:300,   rr:[1, 2],        session:false, maxBars:60,  eName:'M1',  hName:'M5', sweep:true, only:/^BTC/, minRiskPct:.0005,
                keys:['sweep','session','news','risk']},
