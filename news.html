@@ -395,6 +395,17 @@ header.top-nav.scrolled{border-color:#1c2849;box-shadow:0 18px 44px rgba(0,0,0,.
 @media(prefers-reduced-motion:reduce){.qr-status .dot{animation:none}}
 /* Partners & platforms: one row of logo tiles in a rounded frame (logos only; name on hover / for screen readers) */
 
+
+/* Admin → Partners */
+.ptn-row{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--card)}
+.ptn-row.off{opacity:.5}
+.ptn-ico{width:54px;height:54px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center}
+.ptn-ico svg{width:28px;height:28px}.ptn-ico img{max-width:36px;max-height:32px;object-fit:contain}
+.ptn-row b{display:block}.ptn-row small{color:var(--muted);font-size:12px;word-break:break-all}
+.ptn-act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ptn-act button{min-width:34px}
+.ptn-prev{display:flex;gap:10px;align-items:center;margin:4px 0 8px;font-size:12px;color:var(--muted)}
+.ptn-prev .ptn-ico{width:64px;height:64px}
 /* Partners & Platforms: spotlight carousel. One partner sits in the big tile in the middle (ring + name pill), the others wait
    smaller on both sides, and the row slides one step every 2.6 s. Pauses on hover / focus / hidden tab; no motion with reduced motion. */
 .ptc{max-width:560px;margin:0 auto;text-align:left}
@@ -4505,6 +4516,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
       <button type="button" data-t="audit">Audit log</button>
       <button type="button" data-t="pay">Activations<span class="adm-badge" id="admPayBadge" hidden></span></button>
       <button type="button" data-t="promo">Promo codes</button>
+      <button type="button" data-t="ptn">Partners</button>
       <button type="button" data-t="course">Academy</button>
       <button type="button" data-t="aiq">AI report</button>
       <button type="button" data-t="nt">Notifications</button>
@@ -4616,6 +4628,26 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
         </div>
         <div class="adm-tools" style="margin-top:14px"><span class="hint" id="ncCount"></span></div>
         <div id="ncList"></div>
+      </div>
+      <div class="adm-pane" id="admPtn">
+        <form class="pm-form adm-card" id="ptnForm" autocomplete="off">
+          <h3 id="ptnFormT">Add a partner or platform</h3>
+          <div class="pm-grid">
+            <label>Name<input class="field" id="ptnName" maxlength="40" required placeholder="e.g. Exness"></label>
+            <label>Type<select class="field" id="ptnKind"><option value="broker">Broker</option><option value="platform">Platform</option></select></label>
+            <label>Website <small>https://…</small><input class="field" id="ptnUrl" maxlength="300" required placeholder="https://www.example.com"></label>
+            <label>Order <small>smaller = first</small><input class="field" id="ptnSort" type="number" step="1" value="100"></label>
+            <label>Role (English)<input class="field" id="ptnRoleEn" maxlength="80" placeholder="e.g. Forex &amp; gold broker"></label>
+            <label>Role (Khmer)<input class="field" id="ptnRoleKm" maxlength="120" placeholder="ឧ. ឈ្មួញកណ្តាល Forex និងមាស"></label>
+            <label>Logo file <small>SVG / PNG / WebP, max 100 KB, light logo for a dark background</small><input class="field" id="ptnFile" type="file" accept="image/svg+xml,image/png,image/webp,image/jpeg"></label>
+            <label>…or logo URL <small>https://…</small><input class="field" id="ptnLogoUrl" maxlength="300" placeholder="https://…/logo.svg"></label>
+            <label>Icon path <small>optional, Simple Icons SVG path instead of a file</small><input class="field" id="ptnPath" maxlength="6000" spellcheck="false"></label>
+            <label>Icon colour <small>for the icon path</small><input class="field" id="ptnColor" maxlength="7" placeholder="#EEF3F8"></label>
+          </div>
+          <div class="ptn-prev" id="ptnPrev" aria-hidden="true"></div>
+          <div class="pm-actions"><button type="submit" class="btn" id="ptnSave">Add</button><button type="button" class="btn secondary" id="ptnCancel" hidden>Cancel edit</button><span class="pm-msg" id="ptnMsg" role="status" aria-live="polite"></span></div>
+        </form>
+        <div id="ptnList"></div>
       </div>
       <div class="adm-pane" id="admPromo">
         <div class="adm-kpis" id="admPromoKpi"></div>
@@ -7848,6 +7880,19 @@ const PARTNERS = [
   {name:'Hostinger', kind:'ptInfra', url:'https://www.hostinger.com', color:'#673DE6', path:'M16.415 0v7.16l5.785 3.384V2.949L16.415 0ZM1.8 0v11.237h18.815L14.89 8.09l-7.457-.003V3.024L1.8 0Zm14.615 20.894v-5.019l-7.514-.005c.007.033-5.82-3.197-5.82-3.197l19.119.091V24l-5.785-3.106ZM1.8 13.551v7.343l5.633 2.949v-6.988L1.8 13.551Z'},
 ];
 const ptInit = n => n.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+// The live list comes from public.partners (Admin → Partners). PARTNERS above is only the fallback when the database cannot be reached.
+const ptSafeLogo = v => typeof v === 'string' && /^(https:\/\/[^\s"<>]+|data:image\/(png|webp|jpeg|svg\+xml);base64,[A-Za-z0-9+/=]+)$/.test(v) ? v : '';
+async function ptFromDb(){
+  try{
+    if(typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    const {data, error} = await supabaseClient.from('partners').select('name,kind,url,role_en,role_km,logo,svg_path,color,sort').eq('active', true).order('sort').order('name');
+    if(error || !Array.isArray(data) || !data.length) return;
+    PARTNERS.length = 0;
+    data.forEach(r => PARTNERS.push({name:r.name, kind:r.kind === 'broker' ? 'ptBroker' : 'ptInfra', url:/^https:\/\//.test(r.url) ? r.url : '#', logo:ptSafeLogo(r.logo), path:r.svg_path || '', color:r.color || '#EEF3F8', role:{en:r.role_en || '', km:r.role_km || ''}}));
+    PTC.i = 0; const tr = $('ptTrack'); if(tr){ tr.innerHTML = ''; renderPartners(); }
+  }catch(e){ /* keep the built-in list */ }
+}
+setTimeout(ptFromDb, 0);
 const PT_ROLE = {'Exness':'ptRoleBroker', 'Dupoin':'ptRoleBroker', 'HFM':'ptRoleBroker', 'TradingView':'ptRoleTv', 'Forex Factory':'ptRoleFf', 'Supabase':'ptRoleSb', 'Vercel':'ptRoleVc', 'Telegram':'ptRoleTg', 'GitHub':'ptRoleGh', 'Hostinger':'ptRoleHo'};
 const PTC = {i:0, timer:0, hold:false};
 function ptMark(p){ return p.path ? `<svg viewBox="0 0 24 24" fill="${esc(p.color)}" aria-hidden="true"><path d="${esc(p.path)}"/></svg>`
@@ -7874,10 +7919,10 @@ function ptPaint(){
   $('ptPill').textContent = cur.name;
   const brokers = PARTNERS.filter(p => p.kind === 'ptBroker').length;
   $('ptHead').textContent = t('ptHead').replace('{b}', brokers).replace('{p}', n - brokers);
-  $('ptDesc').innerHTML = `<b style="display:inline;font-size:inherit">${esc(cur.name)}</b> · ${esc(t(cur.kind))} · ${esc(t(PT_ROLE[cur.name] || cur.kind))} · <a href="${esc(cur.url)}" target="_blank" rel="noopener noreferrer">${esc(t('ptVisit'))} →</a>`;
+  $('ptDesc').innerHTML = `<b style="display:inline;font-size:inherit">${esc(cur.name)}</b> · ${esc(t(cur.kind))} · ${esc(cur.role && (S.lang === 'km' ? cur.role.km || cur.role.en : cur.role.en) || t(PT_ROLE[cur.name] || cur.kind))} · <a href="${esc(cur.url)}" target="_blank" rel="noopener noreferrer">${esc(t('ptVisit'))} →</a>`;
   $('ptDots').querySelectorAll('button').forEach(b => { const on = +b.dataset.k === PTC.i; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
 }
-function ptGo(k){ const n = PARTNERS.length; PTC.i = (k + n) % n; ptPaint(); }
+function ptGo(k){ const n = PARTNERS.length; if(!n) return; PTC.i = (k + n) % n; ptPaint(); }
 (function ptWire(){
   const car = $('ptCar'); if(!car) return;
   const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -10734,7 +10779,7 @@ function openAdmin(){
 function admShow(tab, force){
   Adm.tab = tab;
   document.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', promo:'admPromo', course:'admCourse', aiq:'admAiq', nt:'admNt', int:'admInt', mt:'admMt'};
+  const map = {ov:'admOv', users:'admUsers', keys:'admKeys', sig:'admSig', audit:'admAudit', pay:'admPay', promo:'admPromo', ptn:'admPtn', course:'admCourse', aiq:'admAiq', nt:'admNt', int:'admInt', mt:'admMt'};
   Object.entries(map).forEach(([k, id]) => $(id).classList.toggle('on', k === tab));
   if(tab === 'ov') admLoadOverview();
   else if(tab === 'users' && (force || !Adm.users.length)) admLoadUsers(true);
@@ -10742,6 +10787,7 @@ function admShow(tab, force){
   else if(tab === 'pay') admLoadPayments();
   else if(tab === 'aiq') admLoadAiq();
   else if(tab === 'promo') admLoadPromo();
+  else if(tab === 'ptn') ptnLoad();
   else if(tab === 'course') acLoad();
   else if(tab === 'keys') admLoadKeys();
   else if(tab === 'nt') admLoadNotifs();
@@ -10750,6 +10796,79 @@ function admShow(tab, force){
   admClaimBadge();
 }
 
+/* ---------- Admin → Partners: add, edit, reorder, hide or delete the logos of the landing page (table public.partners, admins only by RLS) ---------- */
+const PTN = {list:[], edit:null, logo:null};
+function ptnIcon(r){ const l = ptSafeLogo(r.logo);
+  return r.svg_path ? `<svg viewBox="0 0 24 24" fill="${esc(/^#[0-9A-Fa-f]{6}$/.test(r.color || '') ? r.color : '#EEF3F8')}" aria-hidden="true"><path d="${esc(r.svg_path)}"/></svg>`
+    : l ? `<img src="${esc(l)}" alt="">` : `<span class="ptl-mono">${esc(ptInit(r.name || '?'))}</span>`; }
+async function ptnLoad(){
+  $('ptnList').innerHTML = '<p class="hint">Loading…</p>';
+  const {data, error} = await supabaseClient.from('partners').select('*').order('sort').order('name');
+  if(error){ $('ptnList').innerHTML = `<p class="hint">Could not load partners: ${esc(error.message)}</p>`; return; }
+  PTN.list = data || []; ptnPaint();
+  if(!PTN.edit) $('ptnSort').value = (PTN.list.reduce((m, r) => Math.max(m, r.sort), 0) || 0) + 10;   // new rows go last
+}
+function ptnPaint(){
+  $('ptnList').innerHTML = PTN.list.length ? PTN.list.map((r, i) => `<div class="ptn-row${r.active ? '' : ' off'}" data-id="${esc(r.id)}">
+    <div class="ptn-ico">${ptnIcon(r)}</div>
+    <div><b>${esc(r.name)} <small>· ${esc(r.kind)} · #${r.sort}${r.active ? '' : ' · hidden'}</small></b><small>${esc(r.url)}</small><br><small>${esc(r.role_en || '')}${r.role_km ? ' · ' + esc(r.role_km) : ''}</small></div>
+    <div class="ptn-act"><button type="button" class="btn secondary small" data-a="up" ${i ? '' : 'disabled'} aria-label="Move up">↑</button><button type="button" class="btn secondary small" data-a="down" ${i < PTN.list.length - 1 ? '' : 'disabled'} aria-label="Move down">↓</button>
+      <button type="button" class="btn secondary small" data-a="edit">Edit</button><button type="button" class="btn secondary small" data-a="toggle">${r.active ? 'Hide' : 'Show'}</button><button type="button" class="btn secondary small" data-a="del">Delete</button></div></div>`).join('')
+    : '<p class="hint">No partners yet. Add the first one above.</p>';
+}
+function ptnReset(){
+  PTN.edit = null; PTN.logo = null; $('ptnForm').reset(); $('ptnSort').value = (PTN.list.reduce((m, r) => Math.max(m, r.sort), 0) || 0) + 10;
+  $('ptnFormT').textContent = 'Add a partner or platform'; $('ptnSave').textContent = 'Add'; $('ptnCancel').hidden = true; $('ptnPrev').innerHTML = ''; $('ptnMsg').textContent = '';
+}
+function ptnPreview(){
+  const r = {name:$('ptnName').value || '?', logo:PTN.logo || $('ptnLogoUrl').value.trim(), svg_path:$('ptnPath').value.trim(), color:$('ptnColor').value.trim()};
+  $('ptnPrev').innerHTML = `<div class="ptn-ico">${ptnIcon(r)}</div><span>Preview on the dark landing page</span>`;
+}
+setTimeout(function ptnWire(){
+  if(!$('ptnForm')) return;
+  ['ptnName', 'ptnLogoUrl', 'ptnPath', 'ptnColor'].forEach(id => $(id).addEventListener('input', () => { if(id === 'ptnLogoUrl') PTN.logo = null; ptnPreview(); }));
+  $('ptnFile').addEventListener('change', () => {
+    const f = $('ptnFile').files[0]; if(!f) return;
+    if(!/^image\/(svg\+xml|png|webp|jpeg)$/.test(f.type)){ $('ptnMsg').textContent = 'Use an SVG, PNG, WebP or JPEG file.'; $('ptnFile').value = ''; return; }
+    if(f.size > 100 * 1024){ $('ptnMsg').textContent = 'The file is larger than 100 KB. Use a smaller or simpler logo.'; $('ptnFile').value = ''; return; }
+    const rd = new FileReader(); rd.onload = () => { PTN.logo = String(rd.result); $('ptnLogoUrl').value = ''; $('ptnMsg').textContent = ''; ptnPreview(); }; rd.readAsDataURL(f);
+  });
+  $('ptnCancel').onclick = ptnReset;
+  $('ptnForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const url = $('ptnUrl').value.trim(), lu = $('ptnLogoUrl').value.trim(), col = $('ptnColor').value.trim(), path = $('ptnPath').value.trim();
+    if(!/^https:\/\/[^\s"<>]+$/.test(url)){ $('ptnMsg').textContent = 'The website must start with https://'; return; }
+    if(lu && !/^https:\/\/[^\s"<>]+$/.test(lu)){ $('ptnMsg').textContent = 'The logo URL must start with https://'; return; }
+    if(col && !/^#[0-9A-Fa-f]{6}$/.test(col)){ $('ptnMsg').textContent = 'Colour must look like #EEF3F8'; return; }
+    if(path && !/^[0-9A-Za-z .,\-]+$/.test(path)){ $('ptnMsg').textContent = 'The icon path may only hold an SVG path (letters, numbers, dots, commas, minus).'; return; }
+    const row = {name:$('ptnName').value.trim(), kind:$('ptnKind').value, url, sort:parseInt($('ptnSort').value, 10) || 100, role_en:$('ptnRoleEn').value.trim() || null, role_km:$('ptnRoleKm').value.trim() || null,
+      logo:PTN.logo || lu || (PTN.edit ? PTN.edit.logo : null) || null, svg_path:path || null, color:col || null, updated_at:new Date().toISOString()};
+    if(!row.name){ $('ptnMsg').textContent = 'Name is required.'; return; }
+    $('ptnSave').disabled = true; $('ptnMsg').textContent = 'Saving…';
+    const q = PTN.edit ? supabaseClient.from('partners').update(row).eq('id', PTN.edit.id) : supabaseClient.from('partners').insert(row);
+    const {error} = await q; $('ptnSave').disabled = false;
+    if(error){ $('ptnMsg').textContent = /duplicate|unique/i.test(error.message) ? 'A partner with this name already exists.' : 'Could not save: ' + error.message; return; }
+    toast(PTN.edit ? 'Partner updated' : 'Partner added'); await ptnLoad(); ptnReset(); ptFromDb();
+  });
+  $('ptnList').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-a]'); if(!b) return; const id = b.closest('.ptn-row').dataset.id, i = PTN.list.findIndex(r => r.id === id), r = PTN.list[i]; if(!r) return;
+    const a = b.dataset.a; let res = null;
+    if(a === 'edit'){
+      PTN.edit = r; PTN.logo = null; $('ptnName').value = r.name; $('ptnKind').value = r.kind; $('ptnUrl').value = r.url; $('ptnSort').value = r.sort; $('ptnRoleEn').value = r.role_en || ''; $('ptnRoleKm').value = r.role_km || '';
+      $('ptnLogoUrl').value = r.logo && r.logo.startsWith('https://') ? r.logo : ''; $('ptnPath').value = r.svg_path || ''; $('ptnColor').value = r.color || ''; $('ptnFile').value = '';
+      $('ptnFormT').textContent = 'Edit ' + r.name; $('ptnSave').textContent = 'Save changes'; $('ptnCancel').hidden = false; ptnPreview(); $('ptnForm').scrollIntoView({behavior:'smooth', block:'start'}); return;
+    }
+    if(a === 'del'){ if(!confirm('Delete ' + r.name + ' from the landing page? This cannot be undone (use Hide to keep it).')) return; res = await supabaseClient.from('partners').delete().eq('id', id); }
+    if(a === 'toggle') res = await supabaseClient.from('partners').update({active:!r.active, updated_at:new Date().toISOString()}).eq('id', id);
+    if(a === 'up' || a === 'down'){ const o = PTN.list[a === 'up' ? i - 1 : i + 1]; if(!o) return;
+      const s1 = r.sort === o.sort ? o.sort + (a === 'up' ? -1 : 1) : o.sort;
+      const r1 = await supabaseClient.from('partners').update({sort:s1}).eq('id', r.id); res = r1.error ? r1 : await supabaseClient.from('partners').update({sort:r.sort}).eq('id', o.id); }
+    if(res && res.error){ toast('Could not update: ' + res.error.message, true); return; }
+    if(a === 'del' && PTN.edit && PTN.edit.id === id) ptnReset();   // the row being edited is gone
+    await ptnLoad(); ptFromDb();
+  });
+  ptnReset();
+}, 0);
 /* ---------- Admin → Academy: edit AROM Academy lessons and chapter quizzes here (row-level security lets only admins write) ---------- */
 const AC = {list:[], cur:null, lang:'en', dirty:false};
 const acEsc = v => esc(v == null ? '' : v);
