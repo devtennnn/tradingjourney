@@ -3909,13 +3909,6 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
 
 
 <!-- Trade History Table -->
-<section class="pg-main panel section" id="brokerPanel">
-  <div class="panel-head">
-    <div><div class="panel-title"><span data-i18n="bkTitle">ការភ្ជាប់ឈ្មួញកណ្តាល</span> <span class="ai-chip">MT5 / MT4</span></div><div class="panel-sub" data-i18n="bkSub">MT5 / MT4៖ សមតុល្យ ការជួញដូរកំពុងបើក ការជួញដូរបានបិទ និងលទ្ធផល ធ្វើសមកាលកម្មចូលកំណត់ហេតុដោយស្វ័យប្រវត្តិ</div></div>
-    <div class="sg-tools"><button type="button" class="btn small" id="bkAdd" data-i18n="bkAdd" hidden>ភ្ជាប់គណនី</button></div>
-  </div>
-  <div id="bkBody"></div>
-</section>
 <header class="pg-intro jr"><h2 id="jrIntroH" data-i18n="jrIntroH">កំណត់ហេតុជួញដូររបស់អ្នក</h2><p data-i18n="jrIntroP">កត់ត្រាការជួញដូរនីមួយៗជាមួយរូបភាពក្រាហ្វ ហើយមើលថាអ្វីដែលដំណើរការល្អ៖ អត្រាឈ្នះ កត្តាចំណេញ R និងវគ្គជួញដូរល្អបំផុតរបស់អ្នក។ ឥតគិតថ្លៃ ឯកជន និងរក្សាទុកក្នុង cloud។</p></header>
 <section class="pg-main pg-jr panel section" id="secJournal">
   <div class="toolbar">
@@ -13130,8 +13123,8 @@ html.nav-locked .hb-fab{display:none}
      act:{l:{en:'See plans', km:'មើលគម្រោង'}, f:() => go('/pricing')}},
     {id:'plans', kw:['price','pricing','plan','premium','elite','ultra','cost','how much','subscription','upgrade'], kk:['តម្លៃ','គម្រោង','ថ្លៃប៉ុន្មាន','ដំឡើង','ប៉ុន្មានលុយ'],
      q:{en:'What are the plans and prices?', km:'មានគម្រោង និងតម្លៃអ្វីខ្លះ?'},
-     a:{en:'Free: unlimited journal + 1 signal a day. Premium $2.50 / 30 days: chart uploads. Elite $14.99 / 30 days: every AI signal, the full AI Desk and Telegram signals. Ultra $49.99 / 30 days: everything in Elite plus AROM Intelligence (AI analyst, chat, news and journal review) and broker sync. No auto-renew.',
-        km:'Free៖ journal មិនកំណត់ + 1 សញ្ញាក្នុងមួយថ្ងៃ។ Premium $2.50 / 30 ថ្ងៃ៖ បញ្ចូលរូប chart។ Elite $14.99 / 30 ថ្ងៃ៖ គ្រប់សញ្ញា AI, AI Desk ពេញលេញ និងសញ្ញាតាម Telegram។ Ultra $49.99 / 30 ថ្ងៃ៖ គ្រប់យ៉ាងក្នុង Elite បូក AROM Intelligence (អ្នកវិភាគ AI, chat, ព័ត៌មាន និងពិនិត្យ journal) និង broker sync។ មិនកាត់លុយដោយស្វ័យប្រវត្តិទេ។'},
+     a:{en:'Free: unlimited journal + 1 signal a day. Premium $2.50 / 30 days: chart uploads. Elite $14.99 / 30 days: every AI signal, the full AI Desk and Telegram signals. Ultra $49.99 / 30 days: everything in Elite plus AROM Intelligence (AI analyst, chat, news and journal review). No auto-renew.',
+        km:'Free៖ journal មិនកំណត់ + 1 សញ្ញាក្នុងមួយថ្ងៃ។ Premium $2.50 / 30 ថ្ងៃ៖ បញ្ចូលរូប chart។ Elite $14.99 / 30 ថ្ងៃ៖ គ្រប់សញ្ញា AI, AI Desk ពេញលេញ និងសញ្ញាតាម Telegram។ Ultra $49.99 / 30 ថ្ងៃ៖ គ្រប់យ៉ាងក្នុង Elite បូក AROM Intelligence (អ្នកវិភាគ AI, chat, ព័ត៌មាន និងពិនិត្យ journal)។ មិនកាត់លុយដោយស្វ័យប្រវត្តិទេ។'},
      act:{l:{en:'Open Pricing', km:'បើក Pricing'}, f:() => go('/pricing')}},
     {id:'pay', kw:['pay','payment','khqr','aba','acleda','wing','bakong','qr','bank'], kk:['បង់ប្រាក់','បង់លុយ','ទូទាត់','ស្កេន qr','ធនាគារ'],
      q:{en:'How do I pay?', km:'បង់ប្រាក់យ៉ាងម៉េច?'},
@@ -13158,11 +13151,6 @@ html.nav-locked .hb-fab{display:none}
      a:{en:'Open News: high-impact US releases in Cambodia time with the forecast, previous result and how gold and the major pairs usually react, plus an alert before the release.',
         km:'បើក News៖ ព័ត៌មានសេដ្ឋកិច្ចអាមេរិកសំខាន់ៗ តាមម៉ោងកម្ពុជា ជាមួយ forecast, លទ្ធផលមុន និងរបៀបដែលមាស និងគូរូបិយប័ណ្ណធំៗតែងប្រតិកម្ម ព្រមទាំង alert មុនព័ត៌មានចេញ។'},
      act:{l:{en:'Open News', km:'បើក News'}, f:() => go('/news')}},
-    {id:'broker', kw:['broker sync','mt5','mt4','metatrader','sync','ea','expert advisor','connect broker','connect account','connect mt5','connect mt4','mt5 account','mt4 account','vps'], kk:['ភ្ជាប់ broker','ភ្ជាប់គណនី mt5','ភ្ជាប់ mt5','ភ្ជាប់ mt4','សមកាលកម្ម'],
-     q:{en:'How do I connect MT4 / MT5?', km:'ភ្ជាប់ MT4 / MT5 យ៉ាងម៉េច?'},
-     a:{en:'Broker sync is an Ultra feature (Overview → Broker sync). On a PC or VPS: install the small read-only EA and allow its WebRequest URL; it syncs every minute. Phone only: choose "Phone only" and enter your login, server and INVESTOR password (read-only, it can never trade). Your balance, open positions and closed trades then appear automatically.',
-        km:'Broker sync ជា feature របស់ Ultra (Overview → Broker sync)។ លើ PC ឬ VPS៖ ដំឡើង EA តូច (អានតែប៉ុណ្ណោះ) ហើយអនុញ្ញាត WebRequest URL របស់វា វា sync រៀងរាល់នាទី។ មានតែទូរស័ព្ទ៖ ជ្រើស "Phone only" ហើយបញ្ចូល login, server និង INVESTOR password (អានតែប៉ុណ្ណោះ មិនអាចបើក trade បានទេ)។ balance, position បើក និង trade បិទ នឹងបង្ហាញដោយស្វ័យប្រវត្តិ។'},
-     act:{l:{en:'Open Broker sync', km:'បើក Broker sync'}, f:section('brokerPanel', '/')}},
     {id:'intel', kw:['intelligence','ai analyst','ai chat','briefing','journal review','ask ai'], kk:['អ្នកវិភាគ ai','សួរ ai','intelligence'],
      q:{en:'What is AROM Intelligence?', km:'AROM Intelligence ជាអ្វី?'},
      a:{en:'AROM Intelligence (Ultra) is your AI analyst: market briefings, an analyst report per market, AI chat, plain-language news explanations and an AI review of your own journal (40 AI requests a day).',
