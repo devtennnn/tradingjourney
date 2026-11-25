@@ -9180,7 +9180,16 @@ function aiRender(){
    While there is no A+ signal, show a conditional plan: trade the nearest unfilled order block / FVG on the side of the EMA 20/50 trend.
    Entry zone = the zone, stop = 1 ATR beyond it, TP1 = the nearest opposite swing (support / resistance), void if a candle closes beyond the stop.
    It is NOT a signal: never published, never tracked, never in the win rate. The price alert only tells the member price arrived; Re-scan asks the engine. */
+let PL_MEMO = {k:null, v:null};
 function aiPlan(){
+  try{
+    const D0 = AI.data, c0 = D0 && D0.candles, l0 = c0 && c0[c0.length - 1];
+    const mk = l0 ? [AI.sym, AI.mode, c0.length, l0.t, l0.c, AI.last && AI.last.grade, !!Prem.elite].join('|') : null;
+    if(mk && PL_MEMO.k === mk && PL_MEMO.p === AI.P) return PL_MEMO.v;
+    const v = aiPlanCalc(); PL_MEMO = {k:mk, p:AI.P, v}; return v;
+  }catch(e){ return null; }
+}
+function aiPlanCalc(){
   try{
     const D = AI.data, P = AI.P, L = AI.last; if(!D || !P || !L || L.grade === 'A+' || !Prem.elite) return null;
     const C = D.candles, n = C.length - 1, px = C[n].c, A = P.atr[n], base = aiM().base; if(!A || P.e20[n] == null || P.e50[n] == null) return null;
@@ -9618,6 +9627,7 @@ function termDraw(){
   let lo = Math.min(...vis.map(b => b.l)), hi = Math.max(...vis.map(b => b.h));
   const cur = aiCurrent(), live = cur && aiStKey(cur.out.res) === 'open';
   if(live){ const tpx = cur.tp3 || cur.tp2; lo = Math.min(lo, cur.sl, tpx); hi = Math.max(hi, cur.sl, tpx); }
+  else { let pl = null; try{ pl = aiPlan(); }catch(e){} if(pl){ lo = Math.min(lo, pl.sl, pl.tp1, pl.lo); hi = Math.max(hi, pl.sl, pl.tp1, pl.hi); } }
   const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
   if(TERM.yAuto || !(TERM.yHi > TERM.yLo)){ TERM.yLo = lo; TERM.yHi = hi; } else { lo = TERM.yLo; hi = TERM.yHi; }   // manual price range after the user drags / scales vertically
   const Y = p => 8 + (hi - p) / (hi - lo) * (mainH - 16), P = y => hi - (y - 8) / (mainH - 16) * (hi - lo);
@@ -9738,6 +9748,19 @@ function termDraw(){
       const y = Math.round(Y(p)) + .5; g.strokeStyle = col; g.setLineDash(dash); g.beginPath(); g.moveTo(0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]);
       g.font = '800 10px ' + K.font; const txt = lbl, tw = g.measureText(txt).width + 10; g.fillStyle = col; g.fillRect(plotW - tw - 6, y - 8, tw, 16); g.fillStyle = K.fg; g.textAlign = 'left'; g.fillText(txt, plotW - tw - 1, y);
       tags.push({p, col, fg:K.fg}); });
+  }
+  // PLAN (no live A+): entry zone band, stop and TP1 of the plan card in the AI panel. A plan is not a signal (see aiPlan).
+  else {
+    let pl = null; try{ pl = aiPlan(); }catch(e){}
+    if(pl){
+      const sell = pl.side === 'SELL', sc = sell ? K.dnRgb : K.upRgb, x0 = X(Math.max(start, end - 24)), yA = Y(pl.hi), yB = Y(pl.lo);
+      g.fillStyle = `rgba(${sc},.13)`; g.fillRect(x0, Math.min(yA, yB), plotW - x0, Math.max(2, Math.abs(yB - yA)));
+      g.strokeStyle = `rgba(${sc},.7)`; g.setLineDash([4, 3]); g.strokeRect(Math.round(x0) + .5, Math.round(Math.min(yA, yB)) + .5, Math.round(plotW - x0) - 1, Math.round(Math.max(2, Math.abs(yB - yA)))); g.setLineDash([]);
+      const lab = (txt, y, col) => { g.font = '800 10px ' + K.font; const tw = g.measureText(txt).width + 10; g.fillStyle = col; g.fillRect(plotW - tw - 6, y - 8, tw, 16); g.fillStyle = K.fg; g.textAlign = 'left'; g.fillText(txt, plotW - tw - 1, y); };
+      [[pl.sl, K.dn, [5, 4], 'SL'], [pl.tp1, K.up, [5, 4], 'TP1 · ' + pl.rr + 'R']].forEach(([pv, col, dash, txt]) => { if(pv < lo || pv > hi) return; const y = Math.round(Y(pv)) + .5;
+        g.strokeStyle = col; g.globalAlpha = .85; g.setLineDash(dash); g.beginPath(); g.moveTo(x0, y); g.lineTo(plotW, y); g.stroke(); g.setLineDash([]); g.globalAlpha = 1; lab(txt, y, col); tags.push({p:pv, col, fg:K.fg}); });
+      if(pl.near >= lo && pl.near <= hi){ const y = Math.round(Y(pl.near)) + .5; lab(t('plTag') + ' · ' + t('plS_' + pl.side) + ' · ' + pl.kind, y, sell ? K.dn : K.up); tags.push({p:pl.near, col:sell ? K.dn : K.up, fg:K.fg}); }
+    }
   }
   // last price line + axis tags
   const lb = C[N - 1], isLive = !!lb.live;
