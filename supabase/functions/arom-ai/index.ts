@@ -11,6 +11,7 @@
 // AI_REPORT_CACHE_S (600), AI_BRIEFING_CACHE_S (daily 10800, session 3600), BRIEFING_SYMBOLS (comma list), OPENAI_BRIEFING_MAX_OUTPUT_TOKENS (6000), MARKETAUX_API_KEY (news headlines), SITE_URL.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import OpenAI from "npm:openai@5.23.2";
+import { localTimes } from "./lib.mjs";
 import { SYSTEM, ANALYST_SCHEMA, CHAT_SCHEMA, compactAnalysis, numbersIn, ungroundedNumbers, toleranceFor, sanitiseAnalyst, analystText, buildReport, fallbackText, CHAT_TOOLS, SYMBOL_RE, TFS, journalStats, JOURNAL_SCHEMA, JOURNAL_RULES, journalReview, sanitiseJournal, journalText, journalFallback, NEWS_QUERY, NEWS_SCHEMA, NEWS_RULES, sanitiseNews, newsText, newsReport, BRIEF_DEFAULT, BRIEF_SCHEMA, compactBrief, unavailableBrief, sanitiseBrief, groundBrief, buildBriefing } from "./lib.mjs";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
@@ -311,7 +312,7 @@ async function chat(b, ctx) {
   const rs = await reserve(ctx.userId, "chat"); if (rs.error) return json({ error: rs.error, limit: rs.limit }, rs.error === "daily_limit" ? 429 : 503);
   let history = []; if (convId) { const { data } = await db.from("ai_messages").select("role,content").eq("conversation_id", convId).order("id", { ascending: false }).limit(8); history = (data || []).reverse().map((m) => ({ role: m.role, content: m.content })); }
   const hint = b.symbol && SYMBOL_RE.test(String(b.symbol)) ? ` The member is currently looking at ${String(b.symbol).toUpperCase()}.` : "";
-  let input = [...history, { role: "user", content: `${message}\n\n[context: now ${new Date().toISOString()} UTC; answer in ${langName(lang)};${hint} use the tools for any market fact; do not guess]` }];
+  let input = [...history, { role: "user", content: `${message}\n\n[context: now ${new Date().toISOString()} UTC = ${ppTime(Date.now())}; write every time in Cambodia time; answer in ${langName(lang)};${hint} use the tools for any market fact; do not guess]` }];
   const allowed = numbersIn(message), calls = [], tctx = { ...ctx, tol: 0 }; let usage = { input: 0, output: 0 }, final = null, bad = [], retried = false;
   try {
     for (let step = 0; step < 6 && !final; step++) {
@@ -337,8 +338,8 @@ async function chat(b, ctx) {
   } catch (e) { await refund(rs.id, usage); const [code, st] = mapError(e); console.error("arom-ai chat:", e?.status, String(e?.message ?? e).slice(0, 200)); await health(false, code); return json({ error: code }, st); }
   if (!final) { await refund(rs.id, usage); await health(false, "no_final"); return json({ error: "ai_failed" }, 502); }
   await health(true); await finish(rs.id, env("OPENAI_MODEL"), usage);
-  const rejected = bad.length > 0, answer = rejected ? "I could not verify every number in my answer against the data I retrieved, so I am not showing it. Please ask again, or ask for a specific symbol and timeframe." : String(final.answer).slice(0, 4000);
-  const refs = { tools: calls, data_used: Array.isArray(final.data_used) ? final.data_used.slice(0, 8).map((x) => String(x).slice(0, 200)) : [], caveats: Array.isArray(final.caveats) ? final.caveats.slice(0, 6).map((x) => String(x).slice(0, 300)) : [], status: rejected ? "rejected_ungrounded" : "ok" };
+  const rejected = bad.length > 0, answer = rejected ? "I could not verify every number in my answer against the data I retrieved, so I am not showing it. Please ask again, or ask for a specific symbol and timeframe." : localTimes(String(final.answer), lang).slice(0, 4000);
+  const refs = { tools: calls, data_used: Array.isArray(final.data_used) ? final.data_used.slice(0, 8).map((x) => String(x).slice(0, 200)) : [], caveats: Array.isArray(final.caveats) ? final.caveats.slice(0, 6).map((x) => localTimes(String(x), lang).slice(0, 300)) : [], status: rejected ? "rejected_ungrounded" : "ok" };
   if (!convId) { const t = await db.from("ai_conversations").insert({ user_id: ctx.userId, title: message.slice(0, 60), symbol: b.symbol && SYMBOL_RE.test(String(b.symbol)) ? String(b.symbol).toUpperCase() : null }).select("id").single(); if (t.error) { console.error("arom-ai conversation:", t.error.message); return json({ error: "setup_needed" }, 503); } convId = t.data.id; }
   await db.from("ai_messages").insert([{ conversation_id: convId, user_id: ctx.userId, role: "user", content: message }, { conversation_id: convId, user_id: ctx.userId, role: "assistant", content: answer, data_refs: refs }]);
   await db.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
