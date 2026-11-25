@@ -31,10 +31,11 @@ APP = [
     ("profile",  "/profile",  "profile",  'id="pfH"'),   # private account page: noindex, not in the sitemap
     ("course",   "/course",   "course",   'id="crH"'),
     ("replay",   "/replay",   "replay",   'id="rpTitle"'),
+    ("rates", "/rates", "rates", 'id="rtTitle"'),   # Rates: metals, USD exchange rates, fuel prices (public)
     ("orderflow", "/orderflow", "orderflow", 'id="ofTitle"'),   # Order flow (Ultra): heatmap, footprint, delta   # Replay mode (Elite / Ultra)   # AROM Academy: outline + free preview public, paid lessons from the database
 ]
 PRIVATE = {"profile"}
-HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"', 'id="pfH"', 'id="crH"', 'id="rpTitle"', 'id="ofTitle"']
+HEADINGS = ['id="mtH"', 'id="heroH1"', 'id="jrIntroH"', 'id="nwIntroH"', 'id="anH1"', 'data-i18n-html="prH1"', 'id="rfH"', 'id="pfH"', 'id="crH"', 'id="rpTitle"', 'id="ofTitle"', 'id="rtTitle"']
 
 META = {
     "en": {
@@ -52,6 +53,8 @@ META = {
                      "Invite 15 traders who join and use AROM TRADE and get 30 days of Elite free. Earn bonus signals when your referrals buy a plan."),
         "profile":  ("AROM TRADE — My Profile",
                      "Your AROM TRADE account: name, photo, password, plan and expiry, purchase history, Telegram and notification alerts."),
+        "rates":    ("AROM TRADE — Gold, Silver, Exchange Rates and Fuel Prices in Cambodia",
+                     "Live gold, silver and platinum prices, the US dollar against the riel, baht, yuan and more, and fuel prices in Cambodia. Free converter. For information only."),
         "orderflow": ("AROM TRADE — Order Flow · Heatmap, Footprint and Delta",
                       "Live order flow for Bitcoin, and for gold through PAXG: order book heatmap, footprint (bid × ask at every price), big trades, delta and CVD. Ultra."),
         "replay":   ("AROM TRADE — Replay Mode · Practise on Past Candles",
@@ -72,6 +75,8 @@ META = {
                      "គម្រោង AROM TRADE៖ Free, Premium $2.50, Elite $14.99 និង Ultra $49.99 ក្នុង ៣០ ថ្ងៃ។ មិនបន្តដោយស្វ័យប្រវត្តិ បង់តាម KHQR។ ប្រៀបធៀបមុខងារទាំងអស់។"),
         "refer":    ("AROM TRADE — ណែនាំមិត្ត និងទទួលរង្វាន់",
                      "អញ្ជើញអ្នកជួញដូរ ១៥ នាក់ដែលចូលរួម និងប្រើ AROM TRADE ហើយទទួល Elite ឥតគិតថ្លៃ ៣០ ថ្ងៃ។ ទទួលសញ្ញាបន្ថែមនៅពេលមិត្តទិញគម្រោង។"),
+        "rates":    ("AROM TRADE — តម្លៃមាស ប្រាក់ អត្រាប្តូរប្រាក់ និងប្រេងឥន្ធនៈនៅកម្ពុជា",
+                     "តម្លៃមាស ប្រាក់ ផ្លាទីន ផ្ទាល់ ដុល្លារអាមេរិកធៀបនឹងរៀល បាត យ័ន និងផ្សេងទៀត ព្រមទាំងតម្លៃប្រេងឥន្ធនៈនៅកម្ពុជា។ ម៉ាស៊ីនគិតឥតគិតថ្លៃ។ សម្រាប់ព័ត៌មានតែប៉ុណ្ណោះ។"),
         "orderflow": ("AROM TRADE — Order Flow · Heatmap, Footprint និង Delta",
                       "Order flow ផ្ទាល់សម្រាប់ Bitcoin និងមាសតាម PAXG៖ Heatmap នៃ Order book, Footprint (Bid × Ask នៅតម្លៃនីមួយៗ), Trade ធំៗ, Delta និង CVD។ Ultra។"),
         "replay":   ("AROM TRADE — Replay Mode · ហាត់ជួញដូរលើទៀនអតីតកាល",
@@ -161,7 +166,7 @@ def translations(src):
          "process.stdout.write(JSON.stringify(new Function('return '+s.slice(a+10,b+2))()));"
     return json.loads(subprocess.run(["node", "-e", js], input=src, capture_output=True, text=True, check=True).stdout)
 
-KM_PATHS = ["/journey", "/news", "/refer", "/profile", "/course", "/replay", "/orderflow", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
+KM_PATHS = ["/journey", "/news", "/refer", "/profile", "/course", "/replay", "/orderflow", "/rates", "/analysis", "/pricing", "/about", "/methodology", "/track-record", "/risk"]
 
 def markup_only(s, fn):
     """Apply fn to the HTML outside <script> and <style> blocks."""
