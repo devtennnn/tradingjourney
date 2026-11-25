@@ -2,7 +2,7 @@
    - Pages: network first, cached copy when offline (the app opens without a connection)
    - Static files (icons, manifest, fonts): stale-while-revalidate
    - /api/*, Supabase, Telegram and other live data: never cached, always from the network */
-const VERSION = 'arom-v18';
+const VERSION = 'arom-v19';
 const SHELL = ['/', '/journey', '/news', '/refer', '/analysis', '/pricing', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
