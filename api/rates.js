@@ -3,7 +3,7 @@
 // exchange rates against the US dollar (open.er-api.com, updated daily) and pump fuel prices (api/_lib/fuel.json, edited by hand: no public source).
 // Every part fails on its own: the page shows what it got and says so for the rest. Cached 2 minutes on the CDN.
 const METALS = [{id: 'gold', y: 'GC=F'}, {id: 'silver', y: 'SI=F'}, {id: 'platinum', y: 'PL=F'}];
-const CCY = ['KHR', 'THB', 'VND', 'CNY', 'JPY', 'EUR', 'GBP', 'SGD', 'AUD', 'KRW', 'MYR'];
+const CCY = ['KHR', 'VND', 'CNY', 'JPY', 'EUR', 'GBP', 'SGD', 'AUD', 'KRW', 'MYR'];
 const OZ_G = 31.1034768;
 
 async function metal(m) {
