@@ -41,3 +41,23 @@ language sql security definer set search_path = public as $$
   from t join ai_signals s on s.id = t.signal_id where s.status = 'closed' group by t.takes order by t.takes;
 $$;
 revoke all on function public.ai_jury_consensus(int) from public, anon, authenticated;
+
+-- v2 (prompt version): the first prompt told the models to be sceptical and all votes were "skip". Votes now record the prompt version and
+-- a signal can be judged again by a new version. The report compares versions separately.
+alter table public.ai_signal_votes add column if not exists prompt_ver int not null default 1;
+alter table public.ai_signal_votes drop constraint if exists ai_signal_votes_signal_id_model_key;
+alter table public.ai_signal_votes add constraint ai_signal_votes_signal_model_ver unique (signal_id, model, prompt_ver);
+drop view if exists public.ai_jury_report;
+create view public.ai_jury_report with (security_invoker = true) as
+select v.model, v.prompt_ver,
+       count(*) filter (where v.verdict <> 'error')                                           as votes,
+       count(*) filter (where v.verdict = 'take')                                             as takes,
+       count(*) filter (where v.verdict = 'error')                                            as errors,
+       count(*) filter (where v.verdict = 'take' and s.status = 'closed')                     as take_closed,
+       round(avg(s.r_result) filter (where v.verdict = 'take' and s.status = 'closed')::numeric, 2) as take_avg_r,
+       count(*) filter (where v.verdict = 'skip' and s.status = 'closed')                     as skip_closed,
+       round(avg(s.r_result) filter (where v.verdict = 'skip' and s.status = 'closed')::numeric, 2) as skip_avg_r,
+       round(avg(v.ms) filter (where v.verdict <> 'error'))                                   as avg_ms
+from public.ai_signal_votes v join public.ai_signals s on s.id = v.signal_id
+group by v.model, v.prompt_ver;
+revoke all on public.ai_jury_report from anon, authenticated;

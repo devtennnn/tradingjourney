@@ -16,24 +16,25 @@ const BASE = (Deno.env.get("JURY_BASE_URL") || "https://ai-gateway.vercel.sh/v1"
 const KEY = (Deno.env.get("JURY_API_KEY") || "").trim();
 const DEFAULT_MODES = "btcx,swing_v2,intraday_v2,swing_brt,scalp,intraday,swing";
 
-const SYSTEM = `You are a strict risk reviewer for a trading-signal service. A rule-based engine produced the trade below. Decide whether a careful trader should TAKE it or SKIP it.
-Judge only from the data given: the trade plan, the engine's features, and the last candles up to the signal bar. Do not assume anything about news or the future.
-Be sceptical: most setups lose. Say "skip" when the stop is too tight or too wide for the recent range, when price is stretched into a nearby obstacle, when the trend or structure disagrees with the side, or when the candles look like chop.
-Answer with ONE JSON object and nothing else: {"verdict":"take"|"skip","confidence":0-100,"reason":"max 25 words","risks":"max 20 words"}`;
+const PROMPT_VER = 2;   // v1 told the models to be sceptical and every vote was "skip"; v2 asks for a calibrated probability against the plan's break-even
+const SYSTEM = `You review trade signals produced by a rule-based engine. For the trade below, estimate the probability (0-100) that price reaches TP1 before the stop is hit, then compare it with the break-even probability given in the data (the win rate a trade with this stop and TP1 needs to break even).
+Use only what is given: the plan, the engine's features and the last candles up to the signal bar. Do not assume news or the future. Be balanced and calibrated: do not default to either side. Look at trend and structure versus the trade side, how stretched price is, nearby obstacles, and whether the stop and TP1 distances fit the recent candle range.
+Take the trade when your probability is clearly above break-even, skip it when it is at or below.
+Answer with ONE JSON object and nothing else: {"p_tp1":0-100,"verdict":"take"|"skip","reason":"max 25 words","risks":"max 20 words"}`;
 
 function describe(sig) {
   const f = sig.feat || {}, ctx = f.ctx, { ctx: _c, ...feat } = f;
   const bars = ctx && Array.isArray(ctx.bars) ? ctx.bars : [];
   const tf = ctx ? ctx.tf / 60 : "?";
   const lines = bars.map((b) => `${new Date(b[0] * 1000).toISOString().slice(5, 16)} O${b[1]} H${b[2]} L${b[3]} C${b[4]}`).join("\n");
-  const rr = (sig.tp1 && sig.risk) ? (Math.abs(sig.tp1 - sig.entry) / sig.risk).toFixed(2) : "?";
-  return `Market: ${sig.symbol} · engine mode: ${sig.mode} · timeframe: ${tf} min\nSide: ${sig.side.toUpperCase()} at ${sig.entry} · stop ${sig.sl} (risk ${sig.risk}) · TP1 ${sig.tp1} (${rr}R) · TP2 ${sig.tp2}${sig.tp3 ? " · TP3 " + sig.tp3 : ""}\nTrigger: ${sig.trigger}\nEngine features: ${JSON.stringify(feat).slice(0, 900)}\nLast ${bars.length} candles (UTC, oldest first):\n${lines}`;
+  const rrN = (sig.tp1 && sig.risk) ? Math.abs(sig.tp1 - sig.entry) / sig.risk : null, rr = rrN ? rrN.toFixed(2) : "?", be = rrN ? Math.round(100 / (1 + rrN)) : "?";
+  return `Market: ${sig.symbol} · engine mode: ${sig.mode} · timeframe: ${tf} min\nSide: ${sig.side.toUpperCase()} at ${sig.entry} · stop ${sig.sl} (risk ${sig.risk}) · TP1 ${sig.tp1} (${rr}R, break-even probability ${be}%) · TP2 ${sig.tp2}${sig.tp3 ? " · TP3 " + sig.tp3 : ""}\nTrigger: ${sig.trigger}\nEngine features: ${JSON.stringify(feat).slice(0, 900)}\nLast ${bars.length} candles (UTC, oldest first):\n${lines}`;
 }
 
 function parse(txt) {
   const m = String(txt || "").match(/\{[\s\S]*\}/); if (!m) return null;
   try { const j = JSON.parse(m[0]); const v = String(j.verdict || "").toLowerCase(); if (v !== "take" && v !== "skip") return null;
-    return { verdict: v, confidence: Math.max(0, Math.min(100, Math.round(Number(j.confidence) || 0))), reason: String(j.reason || "").slice(0, 300), risks: String(j.risks || "").slice(0, 300) }; }
+    return { verdict: v, confidence: Math.max(0, Math.min(100, Math.round(Number(j.p_tp1 ?? j.confidence) || 0))), reason: String(j.reason || "").slice(0, 300), risks: String(j.risks || "").slice(0, 300) }; }
   catch (_) { return null; }
 }
 
@@ -87,7 +88,7 @@ Deno.serve(async (req) => {
   const since = new Date(Date.now() - 6 * 3600_000).toISOString();
   const { data: sigs } = await db.from("ai_signals").select("*").in("mode", modes).gt("created_at", since).not("feat->ctx", "is", null).order("created_at", { ascending: false }).limit(60);
   const ids = (sigs || []).map((s) => s.id);
-  const { data: have } = ids.length ? await db.from("ai_signal_votes").select("signal_id,model").in("signal_id", ids) : { data: [] };
+  const { data: have } = ids.length ? await db.from("ai_signal_votes").select("signal_id,model").eq("prompt_ver", PROMPT_VER).in("signal_id", ids) : { data: [] };
   const done = new Set((have || []).map((v) => v.signal_id + "|" + v.model));
   const todo = [];
   for (const s of sigs || []) { const miss = models.filter((m) => !done.has(s.id + "|" + m)); if (miss.length) todo.push({ s, miss }); if (todo.length >= batch) break; }
@@ -96,8 +97,8 @@ Deno.serve(async (req) => {
   for (const { s, miss } of todo) {
     const prompt = describe(s);
     const res = await Promise.all(miss.map(async (m) => ({ m, v: await ask(m, prompt) })));
-    const ins = res.map(({ m, v }) => ({ signal_id: s.id, model: m, verdict: v.verdict, confidence: v.confidence ?? null, reason: v.reason ?? null, risks: v.risks ?? null, ms: v.ms ?? null, tokens_in: v.tokens_in ?? null, tokens_out: v.tokens_out ?? null }));
-    const { error } = await db.from("ai_signal_votes").upsert(ins, { onConflict: "signal_id,model", ignoreDuplicates: true });
+    const ins = res.map(({ m, v }) => ({ prompt_ver: PROMPT_VER, signal_id: s.id, model: m, verdict: v.verdict, confidence: v.confidence ?? null, reason: v.reason ?? null, risks: v.risks ?? null, ms: v.ms ?? null, tokens_in: v.tokens_in ?? null, tokens_out: v.tokens_out ?? null }));
+    const { error } = await db.from("ai_signal_votes").upsert(ins, { onConflict: "signal_id,model,prompt_ver", ignoreDuplicates: true });
     out.push({ id: s.id, mode: s.mode, symbol: s.symbol, votes: res.map(({ m, v }) => m + ":" + v.verdict), err: error?.message });
   }
   return json({ ok: true, judged: out.length, out });
