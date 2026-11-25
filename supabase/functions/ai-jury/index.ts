@@ -43,7 +43,7 @@ async function ask(model, prompt) {
     const r = await fetch(BASE + "/chat/completions", {
       method: "POST", signal: AbortSignal.timeout(40000),
       headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, temperature: 0, max_tokens: 400, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }] }),
+      body: JSON.stringify({ model, temperature: 0, max_tokens: 1500, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }] }),
     });
     const j = await r.json().catch(() => null), ms = Date.now() - t0;
     if (!r.ok) return { verdict: "error", reason: `http ${r.status} ${String(j?.error?.message || j?.error || "").slice(0, 120)}`, ms };
@@ -62,6 +62,13 @@ Deno.serve(async (req) => {
   if (url.searchParams.get("models") === "1") {   // lists the model ids the gateway offers (to pick exact ids for jury_models)
     const r = await fetch(BASE + "/models", { headers: { Authorization: `Bearer ${KEY}` } }); const j = await r.json().catch(() => null);
     return json({ status: r.status, models: (j?.data || []).map((m) => m.id) });
+  }
+  if (url.searchParams.get("test") === "1") {   // one invented signal to every model in jury_models: checks the key, the ids and the answer format. Writes nothing.
+    const ms = String(cfg.jury_models || "").split(",").map((x) => x.trim()).filter(Boolean);
+    const bars = Array.from({ length: 40 }, (_, i) => { const c = 2300 + Math.sin(i / 4) * 6 + i * .3; return [1795500000 + i * 900, +(c - 1).toFixed(2), +(c + 2).toFixed(2), +(c - 2).toFixed(2), +c.toFixed(2)]; });
+    const p = describe({ symbol: "XAUUSD", mode: "test", side: "buy", entry: 2312, sl: 2306, tp1: 2321, tp2: 2330, tp3: null, risk: 6, trigger: "engulf", feat: { ctx: { tf: 900, bars } } });
+    const res = await Promise.all(ms.map(async (m) => ({ model: m, ...(await ask(m, p)) })));
+    return json({ ok: true, test: res });
   }
   if (cfg.jury_on !== "on") return json({ ok: true, skipped: "jury_on is off" });
   if (!KEY) return json({ ok: false, error: "JURY_API_KEY is not set" }, 500);
