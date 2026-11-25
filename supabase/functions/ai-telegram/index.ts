@@ -90,7 +90,7 @@ async function newsFn() {
   } catch (_) { return () => null; }
 }
 // Entry Timer checklist lines (same rules as Trade Finder → Time the trade on the website)
-const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING", sweep: "SWEEP (experimental)", btcx: "BTC SHADOW",
+const MLABEL = { scalp: "SCALPING", intraday: "INTRADAY", swing: "SWING", sweep: "SWEEP (experimental)", btcx: "BTC SCALPING · BETA",
   intraday_brt: "INTRADAY BREAKOUT RETEST", intraday_lsr: "INTRADAY SWEEP", intraday_srb: "INTRADAY SESSION BREAKOUT", swing_brt: "SWING BREAKOUT RETEST · BETA", swing_lsr: "SWING SWEEP",
   intraday_msnr: "INTRADAY MSNR", intraday_qm: "INTRADAY QM", swing_msnr: "SWING MSNR", swing_qm: "SWING QM",
   intraday_pat: "INTRADAY CHART PATTERN", swing_pat: "SWING CHART PATTERN", intraday_smc: "INTRADAY SMC", swing_smc: "SWING SMC",
@@ -227,6 +227,8 @@ Deno.serve(async (req) => {
   // publish_pairs = "XAUUSD:swing_brt,…": a shadow research mode posts for that symbol as BETA (feat.beta = true). It pauses itself (logs only)
   // when its posted results reach −8R, or after 30 closed signals with a negative average.
   const publishPairs = new Set(String(cfg.publish_pairs || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean));
+  // skip_pairs = "NQ:intraday_brt,…": that mode does not run at all on that symbol (no signals, no data calls). Open signals still follow up.
+  const skipPairs = new Set(String(cfg.skip_pairs || "").split(",").map((x) => x.trim().toUpperCase()).filter(Boolean));
   const modes = String(cfg.modes || "scalp,intraday,swing").split(",").map((s) => s.trim()).filter((m) => AiEng.MODES[m]);
   const nowS = Math.floor(Date.now() / 1000), force = url.searchParams.get("all") === "1";
   // cron runs every minute: M1 scalping every run; M5+ modes on the old :01, :06, :11 … cadence, just after their entry candle closes
@@ -243,6 +245,7 @@ Deno.serve(async (req) => {
     if (!(M.shadow && !M.pub ? shadowSyms : symbols).includes(sym)) continue;   // public modes and pub shadow modes: cfg.symbols · other shadow modes: cfg.shadow_symbols
     if (M.only && !M.only.test(sym)) continue;      // e.g. the sweep mode is BTC only
     const open = (openAll || []).filter((r) => r.symbol === sym && (r.mode || "scalp") === mk);
+    if (skipPairs.has(pk) && !open.length) continue;
     if (!due(M) && !open.length) continue;
     const out = { symbol: sym, mode: mk, posted: null, updates: [] };
     try {
