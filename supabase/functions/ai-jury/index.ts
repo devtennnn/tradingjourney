@@ -37,20 +37,26 @@ function parse(txt) {
   catch (_) { return null; }
 }
 
+// Two attempts: first with thinking switched off and a small cap (cheap, enough for models that can answer directly); if the gateway refuses that
+// (400) or the answer is cut off / empty (thinking models), once more with room to think. Out of credits (402) stops at once.
+const ATTEMPTS = [{ extra: { reasoning: { effort: "none" } }, max: 600 }, { extra: {}, max: 2500 }];
 async function ask(model, prompt) {
-  const t0 = Date.now();
-  try {
-    const r = await fetch(BASE + "/chat/completions", {
-      method: "POST", signal: AbortSignal.timeout(40000),
-      headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, temperature: 0, max_tokens: 800, reasoning: { effort: "low" }, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }] }),
-    });
-    const j = await r.json().catch(() => null), ms = Date.now() - t0;
-    if (!r.ok) return { verdict: "error", reason: `http ${r.status} ${String(j?.error?.message || j?.error || "").slice(0, 120)}`, ms };
-    const raw = j?.choices?.[0]?.message?.content, out = parse(raw);
-    const u = j?.usage || {};
-    return out ? { ...out, ms, tokens_in: u.prompt_tokens ?? null, tokens_out: u.completion_tokens ?? null } : { verdict: "error", reason: ("unparseable: " + String(raw ?? "").replace(/\s+/g, " ").slice(0, 160) + " [finish=" + (j?.choices?.[0]?.finish_reason ?? "?") + "]"), ms };
-  } catch (e) { return { verdict: "error", reason: String(e?.message || e).slice(0, 120), ms: Date.now() - t0 }; }
+  const t0 = Date.now(); let last = { verdict: "error", reason: "no attempt", ms: 0 };
+  for (const a of ATTEMPTS) {
+    try {
+      const r = await fetch(BASE + "/chat/completions", {
+        method: "POST", signal: AbortSignal.timeout(45000),
+        headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, temperature: 0, max_tokens: a.max, ...a.extra, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }] }),
+      });
+      const j = await r.json().catch(() => null), ms = Date.now() - t0;
+      if (!r.ok) { last = { verdict: "error", reason: `http ${r.status} ${String(j?.error?.message || j?.error || "").slice(0, 120)}`, ms }; if (r.status === 400 || r.status === 422) continue; return last; }
+      const raw = j?.choices?.[0]?.message?.content, out = parse(raw), u = j?.usage || {};
+      if (out) return { ...out, ms, tokens_in: u.prompt_tokens ?? null, tokens_out: u.completion_tokens ?? null };
+      last = { verdict: "error", reason: "unparseable: " + String(raw ?? "").replace(/\s+/g, " ").slice(0, 160) + " [finish=" + (j?.choices?.[0]?.finish_reason ?? "?") + "]", ms };
+    } catch (e) { last = { verdict: "error", reason: String(e?.message || e).slice(0, 120), ms: Date.now() - t0 }; }
+  }
+  return last;
 }
 
 Deno.serve(async (req) => {
