@@ -42,7 +42,7 @@ META = {
         "index":    ("AROM TRADE — Trading Journal & AI Signals for Gold, BTC and Forex",
                      "Trading journal and AI signals for gold, Bitcoin and forex traders in Cambodia. Log every trade, track your stats and get A+ setups in English or Khmer."),
         "journey":  ("AROM TRADE — Trading Journal · Stats & Performance",
-                     "Free trading journal: log trades with screenshots, see win rate, profit factor and R multiples, and sync MT5 / MT4 automatically. English and Khmer."),
+                     "Free trading journal: log trades with screenshots, see win rate, profit factor and R multiples. English and Khmer."),
         "news":     ("AROM TRADE — USD News Calendar & Alerts",
                      "USD economic calendar with high-impact news alerts for gold and forex traders. Signals pause around big releases. All times in Cambodia time."),
         "analysis": ("AROM TRADE — AI Desk · Signals & Market Analysis",
@@ -66,7 +66,7 @@ META = {
         "index":    ("AROM TRADE — កំណត់ហេតុជួញដូរ និងសញ្ញា AI សម្រាប់មាស BTC និង Forex",
                      "កំណត់ហេតុជួញដូរ និងសញ្ញា AI សម្រាប់អ្នកជួញដូរមាស Bitcoin និង Forex នៅកម្ពុជា។ កត់ត្រាការជួញដូរ មើលស្ថិតិ និងទទួល Setup A+ ជាភាសាខ្មែរ។"),
         "journey":  ("AROM TRADE — កំណត់ហេតុជួញដូរ · ស្ថិតិ និងលទ្ធផល",
-                     "កំណត់ហេតុជួញដូរឥតគិតថ្លៃ៖ កត់ត្រាការជួញដូរជាមួយរូបភាព មើលអត្រាឈ្នះ កត្តាចំណេញ និង R ហើយធ្វើសមកាលកម្ម MT5 / MT4 ដោយស្វ័យប្រវត្តិ។"),
+                     "កំណត់ហេតុជួញដូរឥតគិតថ្លៃ៖ កត់ត្រាការជួញដូរជាមួយរូបភាព មើលអត្រាឈ្នះ កត្តាចំណេញ និង R។"),
         "news":     ("AROM TRADE — ប្រតិទិនព័ត៌មាន USD និងការជូនដំណឹង",
                      "ប្រតិទិនសេដ្ឋកិច្ច USD ជាមួយការជូនដំណឹងព័ត៌មានឥទ្ធិពលខ្ពស់ សម្រាប់អ្នកជួញដូរមាស និង Forex។ សញ្ញាផ្អាកនៅពេលព័ត៌មានធំៗ។ ម៉ោងកម្ពុជា។"),
         "analysis": ("AROM TRADE — AI Desk · សញ្ញា និងការវិភាគទីផ្សារ",
@@ -270,7 +270,6 @@ TRUST["about"] = {"path": "/about", "type": "AboutPage",
 <li><b>Trading journal</b>: log trades with screenshots and see your win rate, profit factor, R multiples, best sessions and equity curve. Free.</li>
 <li><b>AI Desk</b>: rule-based setups for gold (XAUUSD), Bitcoin and other markets, each with an entry, a stop loss and targets, plus a buy or sell bias from USD news.</li>
 <li><b>News and alerts</b>: high-impact US economic releases, with alerts in the app, on your phone and in Telegram.</li>
-<li><b>Broker sync</b>: your MT5 or MT4 balance, open positions and closed trades copied into the journal, read-only.</li>
 <li><b>AROM Intelligence</b>: market briefings and an AI analyst that explains verified market data (Ultra plan).</li>
 </ul>
 <h2>How we work</h2>
@@ -283,7 +282,6 @@ TRUST["about"] = {"path": "/about", "type": "AboutPage",
 <h2>Your data and your money</h2>
 <ul>
 <li>Your journal belongs to your account and is kept private in our cloud database.</li>
-<li>Broker sync only reads your account. The AROM Sync EA cannot place, change or close a trade, and the phone option uses your read-only investor password, which we never store.</li>
 <li>Plans are paid 30 days at a time with KHQR and never renew on their own.</li>
 </ul>
 <h2>Contact us</h2>
