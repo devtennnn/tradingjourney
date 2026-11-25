@@ -101,6 +101,46 @@ function checkPlan(s, ctx) {
   return { setup: { side, order, entry: f(en), sl: f(sl), tp1: f(t1), tp2: t2 == null ? null : f(t2), rr1: +rr1.toFixed(2), rr2: t2 == null ? null : +(Math.abs(t2 - en) / risk).toFixed(2),
     risk_atr: +(risk / a).toFixed(2), invalidation: String(s.invalidation || "").slice(0, 200) }, note: null };
 }
+/* ---------- AROM strategy fallback: the same read with rules only, used when the model is off, out of credit or failing ----------
+   Trend from EMA 20/50, entry at the nearest unfilled OB / FVG on the trend side (within 3 ATR), stop 1 ATR beyond it, TP1 / TP2 at the next
+   swing levels. The plan goes through the same checkPlan as the model's. No confidence number: the rules do not estimate one. */
+const TXT = {
+  en: { bull: "Price is above EMA 50 and EMA 20 is above EMA 50: the trend is bullish.", bear: "Price is below EMA 50 and EMA 20 is below EMA 50: the trend is bearish.", flat: "EMA 20 and EMA 50 do not agree: no clear trend.",
+    zone: (k, d, lo, hi) => `Nearest unfilled ${d} ${k}: ${lo} – ${hi}.`, rsi: (v) => `RSI ${v}.`, eng: (m, g) => `Engine (${m}): grade ${g}.`,
+    sum: (side, k) => `Rule-based plan: ${side === "BUY" ? "buy a pullback into" : "sell a rally into"} the ${k} on the trend side.`, none: "Rule-based read: no clean setup on the trend side right now.",
+    waitZ: "a clear trend (EMA 20 and EMA 50 on the same side of price)", waitN: "price to pull back into an unfilled OB or FVG on the trend side",
+    rOb: "RSI is stretched: a pullback can run further than planned.", rHi: "Price is close to the day high / low.", rNews: "News is not part of this read.", inval: (tf, side, sl) => `A ${tf} candle closes ${side === "BUY" ? "below" : "above"} ${sl}.` },
+  km: { bull: "តម្លៃនៅលើ EMA 50 ហើយ EMA 20 នៅលើ EMA 50៖ trend ជា bullish។", bear: "តម្លៃនៅក្រោម EMA 50 ហើយ EMA 20 នៅក្រោម EMA 50៖ trend ជា bearish។", flat: "EMA 20 និង EMA 50 មិនស្របគ្នា៖ គ្មាន trend ច្បាស់។",
+    zone: (k, d, lo, hi) => `${k} ${d} ដែលមិនទាន់បំពេញជិតបំផុត៖ ${lo} – ${hi}។`, rsi: (v) => `RSI ${v}។`, eng: (m, g) => `Engine (${m})៖ កម្រិត ${g}។`,
+    sum: (side, k) => `ផែនការតាមច្បាប់៖ ${side === "BUY" ? "BUY ពេល pullback ចូល" : "SELL ពេលតម្លៃឡើងចូល"} ${k} តាមទិស trend។`, none: "ការអានតាមច្បាប់៖ ឥឡូវគ្មាន setup ស្អាតតាមទិស trend ទេ។",
+    waitZ: "trend ច្បាស់ (EMA 20 និង EMA 50 នៅខាងតែមួយនៃតម្លៃ)", waitN: "តម្លៃ pullback ចូល OB ឬ FVG ដែលមិនទាន់បំពេញតាមទិស trend",
+    rOb: "RSI លាតខ្លាំង៖ pullback អាចទៅឆ្ងាយជាងផែនការ។", rHi: "តម្លៃជិត day high / low។", rNews: "ព័ត៌មានមិនមែនជាផ្នែកនៃការអាននេះទេ។", inval: (tf, side, sl) => `ទៀន ${tf} បិទ${side === "BUY" ? "ក្រោម" : "លើ"} ${sl}។` },
+};
+function strategyScan(ctx, lang, tf) {
+  const T = TXT[lang] || TXT.en, px = ctx.price, a = ctx.atr14;
+  const bias = px > ctx.ema50 && ctx.ema20 > ctx.ema50 ? "bullish" : px < ctx.ema50 && ctx.ema20 < ctx.ema50 ? "bearish" : "neutral";
+  const reasons = [T[bias === "bullish" ? "bull" : bias === "bearish" ? "bear" : "flat"]], risks = [];
+  let plan = { setup: null, note: null }, zone = null;
+  if (bias !== "neutral") {
+    const sell = bias === "bearish";
+    zone = (ctx.zones || []).filter((z) => z.dir === (sell ? "bear" : "bull") && (sell ? z.lo >= px || z.hi >= px : z.hi <= px || z.lo <= px) && z.dist_atr <= 3)[0] || null;
+    if (zone) {
+      const entry = (zone.lo + zone.hi) / 2, sl = sell ? zone.hi + a : zone.lo - a, risk = Math.abs(entry - sl);
+      const lv = (sell ? ctx.levels_below : ctx.levels_above).filter((v) => sell ? v < entry - 0.5 * risk : v > entry + 0.5 * risk);
+      if (lv.length) plan = checkPlan({ side: sell ? "SELL" : "BUY", entry, sl, tp1: lv[0], tp2: lv[1] ?? null, invalidation: T.inval(tf >= 60 ? "1h" : tf + "m", sell ? "SELL" : "BUY", +sl.toFixed(px >= 100 ? 2 : 5)) }, ctx);
+      reasons.push(T.zone(zone.kind, zone.dir === "bear" ? "bearish" : "bullish", zone.lo, zone.hi));
+    }
+  }
+  reasons.push(T.rsi(ctx.rsi14) + (ctx.engine ? " " + T.eng(ctx.engine.mode, ctx.engine.grade) : ""));
+  if (ctx.rsi14 > 70 || ctx.rsi14 < 30) risks.push(T.rOb);
+  if (Math.min(Math.abs(ctx.day_high - px), Math.abs(px - ctx.day_low)) < a) risks.push(T.rHi);
+  risks.push(T.rNews);
+  const s = plan.setup;
+  return { bias, setup: s, rejected: null, confidence: null, summary: s ? T.sum(s.side, zone.kind) : T.none, reasons: reasons.slice(0, 3), risks: risks.slice(0, 3),
+    wait_for: s ? "" : bias === "neutral" ? T.waitZ : T.waitN };
+}
+const CHAT_OFF = { en: "The AI model is not available right now, so chat is paused. The scan above uses the AROM strategy rules only. Try chat again later.",
+  km: "AI model មិនអាចប្រើបានឥឡូវនេះ ដូច្នេះការជជែកផ្អាកសិន។ ស្កេនខាងលើប្រើតែច្បាប់ AROM strategy ប៉ុណ្ណោះ។ សូមសាកជជែកម្តងទៀតពេលក្រោយ។" };
 const parseObj = (t) => { const m = String(t || "").match(/\{[\s\S]*\}/); if (!m) return null; try { return JSON.parse(m[0]); } catch (_) { return null; } };
 const strs = (a, n, len) => (Array.isArray(a) ? a : []).slice(0, n).map((x) => String(x).slice(0, len));
 
@@ -118,7 +158,8 @@ Deno.serve(async (req) => {
       const ctx = context("XAUUSD", 15, cj.candles), model = c.llm_model || "deepseek/deepseek-v4.1-flash-1017";
       const r = await ask(model, [{ role: "system", content: SCAN_SYS("km") }, { role: "user", content: JSON.stringify(ctx) }], 900);
       const o = r.ok ? parseObj(r.text) : null;
-      return json({ ok: !!o, model, ctx_size: JSON.stringify(ctx).length, engine: ctx.engine, zones: ctx.zones.length, price: ctx.price, atr: ctx.atr14, raw: o ? null : r, plan: o ? checkPlan(o.setup, ctx) : null, answer: o, tokens: [r.tin, r.tout] });
+      const strat = strategyScan(ctx, "km", 15);
+      return json({ ok: !!o, strategy: strat, model, ctx_size: JSON.stringify(ctx).length, engine: ctx.engine, zones: ctx.zones.length, price: ctx.price, atr: ctx.atr14, raw: o ? null : r, plan: o ? checkPlan(o.setup, ctx) : null, answer: o, tokens: [r.tin, r.tout] });
     }
     const url = env("SUPABASE_URL"), userClient = createClient(url, env("SUPABASE_ANON_KEY"), { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
     const { data: { user } } = await userClient.auth.getUser();
@@ -126,7 +167,7 @@ Deno.serve(async (req) => {
     const admin = createClient(url, env("SUPABASE_SERVICE_ROLE_KEY"));
     const { data: elite } = await admin.rpc("is_elite", { uid: user.id });
     if (!elite) return json({ error: "plan" }, 403);
-    const { data: rows } = await admin.from("ai_bot_config").select("key,value").in("key", ["llm_model", "llm_daily"]);
+    const { data: rows } = await admin.from("ai_bot_config").select("key,value").in("key", ["llm_model", "llm_daily", "llm_mode"]);
     const cfg = Object.fromEntries((rows || []).map((r) => [r.key, r.value]));
     const limit = Math.max(1, Number(cfg.llm_daily) || 20), model = cfg.llm_model || "deepseek/deepseek-v4.1-flash-1017";
     const body = await req.json().catch(() => ({}));
@@ -135,7 +176,7 @@ Deno.serve(async (req) => {
     if (body.action === "quota") { const { data: left } = await admin.rpc("llm_left", { p_user: user.id, p_limit: limit }); return json({ ok: true, left, limit }); }
     if (body.action !== "scan" && body.action !== "chat") return json({ error: "unknown action" }, 400);
     const sym = SYMS.includes(body.sym) ? body.sym : "XAUUSD", tf = TFS.includes(Number(body.tf)) ? Number(body.tf) : 15;
-    if (!KEY) return json({ error: "unavailable" }, 503);
+    const useModel = !!KEY && cfg.llm_mode !== "strategy";   // llm_mode = strategy: rules only (e.g. while the OpenRouter credit is empty)
 
     // candles from our own API (the same feed as the chart), downloaded here
     const cr = await fetch(`${SITE}/api/candles?symbol=${sym}&tf=${tf}`, { signal: AbortSignal.timeout(20000) });
@@ -147,14 +188,20 @@ Deno.serve(async (req) => {
     if (left == null || left < 0) return json({ error: "quota", left: 0, limit }, 429);
 
     if (body.action === "scan") {
-      const r = await ask(model, [{ role: "system", content: SCAN_SYS(lang) }, { role: "user", content: JSON.stringify(ctx) }], 900);
+      const r = useModel ? await ask(model, [{ role: "system", content: SCAN_SYS(lang) }, { role: "user", content: JSON.stringify(ctx) }], 900) : { ok: false, error: "model off" };
       const o = r.ok ? parseObj(r.text) : null;
-      if (!o) { await admin.rpc("llm_refund", { p_user: user.id }); console.error("arom-llm scan failed", r.error, r.detail || ""); return json({ error: "model", left: left + 1, limit }, 502); }
+      if (!o) {   // model off, out of credit or failing: answer with the AROM strategy rules instead, free (the use is given back)
+        if (useModel) console.error("arom-llm scan failed, strategy fallback", r.error, r.detail || "");
+        await admin.rpc("llm_refund", { p_user: user.id });
+        const out = { ...strategyScan(ctx, lang, tf), via: "strategy", sym, tf, price: ctx.price, atr: ctx.atr14, at: ctx.time_utc, engine: ctx.engine, source: cj.source || null, model: null };
+        await admin.from("llm_log").insert({ user_id: user.id, kind: "scan", sym, tf, model: "strategy", result: { ...out, fallback: r.error } });
+        return json({ ok: true, left: left + 1, limit, scan: out });
+      }
       const chk = checkPlan(o.setup, ctx);
       const out = { bias: ["bullish", "bearish", "neutral"].includes(o.bias) ? o.bias : "neutral", setup: chk.setup, rejected: chk.note,
         confidence: Math.max(0, Math.min(100, Math.round(Number(o.confidence) || 0))), summary: String(o.summary || "").slice(0, 400),
         reasons: strs(o.reasons, 3, 160), risks: strs(o.risks, 3, 160), wait_for: String(o.wait_for || "").slice(0, 240),
-        sym, tf, price: ctx.price, atr: ctx.atr14, at: ctx.time_utc, engine: ctx.engine, source: cj.source || null, model };
+        via: "model", sym, tf, price: ctx.price, atr: ctx.atr14, at: ctx.time_utc, engine: ctx.engine, source: cj.source || null, model };
       await admin.from("llm_log").insert({ user_id: user.id, kind: "scan", sym, tf, model, result: out, tokens_in: r.tin, tokens_out: r.tout });
       return json({ ok: true, left, limit, scan: out });
     }
@@ -164,8 +211,8 @@ Deno.serve(async (req) => {
     if (!q) { await admin.rpc("llm_refund", { p_user: user.id }); return json({ error: "empty" }, 400); }
     const hist = (Array.isArray(body.history) ? body.history : []).slice(-6).map((h) => ({ role: h.role === "assistant" ? "assistant" : "user", content: String(h.content || "").slice(0, 1200) }));
     const last = body.last && typeof body.last === "object" ? JSON.stringify(body.last).slice(0, 2500) : "none";
-    const r = await ask(model, [{ role: "system", content: CHAT_SYS(lang) }, { role: "user", content: "Market data:\n" + JSON.stringify(ctx) + "\n\nLast scan:\n" + last }, ...hist, { role: "user", content: q }], 500);
-    if (!r.ok) { await admin.rpc("llm_refund", { p_user: user.id }); console.error("arom-llm chat failed", r.error, r.detail || ""); return json({ error: "model", left: left + 1, limit }, 502); }
+    const r = !useModel ? { ok: false, error: "model off" } : await ask(model, [{ role: "system", content: CHAT_SYS(lang) }, { role: "user", content: "Market data:\n" + JSON.stringify(ctx) + "\n\nLast scan:\n" + last }, ...hist, { role: "user", content: q }], 500);
+    if (!r.ok) { await admin.rpc("llm_refund", { p_user: user.id }); if (useModel) console.error("arom-llm chat failed", r.error, r.detail || ""); return json({ ok: true, left: left + 1, limit, answer: CHAT_OFF[lang], via: "strategy" }); }
     const answer = r.text.trim().slice(0, 2000);
     await admin.from("llm_log").insert({ user_id: user.id, kind: "chat", sym, tf, model, result: { q, answer }, tokens_in: r.tin, tokens_out: r.tout });
     return json({ ok: true, left, limit, answer });
