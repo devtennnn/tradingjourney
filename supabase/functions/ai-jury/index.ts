@@ -43,13 +43,13 @@ async function ask(model, prompt) {
     const r = await fetch(BASE + "/chat/completions", {
       method: "POST", signal: AbortSignal.timeout(40000),
       headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, temperature: 0, max_tokens: 1500, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }] }),
+      body: JSON.stringify({ model, temperature: 0, max_tokens: 800, reasoning: { effort: "low" }, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }] }),
     });
     const j = await r.json().catch(() => null), ms = Date.now() - t0;
     if (!r.ok) return { verdict: "error", reason: `http ${r.status} ${String(j?.error?.message || j?.error || "").slice(0, 120)}`, ms };
-    const out = parse(j?.choices?.[0]?.message?.content);
+    const raw = j?.choices?.[0]?.message?.content, out = parse(raw);
     const u = j?.usage || {};
-    return out ? { ...out, ms, tokens_in: u.prompt_tokens ?? null, tokens_out: u.completion_tokens ?? null } : { verdict: "error", reason: "unparseable answer", ms };
+    return out ? { ...out, ms, tokens_in: u.prompt_tokens ?? null, tokens_out: u.completion_tokens ?? null } : { verdict: "error", reason: ("unparseable: " + String(raw ?? "").replace(/\s+/g, " ").slice(0, 160) + " [finish=" + (j?.choices?.[0]?.finish_reason ?? "?") + "]"), ms };
   } catch (e) { return { verdict: "error", reason: String(e?.message || e).slice(0, 120), ms: Date.now() - t0 }; }
 }
 
