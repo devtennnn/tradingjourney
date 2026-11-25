@@ -1,0 +1,9 @@
+{
+  "_note": "Fuel pump prices in Cambodian riel per litre. There is no public API for them: edit this file (api/_lib/fuel.json) (price, updated, hist = recent daily prices, oldest first) and deploy.",
+  "updated": "2026-11-25",
+  "unit": "KHR/L",
+  "items": [
+    {"id": "regular", "price": 4050, "hist": []},
+    {"id": "diesel",  "price": 4900, "hist": []}
+  ]
+}
