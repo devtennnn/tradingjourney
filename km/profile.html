@@ -645,6 +645,7 @@ body:not([data-page="orderflow"]) .pg-of{display:none!important}
 
 
 /* ---------- /news: Hot news | Live newswire (server: supabase/functions/newswire, source investinglive.com) ---------- */
+body:not([data-page="news"]) #nwPanel{display:none!important}   /* the newswire lives on /news only */
 .nw{padding:0;overflow:hidden}
 .nw-top{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .nw-tab{border:0;background:none;color:var(--muted);font:800 15px Inter,sans-serif;padding:9px 14px;border-radius:12px;display:inline-flex;align-items:center;gap:8px}
