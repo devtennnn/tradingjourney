@@ -16,17 +16,17 @@ const UA = {'User-Agent': 'Mozilla/5.0 (compatible; arom-trade/1.0)', Accept: 'a
 // For these the 1-minute candles now come from our own /api/candles?tf=1 (Twelve Data spot, the same feed the signals use, real-time and
 // CDN-cached, so this costs no extra Twelve Data credits), and the live price from gold-api.com spot when it is fresh and agrees.
 // If that is unavailable, the old Yahoo logic below runs unchanged.
-const TD_M1 = {XAUUSD: true, XAGUSD: true};
+const TD_M1 = {XAUUSD: true, XAGUSD: true, BTCUSD: true};   // 1-minute candles from our own /api/candles (gold / BTC: Binance, silver: Twelve Data)
 const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://aromx.trade').replace(/\/+$/, '');
 
 async function tdM1(origin, key, now) {
   const r = await fetch(`${origin}/api/candles?symbol=${key}&tf=1`, {headers: UA, signal: AbortSignal.timeout(4000)});
   if (!r.ok) throw new Error('candles ' + r.status);
   const j = await r.json();
-  if (!/^Twelve Data/.test(j.source || '') || !Array.isArray(j.candles) || !j.candles.length) throw new Error('candles not Twelve Data');
+  if (!/^(Twelve Data|Binance)/.test(j.source || '') || !Array.isArray(j.candles) || !j.candles.length) throw new Error('candles not Twelve Data / Binance');
   const m1 = j.candles.slice(-130).map(b => ({t: b.t, o: b.o, h: b.h, l: b.l, c: b.c})), last = m1[m1.length - 1], time = last.t + 60;
   if (now - time > 240) throw new Error('candles stale (' + (now - time) + ' s)');
-  return {symbol: j.source.replace(/^Twelve Data · /, ''), source: j.source, price: last.c, time, lag: Math.max(0, now - time), m1, bars: m1.length};
+  return {symbol: j.source.replace(/^(Twelve Data|Binance) · /, ''), source: j.source, price: last.c, time, lag: Math.max(0, now - time), m1, bars: m1.length};
 }
 /** live price for the Twelve Data feed: the spot API tick when it is fresher than the last closed candle and within 0.5 % of it */
 function tdPrice(td, spot) {
@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
   const now = Math.floor(Date.now() / 1000), debug = req.query && String(req.query.debug) === '1';
   if (TD_M1[key]) {
     // fixed origin: never build a server-side URL from a request header (this response is shared through the CDN cache)
-    const [tdR, gaR] = await Promise.allSettled([tdM1(SITE_ORIGIN, key, now), goldApi(GOLDAPI[key], now)]);
+    const [tdR, gaR] = await Promise.allSettled([tdM1(SITE_ORIGIN, key, now), (GOLDAPI[key] ? goldApi(GOLDAPI[key], now) : Promise.reject(new Error('no spot api')))]);
     if (tdR.status === 'fulfilled') {
       const td = tdR.value, sp = gaR.status === 'fulfilled' ? gaR.value : null, p = tdPrice(td, sp);
       const body = {symbol: key, source: td.source, kind: 'spot', price: p.price, time: p.time, lag: p.lag, m1: td.m1, at: now};
