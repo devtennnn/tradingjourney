@@ -12,8 +12,10 @@ export const PLANS: Record<string, { price: number; col: string; label: string }
   ultra:   { price: Number(env("PLAN_PRICE_ULTRA", "49.99")), col: "ultra_until", label: "Ultra" },
   // AROM Academy course: one payment, lifetime access. The database trigger payments_course_paid sets course_until when the row turns paid.
   course:  { price: Number(env("COURSE_PRICE", "19.99")), col: "course_until", label: "Academy" },
+  // IB & Community Partner: 30 days of IB status + 30 days of Elite + three 5 % codes (database: ib_activate when the row turns paid)
+  ib:      { price: Number(env("PLAN_PRICE_IB", "19.99")), col: "ib_until", label: "IB Partner" },
 };
-export const planOf = (v: unknown) => (v === "course" ? "course" : v === "ultra" ? "ultra" : v === "elite" ? "elite" : "premium");
+export const planOf = (v: unknown) => (v === "course" ? "course" : v === "ib" ? "ib" : v === "ultra" ? "ultra" : v === "elite" ? "elite" : "premium");
 export const CURRENCY = "USD" as const;
 
 /* ---------- KHQRPay API ---------- */
