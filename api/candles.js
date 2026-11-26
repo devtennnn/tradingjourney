@@ -2,15 +2,18 @@
 // Provider 1: Twelve Data (spot XAU/USD) when TWELVEDATA_API_KEY is set in Vercel → Settings → Environment Variables.
 // Provider 2 (fallback): Yahoo Finance COMEX gold futures (GC=F) — futures trade a few dollars above spot.
 // Nothing is generated here: if both providers fail, the endpoint returns an error and the page shows "no data".
+// Provider 0 (since 26 Nov 2026): Binance public market data (free, real-time, no key) for Bitcoin (BTCUSDT) and gold (XAUT/USDT, Tether Gold,
+// shifted to the spot price from gold-api.com so the levels sit where brokers quote). The free Twelve Data plan (800 credits a day) ran out every
+// day from 20 Nov once the terminal asked it for 1-minute candles every minute, and everything fell back to Yahoo futures (~$26 above spot, ~10 min late).
 const SYMBOLS = {
-  XAUUSD: {td: 'XAU/USD', yahoo: 'GC=F', yahooName: 'COMEX Gold futures (GC=F)'},
+  XAUUSD: {td: 'XAU/USD', yahoo: 'GC=F', yahooName: 'COMEX Gold futures (GC=F)', bn: 'XAUTUSDT', spot: 'XAU'},
   XAGUSD: {td: 'XAG/USD', yahoo: 'SI=F', yahooName: 'COMEX Silver futures (SI=F)'},
   EURUSD: {td: 'EUR/USD', yahoo: 'EURUSD=X', yahooName: 'EUR/USD spot (Yahoo)'},
   GBPUSD: {td: 'GBP/USD', yahoo: 'GBPUSD=X', yahooName: 'GBP/USD spot (Yahoo)'},
   USDJPY: {td: 'USD/JPY', yahoo: 'JPY=X',    yahooName: 'USD/JPY spot (Yahoo)'},
   NQ:     {td: null,      yahoo: 'NQ=F',     yahooName: 'Nasdaq 100 E-mini futures (NQ=F)'},
   OIL:    {td: null,      yahoo: 'CL=F',     yahooName: 'WTI crude futures (CL=F)'},
-  BTCUSD: {td: 'BTC/USD', yahoo: 'BTC-USD',  yahooName: 'Bitcoin (Yahoo BTC-USD)'},
+  BTCUSD: {td: 'BTC/USD', yahoo: 'BTC-USD',  yahooName: 'Bitcoin (Yahoo BTC-USD)', bn: 'BTCUSDT'},
 };
 
 // ?tf=1 (scalping v3, M1) · 5 (M5) · 15 (intraday) · 60 (swing)
@@ -47,6 +50,31 @@ async function fromTwelveData(sym, key, tf) {
     o: +v.open, h: +v.high, l: +v.low, c: +v.close, v: +v.volume || 0,
   })).filter(x => isFinite(x.t) && isFinite(x.c));
   return {source: 'Twelve Data · ' + sym.td + ' spot', delayed: false, candles};
+}
+
+const BN_IV = {60: '1m', 300: '5m', 900: '15m', 3600: '1h'};
+async function fromBinance(sym, tf, want) {
+  const iv = BN_IV[tf.step]; if (!iv) throw new Error('binance: no interval');
+  let out = [], end = null;
+  for (let page = 0; page < 6 && out.length < want; page++) {   // 1000 candles per call, newest first by paging back with endTime
+    const url = `https://data-api.binance.vision/api/v3/klines?symbol=${sym.bn}&interval=${iv}&limit=1000` + (end ? `&endTime=${end}` : '');
+    const r = await fetch(url, {headers: {'User-Agent': 'arom-trade/1.0'}, signal: AbortSignal.timeout(8000)});
+    if (!r.ok) throw new Error('binance: ' + r.status);
+    const rows = await r.json(); if (!Array.isArray(rows) || !rows.length) break;
+    out = rows.map(k => ({t: Math.floor(k[0] / 1000), o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] || 0})).concat(out);
+    end = rows[0][0] - 1; if (rows.length < 1000) break;
+  }
+  if (!out.length) throw new Error('binance: empty');
+  let source = 'Binance · ' + sym.bn.replace('USDT', '/USDT');
+  if (sym.spot) {   // gold token -> spot: shift every candle by (spot now - token now). Without a fresh, sane spot tick the token prices are used as they are.
+    try {
+      const r = await fetch('https://api.gold-api.com/price/' + sym.spot, {signal: AbortSignal.timeout(3500)}); const j = await r.json();
+      const spot = Number(j.price), age = Date.now() / 1000 - Date.parse(j.updatedAt) / 1000, last = out[out.length - 1].c, d = spot - last;
+      if (isFinite(spot) && age < 180 && Math.abs(d) / last < 0.015) { out = out.map(b => ({...b, o: b.o + d, h: b.h + d, l: b.l + d, c: b.c + d})); source += ' shifted to spot (gold-api.com, ' + (d >= 0 ? '+' : '') + d.toFixed(2) + ')'; }
+      else source += ' (not shifted to spot)';
+    } catch (e) { source += ' (not shifted to spot)'; }
+  }
+  return {source, delayed: false, candles: out};
 }
 
 async function fromYahoo(sym, tf) {
@@ -86,7 +114,8 @@ module.exports = async (req, res) => {
   const now = Math.floor(Date.now() / 1000), next = Math.ceil((now + 1) / tf.step) * tf.step + 20;
   const errors = [];
   const tdKey = process.env.TWELVEDATA_API_KEY;
-  const providers = tdKey && sym.td ? [() => fromTwelveData(sym, tdKey, tf), () => fromYahoo(sym, tf)] : [() => fromYahoo(sym, tf)];
+  const providers = (tdKey && sym.td ? [() => fromTwelveData(sym, tdKey, tf), () => fromYahoo(sym, tf)] : [() => fromYahoo(sym, tf)]);
+  if (sym.bn) providers.unshift(() => fromBinance(sym, tf, full ? 5000 : tf.keep + 20));
   for (const p of providers) {
     try {
       const out = await p();
