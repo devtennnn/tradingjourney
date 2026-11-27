@@ -489,6 +489,7 @@ body[data-page="ib"] :is(.pg-main,.pg-an,.pg-pr,.pg-jr,.pg-nw,.pg-rf,.pg-pf,.pg-
 .ib-act{display:none;margin-bottom:12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(52,211,153,.45);color:var(--green);font-weight:700;font-size:14px}
 .ib-act.on{display:block}
 .ib-note{margin-top:12px;font-size:12.5px;color:var(--muted)}
+#ibDash[hidden]{display:none!important}
 /* scroll reveal (only when JS runs; everything stays visible otherwise) */
 .ib.js .ib-rv{opacity:0;transform:translateY(28px) scale(.985);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--d,0) * 90ms)}
 .ib.js .ib-rv.in{opacity:1;transform:none}
@@ -3698,7 +3699,7 @@ header.nav2.nav-burger-mode .nav-links > a{font-weight:500}
     </div>
   </div>
 
-  <div class="ib-sec ib-dash ib-rv" id="ibDash">
+  <div class="ib-sec ib-dash ib-rv" id="ibDash" hidden>
     <h2 data-i18n="ibDashT">Your IB dashboard</h2>
     <div id="ibDashBody"><p class="ib-note" data-i18n="ibSignIn">Sign in and join the program to open your dashboard.</p></div>
   </div>
@@ -9713,8 +9714,8 @@ function ibDash(){
   const box = $('ibDashBody'); if(!box) return;
   $('ibJoin').textContent = t(Prem.ib ? 'ibRenew' : 'ibJoin');
   const act = $('ibAct'); if(act){ act.classList.toggle('on', !!Prem.ib); act.textContent = Prem.ib && Prem.ibUntil ? '✓ ' + t('ibActive').replace('{d}', aiICT.format(new Date(Prem.ibUntil)).split(',')[0]) : ''; }
-  if(!currentUser){ box.innerHTML = `<p class="ib-note">${esc(t('ibSignIn'))}</p>`; return; }
-  if(!Prem.ib && !Prem.admin){ box.innerHTML = `<p class="ib-note">${esc(t('ibNotActive'))}</p>`; return; }
+  const open = !!(currentUser && (Prem.ib || Prem.admin)); $('ibDash').hidden = !open;   // the dashboard shows only once the IB plan is paid (or for the admin)
+  if(!open){ box.innerHTML = ''; return; }
   const P = IB.prof || {}, st = P.status || 'none', d = Prem.ibUntil ? aiICT.format(new Date(Prem.ibUntil)).split(',')[0] : '—';
   const f = (id, lbl, hint, input) => `<label>${esc(t(lbl))}${hint ? ` <small>${esc(t(hint))}</small>` : ''}${input}</label>`;
   const v = k => esc(P[k] == null ? '' : P[k]);
