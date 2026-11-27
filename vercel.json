@@ -56,6 +56,23 @@
           "value": "public, max-age=300"
         }
       ]
+    },
+    {
+      "source": "/downloads/(.*)\\.pdf",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/pdf"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
     }
   ],
   "redirects": [
